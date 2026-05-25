@@ -1,5 +1,5 @@
 //  KDNACore — Swift implementation of the KDNA Protocol v1.0-rc
-//  https://github.com/aikdna/KDNA
+//  https://github.com/aikdna/kdna
 
 import Foundation
 
