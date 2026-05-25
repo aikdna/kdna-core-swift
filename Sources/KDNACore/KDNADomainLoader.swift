@@ -7,6 +7,8 @@ import Foundation
 /// Loads KDNA domain cognition from parsed JSON files.
 public class KDNADomainLoader {
 
+    public init() {}
+
     public static let fileMap: [String: String] = [
         "core": "KDNA_Core.json",
         "patterns": "KDNA_Patterns.json",
