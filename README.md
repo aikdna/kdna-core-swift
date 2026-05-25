@@ -12,37 +12,11 @@ This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.co
 - **Validate** domain structure and cross-file references
 - **Format** domain context for injection into LLM system prompts
 - **Classify** tasks to determine which domain sections are relevant
+- **Route** tasks to the correct domain using a 7-state decision engine (Negative Match First → Domain Fit → Trust Gate → Ambiguity Gate)
+- **Compose** multiple domains with conflict detection (stance, axiom, term conflicts)
+- **Verify** trust: signature presence, yank status, license validity
+- **Match** tasks against installed domains (keyword scan with does_not_apply_when exclusion)
 - **Build judgment pipelines** — pre-filter, system prompt injection, post-validation
-
-## Installation
-
-Add via Swift Package Manager:
-
-```swift
-// Package.swift
-dependencies: [
-    .package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.1.0")
-]
-```
-
-Or in Xcode: `File → Add Packages → https://github.com/aikdna/kdna-core-swift`
-
-## Quick Start
-
-```swift
-import KDNACore
-
-// Load a domain
-let loader = KDNADomainLoader()
-let domain = try loader.load(from: URL(filePath: "/path/to/domain"))
-
-// Format for agent context
-let context = loader.formatContext(domain)
-print(context)
-
-// Validate
-let issues = KDNADomainValidator.validate(domain)
-```
 
 ## Architecture
 
@@ -52,6 +26,28 @@ let issues = KDNADomainValidator.validate(domain)
 | `KDNADomainLoader.swift` | Domain loading, scanning, task classification, context formatting |
 | `KDNADomainValidator.swift` | Structural lint, cross-file validation, ID uniqueness |
 | `KDNJudgmentPipeline.swift` | Pre-filtering, system prompt construction, post-validation of agent outputs |
+| `KDNARouter.swift` | **7-State Domain Router** — full routing pipeline (Intent Gate → Negative Match → Domain Fit → Trust Gate → Ambiguity Gate) |
+| `KDNAComposer.swift` | **Multi-Domain Composer** — combines primary + constraint domains with conflict detection |
+| `KDNATrust.swift` | **Trust Verifier** — signature, yank, and license verification |
+
+### Feature Parity with kdna-cli (JS)
+
+| Capability | JS CLI | Swift |
+|------------|:---:|:---:|
+| load domain | ✅ | ✅ |
+| validate | ✅ | ✅ |
+| formatContext | ✅ | ✅ |
+| classify task | ✅ | ✅ |
+| preFilter | ✅ | ✅ |
+| systemPrompt | ✅ | ✅ |
+| postValidate | ✅ | ✅ |
+| **route (7-state)** | ✅ | ✅ |
+| **compose (multi-domain)** | ✅ | ✅ |
+| **verify trust** | ✅ | ✅ |
+| **match (keyword)** | ✅ | ✅ |
+| **available (inventory)** | ✅ | ✅ |
+| install/registry | ✅ | N/A (CLI) |
+| pack/publish | ✅ | N/A (CLI) |
 
 ## Relationship to KDNA Ecosystem
 
