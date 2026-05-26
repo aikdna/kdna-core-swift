@@ -44,8 +44,7 @@ public class KDNATrustVerifier {
 
         // License check — for licensed/runtime, verify license store
         if manifest.access == "licensed" || manifest.access == "runtime" {
-            let licenseStorePath = FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".kdna/licenses.json")
+            let licenseStorePath = KDNAPlatformPaths.licensesFile
             if FileManager.default.fileExists(atPath: licenseStorePath.path) {
                 // License file exists — basic check passed
                 licenseValid = true
