@@ -61,7 +61,7 @@ This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.co
 └──────────────────────────────────┘
 ```
 
-This library is used by [KDNAChat](https://github.com/AhaSparkCoach/kdnachat) for macOS.
+This library is used by [KDNAChat](https://github.com/aikdna/kdna-core-swift) for macOS.
 
 ## License
 
