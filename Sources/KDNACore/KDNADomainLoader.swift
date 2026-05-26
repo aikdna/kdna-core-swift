@@ -14,12 +14,16 @@ enum KDNAPlatformPaths {
         #endif
     }
 
-    static var domainsDirectory: URL {
-        kdnaDirectory.appendingPathComponent("domains", isDirectory: true)
+    static var packagesDirectory: URL {
+        kdnaDirectory.appendingPathComponent("packages", isDirectory: true)
     }
 
-    static var licensesFile: URL {
-        kdnaDirectory.appendingPathComponent("licenses.json")
+    static var packageIndexFile: URL {
+        kdnaDirectory.appendingPathComponent("index.json")
+    }
+
+    static var licensesDirectory: URL {
+        kdnaDirectory.appendingPathComponent("licenses", isDirectory: true)
     }
 }
 
@@ -77,7 +81,7 @@ public class KDNADomainLoader {
         return domain
     }
 
-    /// Load domain from filesystem path.
+    /// Load domain from a dev source directory.
     public static func load(path: String, input: String = "", mode: String = "auto") -> KDNADomain? {
         let fileManager = FileManager.default
         guard fileManager.fileExists(atPath: path) else { return nil }
@@ -114,12 +118,31 @@ public class KDNADomainLoader {
         return loadDomain(dataMap: dataMap, input: input, mode: mode)
     }
 
-    /// Scan ~/.kdna/domains/ for installed domains.
-    public static func scanInstalledDomains() -> [String: KDNADomain] {
-        scanDomains(at: KDNAPlatformPaths.domainsDirectory.path)
+    /// Read installed .kdna asset paths from ~/.kdna/index.json.
+    public static func scanInstalledAssetPaths() -> [String: String] {
+        guard let data = try? Data(contentsOf: KDNAPlatformPaths.packageIndexFile),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let packages = object["packages"] as? [String: Any] else {
+            return [:]
+        }
+
+        var assets: [String: String] = [:]
+        for (name, value) in packages {
+            guard let entry = value as? [String: Any],
+                  let assetPath = entry["asset_path"] as? String else { continue }
+            assets[name] = assetPath
+        }
+        return assets
     }
 
-    /// Scan a directory for KDNA domain subdirectories.
+    /// Installed domains are canonical .kdna assets. This Swift package does not
+    /// yet include a native ZIP asset reader, so callers should use
+    /// scanInstalledAssetPaths() plus the kdna CLI for installed runtime loads.
+    public static func scanInstalledDomains() -> [String: KDNADomain] {
+        [:]
+    }
+
+    /// Scan a dev workspace directory for KDNA domain source subdirectories.
     public static func scanDomains(at path: String) -> [String: KDNADomain] {
         let fileManager = FileManager.default
         guard fileManager.fileExists(atPath: path) else { return [:] }
