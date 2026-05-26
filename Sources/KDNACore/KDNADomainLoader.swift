@@ -3,6 +3,26 @@
 
 import Foundation
 
+enum KDNAPlatformPaths {
+    static var kdnaDirectory: URL {
+        #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+        let baseDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return baseDirectory.appendingPathComponent("KDNA", isDirectory: true)
+        #else
+        return FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".kdna", isDirectory: true)
+        #endif
+    }
+
+    static var domainsDirectory: URL {
+        kdnaDirectory.appendingPathComponent("domains", isDirectory: true)
+    }
+
+    static var licensesFile: URL {
+        kdnaDirectory.appendingPathComponent("licenses.json")
+    }
+}
+
 /// Swift native port of @aikdna/kdna-core loader.js
 /// Loads KDNA domain cognition from parsed JSON files.
 public class KDNADomainLoader {
@@ -96,9 +116,7 @@ public class KDNADomainLoader {
 
     /// Scan ~/.kdna/domains/ for installed domains.
     public static func scanInstalledDomains() -> [String: KDNADomain] {
-        let kdnaPath = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".kdna/domains").path
-        return scanDomains(at: kdnaPath)
+        scanDomains(at: KDNAPlatformPaths.domainsDirectory.path)
     }
 
     /// Scan a directory for KDNA domain subdirectories.
