@@ -42,15 +42,17 @@ public class KDNATrustVerifier {
             }
         }
 
-        // License check — for licensed/runtime, verify license store
+        // License check — for licensed/runtime, verify local activation file
         if manifest.access == "licensed" || manifest.access == "runtime" {
-            let licenseStorePath = KDNAPlatformPaths.licensesFile
-            if FileManager.default.fileExists(atPath: licenseStorePath.path) {
-                // License file exists — basic check passed
+            let safeName = manifest.name.replacingOccurrences(of: "@", with: "").replacingOccurrences(of: "/", with: "-")
+            let licensePath = KDNAPlatformPaths.licensesDirectory.appendingPathComponent("\(safeName).json")
+            if FileManager.default.fileExists(atPath: licensePath.path) {
+                // Activation file exists — basic check passed.
+                // Full entitlement validation is performed by kdna CLI/Core runtime.
                 licenseValid = true
             } else {
                 licenseValid = false
-                failures.append("no license store found for commercial domain")
+                failures.append("no local activation found for commercial domain")
             }
         }
 
