@@ -530,7 +530,7 @@ public class KDNADomainLoader {
 
     // MARK: - Manifest Loading
 
-    /// Load kdna.json manifest from a domain directory.
+    /// Load kdna.json manifest from a dev source directory.
     public static func loadManifest(from path: String) -> KDNAManifest? {
         let manifestPath = (path as NSString).appendingPathComponent("kdna.json")
         guard let data = try? Data(contentsOf: URL(fileURLWithPath: manifestPath)) else { return nil }

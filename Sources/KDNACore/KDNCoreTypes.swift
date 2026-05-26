@@ -437,7 +437,7 @@ public struct KDNAJudgment {
 
 // MARK: - Manifest Types
 
-/// Parsed kdna.json manifest for a KDNA domain package.
+/// Parsed kdna.json manifest for a KDNA domain asset.
 /// Aligns with SPEC.md v1.0-rc Section 3.4
 public struct KDNAManifest: Codable {
     public let kdna_spec: String

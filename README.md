@@ -8,7 +8,7 @@ This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.co
 
 ## What It Does
 
-- **Load** KDNA domain packages from the filesystem
+- **Load** KDNA domain assets from the filesystem
 - **Validate** domain structure and cross-file references
 - **Format** domain context for injection into LLM system prompts
 - **Classify** tasks to determine which domain sections are relevant
