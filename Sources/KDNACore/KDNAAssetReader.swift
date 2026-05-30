@@ -1,0 +1,180 @@
+//  KDNACore — Native .kdna asset reader (ZIP container access)
+//
+//  Reads .kdna files as PKZIP containers without persistent extraction.
+//  Provides open, list, read, and JSON access methods.
+//  Aligned with @aikdna/kdna-core/src/asset-reader.js (Node.js)
+
+import Foundation
+import CryptoKit
+import Compression
+
+public struct KDNAAsset {
+    public let path: String
+    public let size: Int
+    public let assetDigest: String
+    let entries: [String: (offset: UInt32, compressedSize: UInt32, uncompressedSize: UInt32, compressionMethod: UInt16)]
+    let data: Data
+}
+
+public class KDNAAssetReader {
+
+    public init() {}
+
+    // MARK: - Open
+
+    public func open(url: URL) throws -> KDNAAsset {
+        let data = try Data(contentsOf: url)
+        return try open(data: data, path: url.path)
+    }
+
+    public func open(path: String) throws -> KDNAAsset {
+        let url = URL(fileURLWithPath: path)
+        return try open(url: url)
+    }
+
+    public func open(data: Data, path: String = "") throws -> KDNAAsset {
+        let entries = try parseCentralDirectory(data: data)
+        let digest = "sha256:" + SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
+        return KDNAAsset(
+            path: path,
+            size: data.count,
+            assetDigest: digest,
+            entries: entries,
+            data: data
+        )
+    }
+
+    // MARK: - Read
+
+    public func readEntry(asset: KDNAAsset, name: String) throws -> Data {
+        guard let entry = asset.entries[name] else {
+            throw KDNAAssetError.entryNotFound(name)
+        }
+        let start = Int(entry.offset)
+        let size = Int(entry.compressedSize)
+        let raw = asset.data.subdata(in: start..<(start + size))
+
+        if entry.compressionMethod == 0 {
+            return raw
+        } else if entry.compressionMethod == 8 {
+            return try inflate(raw, expectedSize: Int(entry.uncompressedSize))
+        }
+        throw KDNAAssetError.unsupportedCompression(entry.compressionMethod)
+    }
+
+    public func readString(asset: KDNAAsset, name: String) throws -> String {
+        let data = try readEntry(asset: asset, name: name)
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    public func readJSON(asset: KDNAAsset, name: String) throws -> [String: Any]? {
+        let data = try readEntry(asset: asset, name: name)
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
+    public func readManifest(asset: KDNAAsset) throws -> [String: Any]? {
+        return try readJSON(asset: asset, name: "kdna.json")
+    }
+
+    // MARK: - List
+
+    public func listEntries(asset: KDNAAsset) -> [String] {
+        return asset.entries.keys.sorted()
+    }
+
+    public func hasEntry(asset: KDNAAsset, name: String) -> Bool {
+        return asset.entries[name] != nil
+    }
+
+    // MARK: - Verify
+
+    public func verifyMediaType(asset: KDNAAsset) -> Bool {
+        guard let data = try? readEntry(asset: asset, name: "mimetype") else { return false }
+        return String(data: data, encoding: .utf8) == "application/vnd.aikdna.kdna+zip"
+    }
+
+    // MARK: - ZIP Central Directory Parser
+
+    private func parseCentralDirectory(data: Data) throws -> [String: (UInt32, UInt32, UInt32, UInt16)] {
+        // Find end-of-central-directory record
+        guard data.count > 22 else { throw KDNAAssetError.invalidZIP }
+
+        var eocdOffset = data.count - 22
+        while eocdOffset >= 0 {
+            let sig = data.advanced(by: eocdOffset).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }
+            if sig == 0x06054b50 { break }
+            eocdOffset -= 1
+        }
+        guard eocdOffset >= 0 else { throw KDNAAssetError.invalidZIP }
+
+        let eocd = data.advanced(by: eocdOffset)
+        let cdOffset = Int(eocd.advanced(by: 16).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) })
+        let cdCount = Int(eocd.advanced(by: 10).withUnsafeBytes { $0.loadUnaligned(as: UInt16.self) })
+
+        var entries: [String: (UInt32, UInt32, UInt32, UInt16)] = [:]
+        var pos = cdOffset
+
+        for _ in 0..<cdCount {
+            let cd = data.advanced(by: pos)
+            let sig = cd.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }
+            if sig != 0x02014b50 { break }
+
+            let nameLen = Int(cd.advanced(by: 28).withUnsafeBytes { $0.loadUnaligned(as: UInt16.self) })
+            let extraLen = Int(cd.advanced(by: 30).withUnsafeBytes { $0.loadUnaligned(as: UInt16.self) })
+            let commentLen = Int(cd.advanced(by: 32).withUnsafeBytes { $0.loadUnaligned(as: UInt16.self) })
+            let compMethod = cd.advanced(by: 10).withUnsafeBytes { $0.loadUnaligned(as: UInt16.self) }
+            let compSize = cd.advanced(by: 20).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }
+            let uncompSize = cd.advanced(by: 24).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }
+            let localOffset = cd.advanced(by: 42).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }
+
+            let nameData = cd.advanced(by: 46).prefix(nameLen)
+            guard let name = String(data: nameData, encoding: .utf8) else { break }
+
+            // Read local header to get actual data offset
+            let local = data.advanced(by: Int(localOffset))
+            let localNameLen = Int(local.advanced(by: 26).withUnsafeBytes { $0.loadUnaligned(as: UInt16.self) })
+            let localExtraLen = Int(local.advanced(by: 28).withUnsafeBytes { $0.loadUnaligned(as: UInt16.self) })
+            let dataOffset = UInt32(Int(localOffset) + 30 + localNameLen + localExtraLen)
+
+            entries[name] = (dataOffset, compSize, uncompSize, compMethod)
+
+            pos += 46 + nameLen + extraLen + commentLen
+        }
+
+        return entries
+    }
+    // MARK: - Decompression
+
+    private func inflate(_ data: Data, expectedSize: Int) throws -> Data {
+        let capacity = max(expectedSize, data.count * 4)
+        var outBuffer = Data(count: capacity)
+        let result = outBuffer.withUnsafeMutableBytes { dstPtr in
+            data.withUnsafeBytes { srcPtr in
+                compression_decode_buffer(
+                    dstPtr.bindMemory(to: UInt8.self).baseAddress!, capacity,
+                    srcPtr.bindMemory(to: UInt8.self).baseAddress!, data.count,
+                    nil,
+                    COMPRESSION_ZLIB
+                )
+            }
+        }
+        guard result > 0 else { throw KDNAAssetError.invalidZIP }
+        return outBuffer.prefix(result)
+    }
+}
+
+// MARK: - Errors
+
+public enum KDNAAssetError: Error, LocalizedError {
+    case invalidZIP
+    case entryNotFound(String)
+    case unsupportedCompression(UInt16)
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidZIP: return "Invalid .kdna asset: ZIP structure not recognized"
+        case .entryNotFound(let name): return "Entry not found in .kdna asset: \(name)"
+        case .unsupportedCompression(let m): return "Unsupported compression method: \(m)"
+        }
+    }
+}
