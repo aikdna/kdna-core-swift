@@ -465,3 +465,68 @@ public struct KDNAManifestLicense: Codable {
     public let type: String
     public let url: String?
 }
+
+// MARK: - Product Contract v1.0 Types
+
+/// Product Contract Judgment Trace — the canonical trace format shared across all KDNA products.
+public struct KDNAProductContractTrace: Codable {
+    public let trace_id: String
+    public let domain_id: String
+    public let domain_version: String?
+    public let mode: String
+    public let timestamp: String
+    public let agent: String
+    public let input_summary: String?
+    public let signals_detected: [String]
+    public let axioms_triggered: [String]
+    public let patterns_matched: [String]
+    public let misunderstandings_avoided: [String]
+    public let violations_blocked: [String]
+    public let judgment_delta: KDNAContractJudgmentDelta?
+    public let confidence: Double?
+    public let limitations: [String]
+    public let self_checks_passed: Int
+    public let self_checks_failed: Int
+
+    public init(trace_id: String = UUID().uuidString, domain_id: String, domain_version: String? = nil, mode: String, timestamp: String = ISO8601DateFormatter().string(from: Date()), agent: String = "kdnachat", input_summary: String? = nil, signals_detected: [String] = [], axioms_triggered: [String] = [], patterns_matched: [String] = [], misunderstandings_avoided: [String] = [], violations_blocked: [String] = [], judgment_delta: KDNAContractJudgmentDelta? = nil, confidence: Double? = nil, limitations: [String] = [], self_checks_passed: Int = 0, self_checks_failed: Int = 0) {
+        self.trace_id = trace_id; self.domain_id = domain_id; self.domain_version = domain_version
+        self.mode = mode; self.timestamp = timestamp; self.agent = agent
+        self.input_summary = input_summary; self.signals_detected = signals_detected
+        self.axioms_triggered = axioms_triggered; self.patterns_matched = patterns_matched
+        self.misunderstandings_avoided = misunderstandings_avoided; self.violations_blocked = violations_blocked
+        self.judgment_delta = judgment_delta; self.confidence = confidence
+        self.limitations = limitations; self.self_checks_passed = self_checks_passed
+        self.self_checks_failed = self_checks_failed
+    }
+}
+
+public struct KDNAContractJudgmentDelta: Codable {
+    public let without_kdna: String
+    public let with_kdna: String
+    public let difference: String
+}
+
+public struct KDNAFeedbackEvent: Codable {
+    public let event_id: String
+    public let source: String
+    public let domain_id: String
+    public let trace_id: String
+    public let user_feedback: KDNAUserFeedback
+    public let suggested_action: String
+    public let timestamp: String
+
+    public init(event_id: String = UUID().uuidString, source: String = "kdnachat", domain_id: String, trace_id: String, user_feedback: KDNAUserFeedback, suggested_action: String = "none", timestamp: String = ISO8601DateFormatter().string(from: Date())) {
+        self.event_id = event_id; self.source = source; self.domain_id = domain_id
+        self.trace_id = trace_id; self.user_feedback = user_feedback
+        self.suggested_action = suggested_action; self.timestamp = timestamp
+    }
+}
+
+public struct KDNAUserFeedback: Codable {
+    public let type: String
+    public let comment: String
+    public let rating: Int?
+    public init(type: String, comment: String, rating: Int? = nil) {
+        self.type = type; self.comment = comment; self.rating = rating
+    }
+}
