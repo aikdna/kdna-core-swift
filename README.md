@@ -6,6 +6,46 @@ KDNA (Knowledge DNA) is an open protocol for encoding human-verified domain judg
 
 This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/KDNA/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that load, validate, and route KDNA cognitive assets. It provides the same core capabilities for native Apple platform applications.
 
+
+
+## Install
+
+### Swift Package Manager
+
+Add to your Package.swift:
+
+```
+.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.2.0")
+```
+
+Then add `KDNACore` to your target dependencies:
+
+```
+.product(name: "KDNACore", package: "kdna-core-swift")
+```
+
+### Quick Start
+
+```swift
+import KDNACore
+
+// Open a .kdna asset
+let reader = KDNAAssetReader()
+let asset = try reader.open(url: fileURL)
+let manifest = try reader.readManifest(asset: asset)
+
+// Verify integrity
+let result = reader.verifySync(asset)
+print("Content digest:", result.contentDigest ?? "")
+
+// Load a domain
+if let domain = KDNADomainLoader.load(path: "/path/to/domain") {
+    let context = KDNADomainLoader.formatContext(domain)
+    print(context)
+}
+```
+
+## What It Does
 ## What It Does
 
 - **Load** KDNA domain assets from the filesystem
