@@ -145,4 +145,70 @@ public class KDNAContentDigest {
         if let bool = value as? Bool { return bool ? "true" : "false" }
         return "\"\(value)\""
     }
+
+    // MARK: - Manifest Templates
+
+    /// Strip self-referencing fields from manifest for content_digest computation.
+    /// Includes stripping authoring.content_digest (aligns with JS canonicalizeJson fix).
+    public static func manifestForDigest(_ manifest: [String: Any]) -> [String: Any] {
+        var copy = manifest
+        copy.removeValue(forKey: "signature")
+        copy.removeValue(forKey: "asset_digest")
+        copy.removeValue(forKey: "container_sha256")
+        copy.removeValue(forKey: "content_digest")
+        copy.removeValue(forKey: "_source")
+        if var authoring = copy["authoring"] as? [String: Any] {
+            authoring.removeValue(forKey: "content_digest")
+            copy["authoring"] = authoring
+        }
+        return copy
+    }
+
+    /// Strip signature fields from manifest for signing payload computation.
+    public static func manifestForSignature(_ manifest: [String: Any]) -> [String: Any] {
+        var copy = manifest
+        copy.removeValue(forKey: "signature")
+        copy.removeValue(forKey: "_source")
+        return copy
+    }
+
+    // MARK: - Signing Payload
+
+    /// Build canonical signing payload: sorted JSON entries → name:sha256 lines.
+    public static func canonicalSigningPayload(entries: [String: Data]) -> String {
+        entries.keys
+            .filter { $0.lowercased().hasSuffix(".json") && $0 != "signature.json" }
+            .sorted()
+            .map { name in
+                let payloadData: Data
+                if name == "kdna.json", let obj = try? JSONSerialization.jsonObject(with: entries[name] ?? Data()) as? [String: Any] {
+                    payloadData = Data(stableStringify(manifestForSignature(obj)).utf8)
+                } else {
+                    payloadData = entries[name] ?? Data()
+                }
+                return "\(name):\(KDNACrypto.sha256Hex(payloadData))"
+            }
+            .joined(separator: "\n")
+    }
+
+    /// Legacy asset content digest from raw entry data (for app compatibility).
+    /// Prefer `compute(asset:)` or `compute(files:)` for new code.
+    public static func assetContentDigest(entries: [String: Data]) -> String {
+        let excluded: Set<String> = [".DS_Store", "signature.json", "build-receipt.json"]
+        let parts = entries.keys
+            .filter { !excluded.contains($0) }
+            .filter { !$0.hasPrefix("reports/") }
+            .sorted()
+            .map { name in
+                let digestData: Data
+                if name == "kdna.json", let obj = try? JSONSerialization.jsonObject(with: entries[name] ?? Data()) as? [String: Any] {
+                    digestData = Data(stableStringify(manifestForDigest(obj)).utf8)
+                } else {
+                    digestData = entries[name] ?? Data()
+                }
+                return "\(name):\(KDNACrypto.sha256Hex(digestData))"
+            }
+            .joined(separator: "\n")
+        return "sha256:\(KDNACrypto.sha256Hex(Data(parts.utf8)))"
+    }
 }
