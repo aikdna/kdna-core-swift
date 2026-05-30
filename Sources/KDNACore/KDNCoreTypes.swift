@@ -12,6 +12,9 @@ public struct KDNADomain: Codable {
     public var cases: KDNACasesData?
     public var reasoning: KDNAReasoningData?
     public var evolution: KDNAEvolutionData?
+    public init(core: KDNCoreData, patterns: KDNAPatternsData, scenarios: KDNAScenariosData? = nil, cases: KDNACasesData? = nil, reasoning: KDNAReasoningData? = nil, evolution: KDNAEvolutionData? = nil) {
+        self.core = core; self.patterns = patterns; self.scenarios = scenarios; self.cases = cases; self.reasoning = reasoning; self.evolution = evolution
+    }
 }
 
 public struct KDNCoreData: Codable {
