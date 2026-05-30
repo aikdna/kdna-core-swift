@@ -404,6 +404,9 @@ public struct KDNAPreFilterResult {
     public let blockReason: String?
     public let bannedTerms: [BannedTermMatch]
     public let signals: [String]
+    public init(shouldBlock: Bool, blockReason: String?, bannedTerms: [BannedTermMatch], signals: [String]) {
+        self.shouldBlock = shouldBlock; self.blockReason = blockReason; self.bannedTerms = bannedTerms; self.signals = signals
+    }
 }
 
 public struct BannedTermMatch {
@@ -411,6 +414,9 @@ public struct BannedTermMatch {
     public let replaceWith: String
     public let why: String
     public let sourceDomain: String
+    public init(term: String, replaceWith: String, why: String, sourceDomain: String) {
+        self.term = term; self.replaceWith = replaceWith; self.why = why; self.sourceDomain = sourceDomain
+    }
 }
 
 public struct KDNAPostValidateResult {
@@ -418,6 +424,9 @@ public struct KDNAPostValidateResult {
     public let bannedTerms: [BannedTermMatch]
     public let selfChecksFailed: [String]
     public let misunderstandings: [String]
+    public init(passed: Bool, bannedTerms: [BannedTermMatch], selfChecksFailed: [String], misunderstandings: [String]) {
+        self.passed = passed; self.bannedTerms = bannedTerms; self.selfChecksFailed = selfChecksFailed; self.misunderstandings = misunderstandings
+    }
 }
 
 public struct KDNADomainValidationResult {
@@ -426,6 +435,9 @@ public struct KDNADomainValidationResult {
     public let warnings: [String]
     public let fileCount: Int
     public let schemaOK: Bool
+    public init(valid: Bool, errors: [String], warnings: [String], fileCount: Int, schemaOK: Bool) {
+        self.valid = valid; self.errors = errors; self.warnings = warnings; self.fileCount = fileCount; self.schemaOK = schemaOK
+    }
 }
 
 public struct KDNAJudgment {
@@ -433,6 +445,9 @@ public struct KDNAJudgment {
     public let postValidate: KDNAPostValidateResult?
     public let domainLoaded: Bool
     public let axiomsTriggered: [String]
+    public init(preFilter: KDNAPreFilterResult?, postValidate: KDNAPostValidateResult?, domainLoaded: Bool, axiomsTriggered: [String]) {
+        self.preFilter = preFilter; self.postValidate = postValidate; self.domainLoaded = domainLoaded; self.axiomsTriggered = axiomsTriggered
+    }
 }
 
 // MARK: - Manifest Types
