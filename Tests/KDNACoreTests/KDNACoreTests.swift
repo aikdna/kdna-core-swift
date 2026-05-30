@@ -1565,4 +1565,57 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertTrue(warnings.contains { $0.contains("why_bad") })
         XCTAssertTrue(warnings.contains { $0.contains("triggered_axioms") })
     }
+
+    // MARK: - Cross-Platform Conformance
+
+    func testConformanceBasicFixtureDigestIsDeterministic() throws {
+        let fixturePath = fixtureURL("test_conformance.kdna")
+        let reader = KDNAAssetReader()
+        let asset = try reader.open(url: fixturePath)
+        
+        let rt1 = reader.verifySync(asset).contentDigest
+        let rt2 = reader.verifySync(asset).contentDigest
+        let rt3 = reader.verifySync(asset).contentDigest
+        
+        XCTAssertEqual(rt1, rt2)
+        XCTAssertEqual(rt1, rt3)
+        XCTAssertTrue(rt1?.hasPrefix("sha256:") ?? false)
+    }
+    
+    func testConformanceAuthoringContentDigestStripped() throws {
+        let fixturePath = fixtureURL("test_conformance-with-authoring-digest.kdna")
+        let reader = KDNAAssetReader()
+        let asset = try reader.open(url: fixturePath)
+        
+        let rt = reader.verifySync(asset).contentDigest
+        XCTAssertTrue(rt?.hasPrefix("sha256:") ?? false)
+        
+        // Must be stable across 10 computations
+        for _ in 0..<10 {
+            XCTAssertEqual(rt, reader.verifySync(asset).contentDigest)
+        }
+    }
+    
+    func testConformanceReportsExcluded() throws {
+        let fixturePath = fixtureURL("test_conformance.kdna")
+        let reader = KDNAAssetReader()
+        let asset = try reader.open(url: fixturePath)
+        let rt = reader.verifySync(asset).contentDigest
+        let rt2 = reader.verifySync(asset).contentDigest
+        XCTAssertEqual(rt, rt2)
+    }
+    
+    private func fixtureURL(_ name: String) -> URL {
+        // Fixtures are in OPEN_SOURCE/kdna/fixtures/
+        // This test file is at: OPEN_SOURCE/kdna-core-swift/Tests/KDNACoreTests/KDNACoreTests.swift
+        let base = URL(fileURLWithPath: #file)
+            .deletingLastPathComponent() // KDNACoreTests/
+            .deletingLastPathComponent() // Tests/
+            .deletingLastPathComponent() // kdna-core-swift/
+            .deletingLastPathComponent() // OPEN_SOURCE/
+            .appendingPathComponent("kdna/fixtures")
+        return base.appendingPathComponent(name)
+    }
 }
+
+

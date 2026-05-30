@@ -93,6 +93,39 @@ public class KDNAAssetReader {
         return String(data: data, encoding: .utf8) == "application/vnd.aikdna.kdna+zip"
     }
 
+    // MARK: - Verify
+
+    public struct VerifyResult {
+        public let ok: Bool
+        public let errors: [String]
+        public let warnings: [String]
+        public let contentDigest: String?
+        public let assetDigest: String?
+        public let signatureValid: Bool?
+    }
+
+    public func verifySync(_ asset: KDNAAsset) -> VerifyResult {
+        var errors: [String] = []
+        var warnings: [String] = []
+
+        if !hasEntry(asset: asset, name: "kdna.json") { errors.append("required entry missing: kdna.json") }
+        if !verifyMediaType(asset: asset) { errors.append("invalid or missing mimetype") }
+        if !hasEntry(asset: asset, name: "KDNA_Core.json") { errors.append("required entry missing: KDNA_Core.json") }
+        if !hasEntry(asset: asset, name: "KDNA_Patterns.json") { errors.append("required entry missing: KDNA_Patterns.json") }
+
+        let contentDigest = KDNAContentDigest.compute(asset: asset, reader: self)
+        let assetDigest = asset.assetDigest
+
+        return VerifyResult(
+            ok: errors.isEmpty,
+            errors: errors,
+            warnings: warnings,
+            contentDigest: contentDigest,
+            assetDigest: assetDigest,
+            signatureValid: nil
+        )
+    }
+
     // MARK: - ZIP Central Directory Parser
 
     private func parseCentralDirectory(data: Data) throws -> [String: (UInt32, UInt32, UInt32, UInt16)] {
