@@ -522,6 +522,9 @@ public struct KDNAContractJudgmentDelta: Codable {
     public let without_kdna: String
     public let with_kdna: String
     public let difference: String
+    public init(without_kdna: String, with_kdna: String, difference: String) {
+        self.without_kdna = without_kdna; self.with_kdna = with_kdna; self.difference = difference
+    }
 }
 
 public struct KDNAFeedbackEvent: Codable {
