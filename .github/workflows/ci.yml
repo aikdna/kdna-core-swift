@@ -5,8 +5,10 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: recursive
+      - name: Clone kdna fixtures
+        run: |
+          cd ..
+          git clone --depth 1 https://github.com/aikdna/kdna.git
       - name: Build
         run: swift build
       - name: Test
