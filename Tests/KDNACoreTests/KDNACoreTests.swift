@@ -1,4 +1,5 @@
 import XCTest
+import CryptoKit
 @testable import KDNACore
 
 final class KDNACoreTests: XCTestCase {
@@ -1605,6 +1606,79 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertEqual(rt, rt2)
     }
     
+    // MARK: - Licensed Entry Decryption (RFC-0008)
+
+    func testHKDFSha256Deterministic() {
+        let ikm = Data("test-key-material".utf8)
+        let derived1 = KDNACrypto.hkdfSha256(ikm: ikm, info: Data("kdna-test".utf8), length: 32)
+        let derived2 = KDNACrypto.hkdfSha256(ikm: ikm, info: Data("kdna-test".utf8), length: 32)
+        XCTAssertEqual(derived1.count, 32)
+        XCTAssertEqual(derived1, derived2)
+    }
+
+    func testAESKeyWrapRoundTrip() throws {
+        let key = Data([UInt8](repeating: 0xAB, count: 32))
+        let cek = Data([UInt8](repeating: 0xCD, count: 32))
+        let wrapped = try KDNACrypto.aesKeyWrap(key: key, plaintext: cek)
+        XCTAssertEqual(wrapped.count, 40)
+        let unwrapped = try KDNACrypto.aesKeyUnwrap(key: key, ciphertext: wrapped)
+        XCTAssertEqual(unwrapped, cek)
+    }
+
+    func testLicensedEntryDecryptorV1RoundTrip() throws {
+        let licenseKey = "test-license-key-123"
+        let entryName = "KDNA_Core.json"
+        let plaintext = Data(#"{"axioms":[]}"#.utf8)
+
+        // Encrypt using JS-compatible envelope construction
+        let wrappingKey = KDNACrypto.hkdfSha256(ikm: Data(licenseKey.utf8), info: Data("kdna-licensed-entry-v1-kwk".utf8), length: 32)
+        let cek = KDNACrypto.hkdfSha256(ikm: Data("random-cek-seed".utf8), info: Data(), length: 32)
+        let wrappedKey = try KDNACrypto.aesKeyWrap(key: wrappingKey, plaintext: cek)
+
+        let nonce = AES.GCM.Nonce()
+        let aad = Data([
+            "kdna-licensed-entry-v1",
+            "@aikdna/test",
+            "1.0.0",
+            entryName,
+        ].joined(separator: "\n").utf8)
+        let sealed = try AES.GCM.seal(plaintext, using: SymmetricKey(data: cek), nonce: nonce, authenticating: aad)
+
+        let envelope = KDNALicensedEntryEnvelope(
+            profile: "kdna-licensed-entry-v1",
+            alg: "AES-256-GCM",
+            kdf: "HKDF-SHA256",
+            key_wrapping: "AES-256-KW",
+            wrapped_key: wrappedKey.base64EncodedString(),
+            iv: Data(nonce).base64EncodedString(),
+            tag: sealed.tag.base64EncodedString(),
+            ciphertext: sealed.ciphertext.base64EncodedString()
+        )
+
+        let envelopeData = try JSONEncoder().encode(envelope)
+        let manifest = KDNAManifest(
+            kdna_spec: "1.0-rc",
+            name: "@aikdna/test",
+            version: "1.0.0",
+            status: nil,
+            access: "licensed",
+            language: nil,
+            author: nil,
+            license: nil,
+            encryption: KDNAEncryption(profile: "kdna-licensed-entry-v1", encrypted_entries: [entryName]),
+            description: nil,
+            keywords: nil,
+            core_insight: nil,
+            eval_score: nil,
+            test_count: nil,
+            quality_badge: nil
+        )
+
+        let decryptor = KDNALicensedEntryDecryptor(licenseKey: licenseKey)
+        let decrypted = try decryptor.decrypt(entryName: entryName, envelopeData: envelopeData, manifest: manifest)
+        XCTAssertEqual(decrypted, plaintext)
+    }
+
     private func fixtureURL(_ name: String) -> URL {
         // Fixtures are in OPEN_SOURCE/kdna/fixtures/
         // This test file is at: OPEN_SOURCE/kdna-core-swift/Tests/KDNACoreTests/KDNACoreTests.swift

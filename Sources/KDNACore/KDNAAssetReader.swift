@@ -62,6 +62,13 @@ public class KDNAAssetReader {
         throw KDNAAssetError.unsupportedCompression(entry.compressionMethod)
     }
 
+    public func readEntry(asset: KDNAAsset, name: String, manifest: KDNAManifest?, decryptEntry: KDNADecryptEntry? = nil) throws -> Data {
+        let raw = try readEntry(asset: asset, name: name)
+        guard let manifest = manifest, let decryptEntry = decryptEntry else { return raw }
+        guard manifest.encryption?.encrypted_entries?.contains(name) == true else { return raw }
+        return try decryptEntry(asset, manifest, name, raw)
+    }
+
     public func readString(asset: KDNAAsset, name: String) throws -> String {
         let data = try readEntry(asset: asset, name: name)
         return String(data: data, encoding: .utf8) ?? ""
@@ -72,8 +79,22 @@ public class KDNAAssetReader {
         return try JSONSerialization.jsonObject(with: data) as? [String: Any]
     }
 
+    public func readJSON(asset: KDNAAsset, name: String, manifest: KDNAManifest?, decryptEntry: KDNADecryptEntry? = nil) throws -> [String: Any]? {
+        let data = try readEntry(asset: asset, name: name, manifest: manifest, decryptEntry: decryptEntry)
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
     public func readManifest(asset: KDNAAsset) throws -> [String: Any]? {
         return try readJSON(asset: asset, name: "kdna.json")
+    }
+
+    /// Decode the manifest as a typed KDNAManifest.
+    public func decodeManifest(asset: KDNAAsset) throws -> KDNAManifest? {
+        guard let data = try? readEntry(asset: asset, name: "kdna.json"),
+              let manifest = try? JSONDecoder().decode(KDNAManifest.self, from: data) else {
+            return nil
+        }
+        return manifest
     }
 
     // MARK: - List
