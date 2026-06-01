@@ -5,6 +5,7 @@
 
 import Foundation
 import CryptoKit
+import CommonCrypto
 
 public class KDNACrypto {
 
@@ -92,6 +93,97 @@ public class KDNACrypto {
     public static func hexEncode(_ data: Data) -> String {
         data.map { String(format: "%02x", $0) }.joined()
     }
+
+    // MARK: - HKDF-SHA256 (RFC 5869)
+
+    /// Derive keying material via HKDF-SHA256 extract-then-expand.
+    public static func hkdfSha256(ikm: Data, salt: Data? = nil, info: Data = Data(), length: Int = 32) -> Data {
+        let saltKey = salt ?? Data(count: 32)
+        let prk = HMAC<SHA256>.authenticationCode(for: ikm, using: SymmetricKey(data: saltKey))
+        let t = HMAC<SHA256>.authenticationCode(for: info + Data([1]), using: SymmetricKey(data: Data(prk)))
+        return Data(t).prefix(length)
+    }
+
+    // MARK: - AES-256-KW (RFC 3394)
+
+    private static let kwIV: Data = Data([0xa6, 0xa6, 0xa6, 0xa6, 0xa6, 0xa6, 0xa6, 0xa6])
+
+    private static func aesECB(_ operation: CCOperation, key: Data, input: Data) -> Data {
+        var output = Data(count: input.count)
+        var numBytes: size_t = 0
+        let outputCount = output.count
+        let status = output.withUnsafeMutableBytes { outPtr in
+            key.withUnsafeBytes { keyPtr in
+                input.withUnsafeBytes { inPtr in
+                    CCCrypt(operation, CCAlgorithm(kCCAlgorithmAES), CCOptions(kCCOptionECBMode),
+                            keyPtr.baseAddress!, key.count, nil,
+                            inPtr.baseAddress!, input.count,
+                            outPtr.baseAddress!, outputCount, &numBytes)
+                }
+            }
+        }
+        guard status == kCCSuccess else {
+            fatalError("AES-ECB operation failed with status \(status)")
+        }
+        return output.prefix(numBytes)
+    }
+
+    /// Wrap a 32-byte CEK with a 32-byte key-wrapping key (AES-256-KW).
+    public static func aesKeyWrap(key: Data, plaintext: Data) throws -> Data {
+        guard key.count == 32 else { throw KDNACryptoError.keyWrapInvalidKeySize }
+        guard plaintext.count == 32 else { throw KDNACryptoError.keyWrapInvalidPlaintextSize }
+        let n = plaintext.count / 8 // = 4 for 256-bit CEK
+        var a = kwIV
+        var r = [Data]()
+        for i in 0..<n {
+            r.append(plaintext.subdata(in: i*8..<(i+1)*8))
+        }
+        for j in 0...5 {
+            for i in 0..<n {
+                let input = a + r[i]
+                let b = aesECB(CCOperation(kCCEncrypt), key: key, input: input)
+                a = b.subdata(in: 0..<8)
+                let t = UInt64(n * j + (i + 1))
+                var aBytes = [UInt8](a)
+                let tBytes = withUnsafeBytes(of: t.bigEndian) { Array($0) }
+                for k in 0..<8 { aBytes[k] ^= tBytes[k] }
+                a = Data(aBytes)
+                r[i] = b.subdata(in: 8..<16)
+            }
+        }
+        var result = a
+        for i in 0..<n { result.append(r[i]) }
+        return result // 40 bytes
+    }
+
+    /// Unwrap a 32-byte CEK from its 40-byte wrapped form (AES-256-KW).
+    public static func aesKeyUnwrap(key: Data, ciphertext: Data) throws -> Data {
+        guard key.count == 32 else { throw KDNACryptoError.keyWrapInvalidKeySize }
+        guard ciphertext.count == 40 else { throw KDNACryptoError.keyWrapInvalidCiphertextSize }
+        let n = (ciphertext.count / 8) - 1 // = 4
+        var a = ciphertext.subdata(in: 0..<8)
+        var r = [Data]()
+        for i in 0..<n {
+            r.append(ciphertext.subdata(in: (i+1)*8..<(i+2)*8))
+        }
+        for j in (0...5).reversed() {
+            for i in (0..<n).reversed() {
+                let t = UInt64(n * j + (i + 1))
+                var aBytes = [UInt8](a)
+                let tBytes = withUnsafeBytes(of: t.bigEndian) { Array($0) }
+                for k in 0..<8 { aBytes[k] ^= tBytes[k] }
+                a = Data(aBytes)
+                let input = a + r[i]
+                let b = aesECB(CCOperation(kCCDecrypt), key: key, input: input)
+                a = b.subdata(in: 0..<8)
+                r[i] = b.subdata(in: 8..<16)
+            }
+        }
+        guard a == kwIV else { throw KDNACryptoError.keyWrapIntegrityCheckFailed }
+        var result = Data()
+        for i in 0..<n { result.append(r[i]) }
+        return result // 32 bytes
+    }
 }
 
 // MARK: - Errors
@@ -102,6 +194,10 @@ public enum KDNACryptoError: Error, LocalizedError {
     case invalidPublicKey
     case invalidSignature
     case signatureVerificationFailed
+    case keyWrapInvalidKeySize
+    case keyWrapInvalidPlaintextSize
+    case keyWrapInvalidCiphertextSize
+    case keyWrapIntegrityCheckFailed
 
     public var errorDescription: String? {
         switch self {
@@ -111,6 +207,10 @@ public enum KDNACryptoError: Error, LocalizedError {
         case .invalidPublicKey: return "Invalid Ed25519 public key format"
         case .invalidSignature: return "Invalid Ed25519 signature format"
         case .signatureVerificationFailed: return "Ed25519 signature verification failed"
+        case .keyWrapInvalidKeySize: return "AES-256-KW requires a 32-byte key"
+        case .keyWrapInvalidPlaintextSize: return "AES-256-KW requires 32-byte plaintext"
+        case .keyWrapInvalidCiphertextSize: return "AES-256-KW ciphertext must be 40 bytes"
+        case .keyWrapIntegrityCheckFailed: return "AES-256-KW unwrap: integrity check failed"
         }
     }
 }

@@ -466,6 +466,7 @@ public struct KDNAManifest: Codable {
     public let language: [String]?
     public let author: KDNAManifestAuthor?
     public let license: KDNAManifestLicense?
+    public let encryption: KDNAEncryption?
     public let description: String?
     public let keywords: [String]?
     public let core_insight: String?
@@ -482,6 +483,12 @@ public struct KDNAManifestAuthor: Codable {
 public struct KDNAManifestLicense: Codable {
     public let type: String
     public let url: String?
+}
+
+/// Encryption metadata for licensed assets (RFC-0008).
+public struct KDNAEncryption: Codable {
+    public let profile: String
+    public let encrypted_entries: [String]?
 }
 
 // MARK: - Product Contract v1.0 Types

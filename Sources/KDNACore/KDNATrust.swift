@@ -43,7 +43,36 @@ public class KDNATrustVerifier {
             let safeName = manifest.name.replacingOccurrences(of: "@", with: "").replacingOccurrences(of: "/", with: "-")
             let licensePath = KDNAPlatformPaths.licensesDirectory.appendingPathComponent("\(safeName).json")
             if FileManager.default.fileExists(atPath: licensePath.path) {
-                licenseValid = true
+                do {
+                    let licenseData = try Data(contentsOf: licensePath)
+                    let activation = try JSONDecoder().decode(KDNALicenseActivation.self, from: licenseData)
+
+                    // Expiry check
+                    if activation.isExpired() {
+                        licenseValid = false
+                        failures.append("license expired for \(manifest.name)")
+                    }
+
+                    // Machine binding check
+                    let currentFingerprint = try? machineFingerprint()
+                    if !activation.isBound(to: currentFingerprint) {
+                        licenseValid = false
+                        failures.append("license machine binding mismatch for \(manifest.name)")
+                    }
+
+                    // Revocation check
+                    if isRevoked(licenseID: activation.license_id, domain: manifest.name) {
+                        licenseValid = false
+                        failures.append("license revoked for \(manifest.name)")
+                    }
+
+                    if licenseValid == nil {
+                        licenseValid = true
+                    }
+                } catch {
+                    licenseValid = false
+                    failures.append("invalid license file for \(manifest.name): \(error.localizedDescription)")
+                }
             } else {
                 licenseValid = false
                 failures.append("no local activation found for commercial domain")
@@ -113,5 +142,24 @@ public class KDNATrustVerifier {
 
         let payload = KDNAContentDigest.canonicalSigningPayload(entries: entries)
         return Data(payload.utf8)
+    }
+
+    // MARK: - License Helpers
+
+    /// Compute a machine fingerprint for license binding.
+    /// Current implementation uses hostname + username as a portable baseline.
+    /// Future versions should incorporate hardware UUID via IOKit for stronger binding.
+    private func machineFingerprint() throws -> String {
+        let hostname = ProcessInfo.processInfo.hostName
+        let username = NSUserName()
+        let source = "\(hostname)|\(username)"
+        return KDNACrypto.sha256Hex(Data(source.utf8))
+    }
+
+    /// Check whether a license ID has been revoked locally.
+    private func isRevoked(licenseID: String, domain: String) -> Bool {
+        let revokedDir = KDNAPlatformPaths.licensesDirectory.appendingPathComponent("revoked", isDirectory: true)
+        let revokedFile = revokedDir.appendingPathComponent("\(licenseID).json")
+        return FileManager.default.fileExists(atPath: revokedFile.path)
     }
 }
