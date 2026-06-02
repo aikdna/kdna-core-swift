@@ -63,7 +63,13 @@ public class KDNAAssetReader {
     }
 
     public func readEntry(asset: KDNAAsset, name: String, manifest: KDNAManifest?, decryptEntry: KDNADecryptEntry? = nil) throws -> Data {
-        let raw = try readEntry(asset: asset, name: name)
+        let raw: Data
+        do {
+            raw = try readEntry(asset: asset, name: name)
+        } catch KDNAAssetError.entryNotFound {
+            // If the plain entry is missing, try the encrypted suffix
+            raw = try readEntry(asset: asset, name: "\(name).encrypted")
+        }
         guard let manifest = manifest, let decryptEntry = decryptEntry else { return raw }
         guard manifest.encryption?.encrypted_entries?.contains(name) == true else { return raw }
         return try decryptEntry(asset, manifest, name, raw)

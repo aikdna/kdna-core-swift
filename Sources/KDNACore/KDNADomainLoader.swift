@@ -118,6 +118,57 @@ public class KDNADomainLoader {
         return loadDomain(dataMap: dataMap, input: input, mode: mode)
     }
 
+    /// Load domain directly from a `.kdna` file without persistent extraction.
+    /// For protected assets, provide the password to decrypt entries in memory.
+    public static func load(fromKDNA path: String, password: String? = nil, input: String = "", mode: String = "auto") -> KDNADomain? {
+        let reader = KDNAAssetReader()
+        guard let asset = try? reader.open(path: path),
+              let manifest = try? reader.decodeManifest(asset: asset) else {
+            return nil
+        }
+
+        let isProtected = manifest.access == "protected"
+        let decryptEntry: KDNADecryptEntry? = {
+            guard isProtected, let password = password else { return nil }
+            return createPasswordDecryptEntry(password: password)
+        }()
+
+        var dataMap: [String: Codable] = [:]
+
+        guard let coreData: KDNCoreData = loadEntry(reader: reader, asset: asset, name: "KDNA_Core.json", manifest: manifest, decryptEntry: decryptEntry) else {
+            return nil
+        }
+        dataMap["core"] = coreData
+
+        guard let patternsData: KDNAPatternsData = loadEntry(reader: reader, asset: asset, name: "KDNA_Patterns.json", manifest: manifest, decryptEntry: decryptEntry) else {
+            return nil
+        }
+        dataMap["patterns"] = patternsData
+
+        if let scenarios: KDNAScenariosData = loadEntry(reader: reader, asset: asset, name: "KDNA_Scenarios.json", manifest: manifest, decryptEntry: decryptEntry) {
+            dataMap["scenarios"] = scenarios
+        }
+        if let cases: KDNACasesData = loadEntry(reader: reader, asset: asset, name: "KDNA_Cases.json", manifest: manifest, decryptEntry: decryptEntry) {
+            dataMap["cases"] = cases
+        }
+        if let reasoning: KDNAReasoningData = loadEntry(reader: reader, asset: asset, name: "KDNA_Reasoning.json", manifest: manifest, decryptEntry: decryptEntry) {
+            dataMap["reasoning"] = reasoning
+        }
+        if let evolution: KDNAEvolutionData = loadEntry(reader: reader, asset: asset, name: "KDNA_Evolution.json", manifest: manifest, decryptEntry: decryptEntry) {
+            dataMap["evolution"] = evolution
+        }
+
+        return loadDomain(dataMap: dataMap, input: input, mode: mode)
+    }
+
+    private static func loadEntry<T: Codable>(reader: KDNAAssetReader, asset: KDNAAsset, name: String, manifest: KDNAManifest, decryptEntry: KDNADecryptEntry?) -> T? {
+        guard let data = try? reader.readEntry(asset: asset, name: name, manifest: manifest, decryptEntry: decryptEntry),
+              let value = try? JSONDecoder().decode(T.self, from: data) else {
+            return nil
+        }
+        return value
+    }
+
     /// Read installed .kdna asset paths from ~/.kdna/index.json.
     public static func scanInstalledAssetPaths() -> [String: String] {
         guard let data = try? Data(contentsOf: KDNAPlatformPaths.packageIndexFile),
