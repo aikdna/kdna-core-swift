@@ -1,5 +1,7 @@
 # KDNA Core Swift
 
+[![CI](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml/badge.svg)](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+
 Native Swift implementation of the KDNA Protocol core library — zero dependencies, pure logic.
 
 KDNA (Knowledge DNA) is an open protocol for encoding human-verified domain judgment into structured assets that AI agents can load, verify, and evolve.
