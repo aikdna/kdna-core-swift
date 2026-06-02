@@ -125,7 +125,11 @@ public class KDNAAssetReader {
         public let signatureValid: Bool?
     }
 
-    public func verifySync(_ asset: KDNAAsset) -> VerifyResult {
+    public func verifySync(
+        _ asset: KDNAAsset,
+        requireDecryption: Bool = false,
+        decryptEntry: KDNADecryptEntry? = nil
+    ) -> VerifyResult {
         var errors: [String] = []
         var warnings: [String] = []
 
@@ -133,6 +137,24 @@ public class KDNAAssetReader {
         if !verifyMediaType(asset: asset) { errors.append("invalid or missing mimetype") }
         if !hasEntry(asset: asset, name: "KDNA_Core.json") { errors.append("required entry missing: KDNA_Core.json") }
         if !hasEntry(asset: asset, name: "KDNA_Patterns.json") { errors.append("required entry missing: KDNA_Patterns.json") }
+
+        if requireDecryption {
+            if let manifest = try? decodeManifest(asset: asset),
+               let encryptedEntries = manifest.encryption?.encrypted_entries,
+               !encryptedEntries.isEmpty {
+                if let decryptEntry = decryptEntry {
+                    for entryName in encryptedEntries {
+                        do {
+                            _ = try readEntry(asset: asset, name: entryName, manifest: manifest, decryptEntry: decryptEntry)
+                        } catch {
+                            errors.append("decryption failed for \(entryName): \(error.localizedDescription)")
+                        }
+                    }
+                } else {
+                    errors.append("encrypted entries present but no decryptEntry hook provided")
+                }
+            }
+        }
 
         let contentDigest = KDNAContentDigest.compute(asset: asset, reader: self)
         let assetDigest = asset.assetDigest
