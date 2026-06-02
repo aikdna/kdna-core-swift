@@ -2127,6 +2127,70 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertNotNil(patternsRead?["meta"])
     }
 
+    func testCrossLanguageFixtureDecryptsProtectedEntryFromJS() throws {
+        let fixtureURL = fixtureURL("test_protected_entry.kdna")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: fixtureURL.path), "shared fixture must exist")
+
+        let reader = KDNAAssetReader()
+        let asset = try reader.open(url: fixtureURL)
+        let manifest = try XCTUnwrap(reader.decodeManifest(asset: asset))
+        XCTAssertEqual(manifest.access, "protected")
+        XCTAssertEqual(manifest.encryption?.profile, "kdna-password-protected-v1")
+
+        let decryptEntry = createPasswordDecryptEntry(password: "KDNA-TEST-VECTOR-2026")
+
+        let coreData = try reader.readEntry(asset: asset, name: "KDNA_Core.json", manifest: manifest, decryptEntry: decryptEntry)
+        let patternsData = try reader.readEntry(asset: asset, name: "KDNA_Patterns.json", manifest: manifest, decryptEntry: decryptEntry)
+
+        let coreJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: coreData) as? [String: Any])
+        let patternsJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: patternsData) as? [String: Any])
+
+        XCTAssertEqual(coreJSON["meta"] as? [String: String], [
+            "domain": "protected_test",
+            "version": "0.1.0",
+            "created": "2026-06-02",
+            "purpose": "test",
+            "load_condition": "always"
+        ])
+        XCTAssertEqual((coreJSON["axioms"] as? [[String: String]])?.first?["id"], "protected_a1")
+        XCTAssertEqual((patternsJSON["misunderstandings"] as? [[String: String]])?.first?["id"], "protected_m1")
+    }
+
+    func testProtectedEntryTamperedCiphertextFails() throws {
+        let password = "KDNA-Test-Vector-2026"
+        let manifest = KDNAManifest(name: "@test/protected", version: "1.0.0")
+        let plaintext = Data(#"{"secret": "protected judgment"}"#.utf8)
+
+        var envelope = try encryptProtectedEntry(
+            plaintext: plaintext,
+            entryName: "KDNA_Core.json",
+            manifest: manifest,
+            password: password
+        )
+
+        // Tamper with ciphertext
+        var ciphertextBytes = Data(base64Encoded: envelope.ciphertext)!
+        ciphertextBytes[0] = ciphertextBytes[0] ^ 0xFF
+        envelope = KDNAProtectedEnvelope(
+            profile: envelope.profile,
+            alg: envelope.alg,
+            kdf: envelope.kdf,
+            key_wrapping: envelope.key_wrapping,
+            password_kdf: envelope.password_kdf,
+            key_slots: envelope.key_slots,
+            iv: envelope.iv,
+            tag: envelope.tag,
+            ciphertext: ciphertextBytes.base64EncodedString()
+        )
+
+        XCTAssertThrowsError(try decryptProtectedEntry(
+            envelope: envelope,
+            entryName: "KDNA_Core.json",
+            manifest: manifest,
+            password: password
+        ))
+    }
+
     private func fixtureURL(_ name: String) -> URL {
         // Fixtures are in OPEN_SOURCE/kdna/fixtures/
         // This test file is at: OPEN_SOURCE/kdna-core-swift/Tests/KDNACoreTests/KDNACoreTests.swift
