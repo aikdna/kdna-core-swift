@@ -13,10 +13,13 @@ let package = Package(
             targets: ["KDNACore"]
         ),
     ],
+    dependencies: [
+        .package(url: "https://github.com/tmthecoder/Argon2Swift.git", .branch("main"))
+    ],
     targets: [
         .target(
             name: "KDNACore",
-            dependencies: []
+            dependencies: ["Argon2Swift"]
         ),
         .testTarget(
             name: "KDNACoreTests",

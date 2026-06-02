@@ -86,6 +86,7 @@ if let domain = KDNADomainLoader.load(path: "/path/to/domain") {
 | **verify trust** | ✅ | ✅ |
 | **match (keyword)** | ✅ | ✅ |
 | **available (inventory)** | ✅ | ✅ |
+| **licensed entry decrypt** | ✅ | ✅ |
 | install/registry | ✅ | N/A (CLI) |
 | pack/publish | ✅ | N/A (CLI) |
 

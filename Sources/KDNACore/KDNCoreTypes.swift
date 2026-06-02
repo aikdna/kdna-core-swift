@@ -458,7 +458,10 @@ public struct KDNAJudgment {
 /// Parsed kdna.json manifest for a KDNA domain asset.
 /// Aligns with SPEC.md v1.0-rc Section 3.4
 public struct KDNAManifest: Codable {
-    public let kdna_spec: String
+    public let format: String?
+    public let format_version: String?
+    public let spec_version: String?
+    public let kdna_spec: String?
     public let name: String
     public let version: String
     public let status: String?
@@ -473,6 +476,46 @@ public struct KDNAManifest: Codable {
     public let eval_score: Double?
     public let test_count: Int?
     public let quality_badge: String?
+
+    public init(
+        format: String? = nil,
+        format_version: String? = nil,
+        spec_version: String? = nil,
+        kdna_spec: String? = nil,
+        name: String,
+        version: String,
+        status: String? = nil,
+        access: String? = nil,
+        language: [String]? = nil,
+        author: KDNAManifestAuthor? = nil,
+        license: KDNAManifestLicense? = nil,
+        encryption: KDNAEncryption? = nil,
+        description: String? = nil,
+        keywords: [String]? = nil,
+        core_insight: String? = nil,
+        eval_score: Double? = nil,
+        test_count: Int? = nil,
+        quality_badge: String? = nil
+    ) {
+        self.format = format
+        self.format_version = format_version
+        self.spec_version = spec_version
+        self.kdna_spec = kdna_spec
+        self.name = name
+        self.version = version
+        self.status = status
+        self.access = access
+        self.language = language
+        self.author = author
+        self.license = license
+        self.encryption = encryption
+        self.description = description
+        self.keywords = keywords
+        self.core_insight = core_insight
+        self.eval_score = eval_score
+        self.test_count = test_count
+        self.quality_badge = quality_badge
+    }
 }
 
 public struct KDNAManifestAuthor: Codable {
