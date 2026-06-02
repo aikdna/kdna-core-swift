@@ -108,7 +108,8 @@ public func encryptProtectedEntry(
     entryName: String,
     manifest: KDNAManifest,
     password: String,
-    includeRecovery: Bool = true
+    includeRecovery: Bool = true,
+    recoveryCode: String? = nil
 ) throws -> KDNAProtectedEnvelope {
     // Generate CEK
     let cek = SymmetricKey(size: .bits256)
@@ -131,10 +132,15 @@ public func encryptProtectedEntry(
 
     // Recovery slot
     if includeRecovery {
-        var recoveryKeyBytes = [UInt8](repeating: 0, count: 32)
-        let status = SecRandomCopyBytes(kSecRandomDefault, recoveryKeyBytes.count, &recoveryKeyBytes)
-        guard status == errSecSuccess else { fatalError("Failed to generate recovery key") }
-        let recoveryKey = Data(recoveryKeyBytes)
+        let recoveryKey: Data
+        if let code = recoveryCode {
+            recoveryKey = try decodeRecoveryCode(code)
+        } else {
+            var recoveryKeyBytes = [UInt8](repeating: 0, count: 32)
+            let status = SecRandomCopyBytes(kSecRandomDefault, recoveryKeyBytes.count, &recoveryKeyBytes)
+            guard status == errSecSuccess else { fatalError("Failed to generate recovery key") }
+            recoveryKey = Data(recoveryKeyBytes)
+        }
         let recoveryWrappedKey = try KDNACrypto.aesKeyWrap(key: recoveryKey, plaintext: cekData)
         keySlots.append(KDNAKeySlot(slot: "recovery", wrap: "AES-256-KW", wrapped_key: recoveryWrappedKey.base64EncodedString()))
     }
