@@ -13,7 +13,7 @@ jobs:
       - name: Clone kdna fixtures
         run: |
           cd ..
-          git clone --depth 1 https://github.com/aikdna/kdna.git
+          git clone --depth 1 --branch main https://github.com/aikdna/kdna.git
       - name: Build
         run: swift build
       - name: Test
