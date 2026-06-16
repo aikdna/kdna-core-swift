@@ -14,7 +14,11 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/tmthecoder/Argon2Swift.git", .branch("main"))
+        // PR-8: pin to a specific tag (was .branch("main"), which floats
+        // and is a known anti-pattern for crypto deps). The tag was the
+        // latest at the time of audit (2026-06-16) and matches the SHA
+        // recorded in Package.resolved.
+        .package(url: "https://github.com/tmthecoder/Argon2Swift.git", exact: "1.0.4")
     ],
     targets: [
         .target(
