@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml/badge.svg)](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
-Native Swift implementation of the KDNA Protocol core library — zero dependencies, pure logic.
+Official Swift component of the KDNA toolchain — the official KDNA judgment-asset format and runtime loading contract.
 
-KDNA (Knowledge DNA) is an open protocol for encoding human-verified domain judgment into structured assets that AI agents can load, verify, and evolve.
+KDNA Core is the official KDNA judgment-asset format. .kdna assets are created, inspected, loaded, and consumed through the official KDNA toolchain. This package is the official Swift component of that toolchain.
 
 This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/kdna/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that load, validate, and route KDNA cognitive assets. It provides the same core capabilities for native Apple platform applications.
 
