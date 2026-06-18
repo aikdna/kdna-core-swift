@@ -89,14 +89,14 @@ if let domain = KDNADomainLoader.load(path: "/path/to/domain") {
 | **match (keyword)** | ✅ | ✅ |
 | **available (inventory)** | ✅ | ✅ |
 | **licensed entry decrypt** | ✅ | ✅ |
-| install/registry | ✅ | N/A (CLI) |
+| install/registry | legacy | N/A (CLI) |
 | pack/publish | ✅ | N/A (CLI) |
 
 ## Relationship to KDNA Ecosystem
 
 ```
 ┌──────────────────────────────────┐
-│        KDNA Protocol (SPEC)       │  ← Open standard
+│        KDNA Core v1 format        │  ← Judgment-asset contract
 ├──────────────────────────────────┤
 │  kdna-core (JS)  │ kdna-core-swift│  ← Core libraries (Apache 2.0)
 ├──────────────────────────────────┤
@@ -104,7 +104,8 @@ if let domain = KDNADomainLoader.load(path: "/path/to/domain") {
 └──────────────────────────────────┘
 ```
 
-This library is used by [KDNAChat](https://github.com/aikdna/kdnachat) for macOS.
+This library is the Swift runtime bridge for products that need to inspect,
+validate, load, or decrypt KDNA-compatible assets locally.
 
 ## License
 
@@ -112,7 +113,6 @@ Apache 2.0 — see [LICENSE](LICENSE).
 
 ## Related
 
-- [KDNA Protocol](https://github.com/aikdna/kdna) — Specification and JS core library
-- [KDNA Registry](https://github.com/aikdna/kdna-registry) — Domain catalog
+- [KDNA Core](https://github.com/aikdna/kdna) — Format, JS core library, and launch truth
 - [kdna-cli](https://github.com/aikdna/kdna-cli) — CLI tools
 - [aikdna.com](https://aikdna.com) — Website
