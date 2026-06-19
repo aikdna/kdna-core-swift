@@ -8,7 +8,7 @@
 //   - Excludes: .DS_Store, signature.json, build-receipt.json, reports/*
 //   - kdna.json: strips signature, asset_digest, container_sha256, content_digest, authoring.content_digest
 //   - All JSON entries: stable-sorted key canonicalization
-//   - mimetype: uses literal "application/vnd.aikdna.kdna+zip"
+//   - mimetype: uses the literal media type stored in the asset
 
 import Foundation
 import CryptoKit
@@ -27,9 +27,7 @@ public class KDNAContentDigest {
 
             guard let data = try? reader.readEntry(asset: asset, name: name) else { continue }
 
-            let content = name == "mimetype"
-                ? "application/vnd.aikdna.kdna+zip"
-                : String(data: data, encoding: .utf8) ?? ""
+            let content = String(data: data, encoding: .utf8) ?? ""
 
             let hashInput: Data
             if name.hasSuffix(".json") {
@@ -57,11 +55,7 @@ public class KDNAContentDigest {
             if excluded.contains(name) { continue }
             if name.hasPrefix("reports/") { continue }
 
-            let contentFromFiles: String = {
-                var c = files[name] ?? ""
-                if name == "mimetype" { c = "application/vnd.aikdna.kdna+zip" }
-                return c
-            }()
+            let contentFromFiles = files[name] ?? ""
 
             let hashInput: Data
             if name.hasSuffix(".json") {

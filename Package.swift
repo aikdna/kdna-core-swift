@@ -14,11 +14,11 @@ let package = Package(
         ),
     ],
     dependencies: [
-        // PR-8: pin to a specific tag (was .branch("main"), which floats
-        // and is a known anti-pattern for crypto deps). The tag was the
-        // latest at the time of audit (2026-06-16) and matches the SHA
-        // recorded in Package.resolved.
-        .package(url: "https://github.com/tmthecoder/Argon2Swift.git", exact: "1.0.4")
+        // Argon2Swift 1.0.4 depends on phc-winner-argon2 by branch, which
+        // SwiftPM rejects when the root depends on Argon2Swift as a stable
+        // version. Pin the known revision directly so builds remain
+        // reproducible while this crypto dependency is replaced or vendored.
+        .package(url: "https://github.com/tmthecoder/Argon2Swift.git", revision: "53543623fefe68461b7eeea03d7f96677c2fd76d")
     ],
     targets: [
         .target(

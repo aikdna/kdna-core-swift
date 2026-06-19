@@ -8,6 +8,11 @@ KDNA Core is the official KDNA judgment-asset format. .kdna assets are created, 
 
 This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/kdna/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that load, validate, and route KDNA cognitive assets. It provides the same core capabilities for native Apple platform applications.
 
+Authorization and runtime-load planning are defined in `aikdna/kdna`, not in
+app repositories. Native products such as KDNAChat and KDNAStudio should render
+authorization UI from `KDNARuntime.planLoad(...)` and should not infer load
+permission directly from raw manifest fields.
+
 
 
 ## Install
@@ -36,6 +41,15 @@ let reader = KDNAAssetReader()
 let asset = try reader.open(url: fileURL)
 let manifest = try reader.readManifest(asset: asset)
 
+// Plan authorization before loading
+let plan = KDNARuntime.planLoad(assetURL: fileURL)
+if plan.can_load_now {
+    let projection = try KDNARuntime.loadWithCredential(assetURL: fileURL)
+    print(projection.prompt)
+} else {
+    print("Required action:", plan.required_action)
+}
+
 // Verify integrity
 let result = reader.verifySync(asset)
 print("Content digest:", result.contentDigest ?? "")
@@ -51,6 +65,8 @@ if let domain = KDNADomainLoader.load(path: "/path/to/domain") {
 ## What It Does
 
 - **Load** KDNA domain assets from the filesystem
+- **Plan runtime authorization** through LoadPlan before loading protected assets
+- **Project authorized v1 runtime payloads** through `KDNAJudgmentProjection`
 - **Validate** domain structure and cross-file references
 - **Format** domain context for injection into LLM system prompts
 - **Classify** tasks to determine which domain sections are relevant
@@ -89,8 +105,33 @@ if let domain = KDNADomainLoader.load(path: "/path/to/domain") {
 | **match (keyword)** | ✅ | ✅ |
 | **available (inventory)** | ✅ | ✅ |
 | **licensed entry decrypt** | ✅ | ✅ |
+| **LoadPlan authorization conformance** | ✅ | ✅ |
+| **JudgmentProjection** | ✅ | ✅ |
 | install/registry | legacy | N/A (CLI) |
 | pack/publish | ✅ | N/A (CLI) |
+
+## Runtime Authorization Contract
+
+The source of truth is `aikdna/kdna`:
+
+- `specs/kdna-authorization-contract.md`
+- `schema/load-plan.schema.json`
+- `conformance/authorization/cases.json`
+- `conformance/authorization/goldens/*.loadplan.json`
+
+Swift Core consumes that contract through `KDNARuntime.planLoad(assetURL:environment:)`
+and `KDNARuntime.loadWithCredential(assetURL:credential:)`. The current
+implementation covers v1 source-directory fixtures and packed `.kdna` runtime
+containers, and is tested against the shared authorization conformance goldens.
+Product code should use the returned `KDNALoadPlan.state`, `required_action`,
+`can_load_now`, and `issues` fields as its UI/runtime source of truth.
+
+`loadWithCredential` returns a `KDNAJudgmentProjection`, not the raw payload.
+The projection contains minimal task-safe sections and prompt text derived from
+authorized `payload.kdnab` content.
+
+Swift Core must not define access modes, entitlement profiles, issue codes, or
+fail-closed policy independently from `aikdna/kdna`.
 
 ## Relationship to KDNA Ecosystem
 
