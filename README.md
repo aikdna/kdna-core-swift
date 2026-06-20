@@ -2,11 +2,16 @@
 
 [![CI](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml/badge.svg)](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
-Official Swift component of the KDNA toolchain — the official KDNA judgment-asset format and runtime loading contract.
+Swift beta component of the KDNA toolchain for native Apple runtimes.
 
-KDNA Core is the official KDNA judgment-asset format. .kdna assets are created, inspected, loaded, and consumed through the official KDNA toolchain. This package is the official Swift component of that toolchain.
+KDNA Core is the official KDNA judgment-asset format and runtime loading
+contract. `.kdna` assets are created, inspected, validated, planned, loaded,
+and consumed through the official KDNA toolchain. This package implements the
+Swift runtime side for local `.kdna` files; JS Core remains the first-run public
+baseline until Swift parity is proven against fixed Core v1 conformance
+fixtures.
 
-This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/kdna/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that load, validate, and route KDNA cognitive assets. It provides the same core capabilities for native Apple platform applications.
+This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/kdna/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that need to plan-load, verify, and project local KDNA runtime files. It should not be marketed as complete JS parity until the shared conformance suite proves that claim.
 
 Authorization and runtime-load planning are defined in `aikdna/kdna`, not in
 app repositories. Native products such as KDNAChat and KDNAStudio should render
@@ -54,27 +59,19 @@ if plan.can_load_now {
 let result = reader.verifySync(asset)
 print("Content digest:", result.contentDigest ?? "")
 
-// Load a domain
-if let domain = KDNADomainLoader.load(path: "/path/to/domain") {
-    let context = KDNADomainLoader.formatContext(domain)
-    print(context)
-}
+// Legacy/developer compatibility APIs such as KDNADomainLoader.load(path:)
+// exist for source-directory fixtures. Public runtime use should start from
+// a packaged .kdna file and the LoadPlan path above.
 ```
 
 ## What It Does
-## What It Does
 
-- **Load** KDNA domain assets from the filesystem
-- **Plan runtime authorization** through LoadPlan before loading protected assets
+- **Open and verify** local `.kdna` runtime files
+- **Plan runtime loading** through LoadPlan before emitting judgment context
 - **Project authorized v1 runtime payloads** through `KDNAJudgmentProjection`
-- **Validate** domain structure and cross-file references
-- **Format** domain context for injection into LLM system prompts
-- **Classify** tasks to determine which domain sections are relevant
-- **Route** tasks to the correct domain using a 7-state decision engine (Negative Match First → Domain Fit → Trust Gate → Ambiguity Gate)
-- **Compose** multiple domains with conflict detection (stance, axiom, term conflicts)
-- **Verify** trust: signature presence, yank status, license validity
-- **Match** tasks against installed domains (keyword scan with does_not_apply_when exclusion)
-- **Build judgment pipelines** — pre-filter, system prompt injection, post-validation
+- **Validate** legacy source-directory fixtures for developer compatibility
+- **Format** loaded judgment context for native application integration
+- **Route / compose / match** through beta Swift APIs used by native experiments
 
 ## Architecture
 
@@ -88,27 +85,19 @@ if let domain = KDNADomainLoader.load(path: "/path/to/domain") {
 | `KDNAComposer.swift` | **Multi-Domain Composer** — combines primary + constraint domains with conflict detection |
 | `KDNATrust.swift` | **Trust Verifier** — signature, yank, and license verification |
 
-### Feature Parity with kdna-cli (JS)
+### Compatibility Status
 
-| Capability | JS CLI | Swift |
-|------------|:---:|:---:|
-| load domain | ✅ | ✅ |
-| validate | ✅ | ✅ |
-| formatContext | ✅ | ✅ |
-| classify task | ✅ | ✅ |
-| preFilter | ✅ | ✅ |
-| systemPrompt | ✅ | ✅ |
-| postValidate | ✅ | ✅ |
-| **route (7-state)** | ✅ | ✅ |
-| **compose (multi-domain)** | ✅ | ✅ |
-| **verify trust** | ✅ | ✅ |
-| **match (keyword)** | ✅ | ✅ |
-| **available (inventory)** | ✅ | ✅ |
-| **licensed entry decrypt** | ✅ | ✅ |
-| **LoadPlan authorization conformance** | ✅ | ✅ |
-| **JudgmentProjection** | ✅ | ✅ |
-| install/registry | legacy | N/A (CLI) |
-| pack/publish | ✅ | N/A (CLI) |
+| Capability | Status |
+|------------|--------|
+| Open local `.kdna` runtime containers | Beta |
+| Verify local `.kdna` container digests | Beta |
+| LoadPlan authorization planning | Beta |
+| `KDNAJudgmentProjection` rendering | Beta |
+| Legacy source-directory fixture loading | Developer compatibility |
+| Route / compose / match APIs | Experimental |
+| Registry / install / marketplace | Not part of Swift Core v1 baseline |
+| Protected / remote / paid authorization parity | Not claimed |
+| Complete JS parity | Not claimed; requires fixed shared conformance evidence |
 
 ## Runtime Authorization Contract
 
