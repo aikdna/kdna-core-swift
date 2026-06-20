@@ -8,13 +8,21 @@ on:
 jobs:
   test:
     runs-on: macos-14
+    env:
+      KDNA_CONFORMANCE_COMMIT: bfe45c226d06372a0236f2adc10f87f1f0673066
     steps:
       - uses: actions/checkout@v6
-      - name: Clone kdna fixtures
+      - name: Checkout fixed kdna conformance fixtures
         run: |
           cd ..
-          git clone --depth 1 --branch main https://github.com/aikdna/kdna.git
+          git init kdna
+          cd kdna
+          git remote add origin https://github.com/aikdna/kdna.git
+          git fetch --depth 1 origin "$KDNA_CONFORMANCE_COMMIT"
+          git checkout --detach FETCH_HEAD
       - name: Build
-        run: swift build
+        run: swift build --scratch-path /tmp/kdna-core-swift-ci-scratch -Xcc -fmodules-cache-path=/tmp/kdna-core-swift-ci-module-cache
       - name: Test
-        run: swift test
+        env:
+          KDNA_CONFORMANCE_ROOT: ${{ github.workspace }}/../kdna
+        run: swift test --scratch-path /tmp/kdna-core-swift-ci-scratch -Xcc -fmodules-cache-path=/tmp/kdna-core-swift-ci-module-cache
