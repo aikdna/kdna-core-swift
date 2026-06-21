@@ -7,16 +7,16 @@ Swift beta component of the KDNA toolchain for native Apple runtimes.
 KDNA Core is the official KDNA judgment-asset format and runtime loading
 contract. `.kdna` assets are created, inspected, validated, planned, loaded,
 and consumed through the official KDNA toolchain. This package implements the
-Swift runtime side for local `.kdna` files; JS Core remains the first-run public
-baseline until Swift parity is proven against fixed Core v1 conformance
-fixtures.
+Swift runtime side for local `.kdna` files. JS Core is the current first-run
+public beta baseline; Swift Core is beta until shared conformance evidence is
+published.
 
-This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/kdna/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that need to plan-load, verify, and project local KDNA runtime files. It should not be marketed as complete JS parity until the shared conformance suite proves that claim.
+This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/kdna/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that need to plan-load, verify, and project local KDNA runtime files.
 
 Authorization and runtime-load planning are defined in `aikdna/kdna`, not in
-app repositories. Native products such as KDNAChat and KDNAStudio should render
-authorization UI from `KDNARuntime.planLoad(...)` and should not infer load
-permission directly from raw manifest fields.
+app repositories. Native apps should render authorization UI from
+`KDNARuntime.planLoad(...)` and should not infer load permission directly from
+raw manifest fields.
 
 
 
