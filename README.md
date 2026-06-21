@@ -59,9 +59,8 @@ if plan.can_load_now {
 let result = reader.verifySync(asset)
 print("Content digest:", result.contentDigest ?? "")
 
-// Legacy/developer compatibility APIs such as KDNADomainLoader.load(path:)
-// exist for source-directory fixtures. Public runtime use should start from
-// a packaged .kdna file and the LoadPlan path above.
+// Developer compatibility APIs also exist for fixtures. Public runtime use
+// should start from a packaged .kdna file and the LoadPlan path above.
 ```
 
 ## What It Does
@@ -69,7 +68,7 @@ print("Content digest:", result.contentDigest ?? "")
 - **Open and verify** local `.kdna` runtime files
 - **Plan runtime loading** through LoadPlan before emitting judgment context
 - **Project authorized v1 runtime payloads** through `KDNAJudgmentProjection`
-- **Validate** legacy source-directory fixtures for developer compatibility
+- **Validate** developer fixtures for compatibility testing
 - **Format** loaded judgment context for native application integration
 - **Route / compose / match** through beta Swift APIs used by native experiments
 
@@ -93,10 +92,8 @@ print("Content digest:", result.contentDigest ?? "")
 | Verify local `.kdna` container digests | Beta |
 | LoadPlan authorization planning | Beta |
 | `KDNAJudgmentProjection` rendering | Beta |
-| Legacy source-directory fixture loading | Developer compatibility |
+| Developer fixture loading | Developer compatibility |
 | Route / compose / match APIs | Experimental |
-| Registry / install / marketplace | Not part of Swift Core v1 baseline |
-| Protected / remote / paid authorization parity | Not claimed |
 | Complete JS parity | Not claimed; requires fixed shared conformance evidence |
 
 ## Runtime Authorization Contract
@@ -110,7 +107,7 @@ The source of truth is `aikdna/kdna`:
 
 Swift Core consumes that contract through `KDNARuntime.planLoad(assetURL:environment:)`
 and `KDNARuntime.loadWithCredential(assetURL:credential:)`. The current
-implementation covers v1 source-directory fixtures and packed `.kdna` runtime
+implementation covers developer fixtures and packed `.kdna` runtime
 containers, and is tested against the shared authorization conformance goldens.
 Product code should use the returned `KDNALoadPlan.state`, `required_action`,
 `can_load_now`, and `issues` fields as its UI/runtime source of truth.
@@ -135,7 +132,7 @@ fail-closed policy independently from `aikdna/kdna`.
 ```
 
 This library is the Swift runtime bridge for products that need to inspect,
-validate, load, or decrypt KDNA-compatible assets locally.
+validate, load, or format KDNA-compatible assets locally.
 
 ## License
 
