@@ -376,6 +376,15 @@ public enum KDNALoadPlanCore {
                 result: &result,
                 problems: &problems
             )
+            verifyAssetDigest(
+                entries: [
+                    ("kdna.json", layout.rawManifest),
+                    ("payload.kdnab", layout.payload),
+                ],
+                checksums: checksums,
+                result: &result,
+                problems: &problems
+            )
         }
 
         result.overall_valid = result.format_valid &&
@@ -400,6 +409,26 @@ public enum KDNALoadPlanCore {
         if actual != expected {
             result.checksums_valid = false
             problems.append("checksums: \(key) mismatch (declared \(String(expected.prefix(8)))..., actual \(String(actual.prefix(8)))...)")
+        }
+    }
+
+    private static func verifyAssetDigest(
+        entries: [(String, Data)],
+        checksums: [String: Any],
+        result: inout KDNALoadPlanChecks,
+        problems: inout [String]
+    ) {
+        guard let declared = checksums["asset_digest"] as? String else { return }
+        let expected = declared.replacingOccurrences(of: "sha256:", with: "")
+        // Sort entries by name, compute `name:hex_digest` pairs, join with newline, hash
+        let combined = entries
+            .sorted { $0.0 < $1.0 }
+            .map { "\($0.0):\(sha256Hex($0.1))" }
+            .joined(separator: "\n")
+        let actual = sha256Hex(Data(combined.utf8))
+        if actual != expected {
+            result.checksums_valid = false
+            problems.append("checksums: asset_digest mismatch (declared \(String(expected.prefix(8)))..., actual \(String(actual.prefix(8)))...)")
         }
     }
 
@@ -510,15 +539,15 @@ public enum KDNALoadPlanCore {
         }
 
         if environment.entitlementStatus == "expired" {
-            plan.state = "expired"
-            plan.required_action = "sync"
+            plan.state = "expired_grace"
+            plan.required_action = "renew_entitlement"
             plan.issues.append(KDNALoadPlanIssue(code: "KDNA_AUTH_EXPIRED", severity: "blocking", message: "The entitlement is expired."))
             return plan
         }
 
         if environment.entitlementStatus == "revoked" {
-            plan.state = "revoked"
-            plan.required_action = "block"
+            plan.state = "denied"
+            plan.required_action = "contact_issuer"
             plan.issues.append(KDNALoadPlanIssue(code: "KDNA_AUTH_REVOKED", severity: "blocking", message: "The entitlement has been revoked."))
             return plan
         }
