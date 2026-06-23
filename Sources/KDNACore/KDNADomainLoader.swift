@@ -186,16 +186,11 @@ public class KDNADomainLoader {
         return assets
     }
 
-    /// Scan installed .kdna assets and load each as a KDNADomain.
+    /// Installed domains are canonical .kdna assets. This Swift package does not
+    /// yet include a native ZIP asset reader, so callers should use
+    /// scanInstalledAssetPaths() plus the kdna CLI for installed runtime loads.
     public static func scanInstalledDomains() -> [String: KDNADomain] {
-        var domains: [String: KDNADomain] = [:]
-        let paths = scanInstalledAssetPaths()
-        for (name, assetPath) in paths {
-            if let domain = load(fromKDNA: assetPath) {
-                domains[name] = domain
-            }
-        }
-        return domains
+        [:]
     }
 
     /// Scan a dev workspace directory for KDNA domain source subdirectories.

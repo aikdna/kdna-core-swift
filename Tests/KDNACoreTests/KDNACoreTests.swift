@@ -152,7 +152,7 @@ final class KDNACoreTests: XCTestCase {
               "steps": ["Problem", "Agitation", "Solution"]
             }
           ],
-          "trigger_signals": ["writing", "copy", "draft"]
+          "trigger_signals": []
         }
         """.data(using: .utf8)!
     }
