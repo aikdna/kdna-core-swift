@@ -1820,6 +1820,31 @@ final class KDNACoreTests: XCTestCase {
     
     // MARK: - Licensed Entry Decryption (RFC-0008)
 
+    func testLicenseSignatureVerifyThrowsUnsupported() throws {
+        // Per ADR-005 §5 and PR #5, the Swift implementation must NOT return
+        // `true` for license signatures (that would accept any license as
+        // valid). Instead, verifySignature must throw
+        // `KDNAError.unsupportedProfile` so callers can either skip license
+        // checks or refuse to validate licensed domains.
+        let license = KDNALicenseActivation(
+            version: "1",
+            license_id: "test-license",
+            domain: "test.example",
+            issued_to: "test",
+            issued_at: "2026-06-26",
+            expires_at: nil,
+            machine_fingerprint: nil,
+            signature: "fake-signature-bytes"
+        )
+        XCTAssertThrowsError(try license.verifySignature(publicKey: "fake-public-key")) { error in
+            guard case KDNAError.unsupportedProfile(let msg) = error else {
+                XCTFail("Expected KDNAError.unsupportedProfile, got \(error)")
+                return
+            }
+            XCTAssertTrue(msg.contains("license file signature verification"))
+        }
+    }
+
     func testHKDFSha256Deterministic() {
         let ikm = Data("test-key-material".utf8)
         let derived1 = KDNACrypto.hkdfSha256(ikm: ikm, info: Data("kdna-test".utf8), length: 32)
