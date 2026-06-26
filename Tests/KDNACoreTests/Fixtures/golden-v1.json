@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "generated_at": "2026-06-27T00:00:00.000Z",
+  "kdna_core_version": "0.15.0",
+  "note": "JSON-stable fixtures. Timestamps are pinned so the file is diff-stable.",
+  "vectors": {
+    "scrypt_password_v1": {
+      "profile": "kdna-password-protected-v1-scrypt",
+      "alg": "AES-256-GCM",
+      "kdf": "scrypt-sha256",
+      "key_wrapping": "AES-256-KW",
+      "scrypt_params": {
+        "N": 32768,
+        "r": 8,
+        "p": 1,
+        "salt": "Q2FBK8I/NOIaLxWqJyh7ZA=="
+      },
+      "key_slots": [
+        {
+          "slot": "password",
+          "wrap": "AES-256-KW",
+          "wrapped_key": "uau/LF3ZZtMe+ymUr6Cjui7+s8otKOE84eBEaCE9hYd2ugyrMziJjw=="
+        }
+      ],
+      "iv": "OIZi7ZruAZOpv8pt",
+      "tag": "V5lXYO4TlhqFNlc3ejbxYw==",
+      "ciphertext": "bsvn2FAnGcQ+3iFSFCq/0jnjOmYdrGnL0tsfWiVWRM4PNRFVUg3wSGXNDyX5n0DAAA6SbhgvIH89gcfNU7u1qmRk93SrIAZxDP6TM6ponA2z/+tdjGDHVqJOMHfGgUZAjz4w+n58",
+      "plaintext": "{\"core\":{\"meta\":{\"domain\":\"vector-skill\"}},\"axioms\":[{\"id\":\"a1\",\"one_sentence\":\"parity check axiom\"}]}",
+      "wrong_password_fails": true
+    },
+    "licensed_entry_v1": {
+      "profile": "kdna-licensed-entry-v1",
+      "alg": "AES-256-GCM",
+      "kdf": "HKDF-SHA256",
+      "key_wrapping": "AES-256-KW",
+      "wrapped_key": "LR9LPAvVzX17nSKI2CFP6A9Sog3SVkc9qQ7mLQhjK/dCEvNUHj3fwA==",
+      "iv": "YJL4DiGkdXHyt/IG",
+      "tag": "vFwvieKbkqIEbvgp6KZFJA==",
+      "ciphertext": "g31DhGXfSopNwznZptdfUiyq1/cRkgK4b1gmBUJKxcodVBIgVYZYwJlhVBEDug==",
+      "plaintext": "{\"core\":{\"meta\":{\"domain\":\"vector-licensed\"}}}"
+    }
+  }
+}
