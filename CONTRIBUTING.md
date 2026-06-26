@@ -1,110 +1,107 @@
-# Contributing to KDNA
+# Contributing to kdna-core-swift
 
-This repository is the KDNA protocol specification. You can contribute at multiple levels.
+This is the Swift implementation of the KDNA Core v1 spec. It mirrors the
+JavaScript `@aikdna/kdna-core` package, focusing on macOS-first consumption
+from the Studio Swift app and other Swift-based tools.
 
 ## Prerequisites
 
-- **Node.js >= 18** (check: `node --version`)
-- **npm** (comes with Node.js)
-- **Python 3** (needed for `.kdna` ZIP packaging; check: `python3 --version`)
+- **macOS 13+** (for CryptoKit and modern Swift Concurrency)
+- **Swift 5.9+** (check: `swift --version`)
+- **Xcode 15+** (for full development; command-line tools are sufficient for `swift build`)
 - **Git** (for submitting PRs)
 
-### Developer Setup
+> Cross-platform note: this package targets macOS. Linux Swift is not
+> covered by CI. iOS may work but is not officially supported.
 
-```bash
-git clone https://github.com/aikdna/KDNA.git
-cd KDNA
-npm install
-npm test         # kdna-core unit tests
+## Repository Layout
+
+```
+kdna-core-swift/
+├── Sources/
+│   └── KDNACore/         # Library code (mirrors @aikdna/kdna-core)
+├── Tests/
+│   └── KDNACoreTests/    # XCTest suite
+├── Package.swift         # SwiftPM manifest
+├── README.md
+├── SECURITY.md
+└── CHANGELOG.md
 ```
 
-For CLI development, see the [kdna-cli](https://github.com/aikdna/kdna-cli) repository.
+## Developer Setup
 
-### Available Scripts
+```bash
+git clone https://github.com/aikdna/kdna-core-swift.git
+cd kdna-core-swift
+swift build          # debug build
+swift test           # run XCTest suite
+swift build -c release
+```
 
-| Script | Purpose |
-|--------|---------|
-| `npm test` | Run kdna-core test suite |
-| `npm run lint` | ESLint code quality check |
-| `npm run format:check` | Prettier format validation |
-| `npm run lint:examples` | Validate example domains via kdna-lint |
-| `npm run validate:examples` | Schema-validate example domains |
+### Xcode
+
+Open `Package.swift` in Xcode. The `KDNACore` library and
+`KDNACoreTests` test target are auto-detected.
+
+## Available Commands
+
+| Command | Purpose |
+|---------|---------|
+| `swift build` | Debug build |
+| `swift build -c release` | Release build |
+| `swift test` | Run all XCTest cases |
+| `swift test --filter KDNACoreTests.testName` | Run a single test |
+| `swift package describe` | Inspect package metadata |
+| `swift package generate-xcodeproj` | (legacy; Xcode auto-detects `Package.swift` now) |
+
+## Cross-Implementation Parity
+
+This package **must** stay behaviorally equivalent to `@aikdna/kdna-core`
+in the following areas:
+
+- LoadPlan v1 states and transitions
+- Canonical container format
+- Crypto profile: `kdna-password-protected-v1` (Argon2id + AES-KW + AES-GCM)
+- Manifest schema validation
+
+Before opening a PR, run the cross-language golden vectors in the
+JavaScript repo (`packages/kdna-core/test-vectors/golden-vectors.js`)
+and confirm identical outputs. If a divergence is intentional, document
+it in the PR description with rationale.
 
 ## Contribution Types
 
-### 1. Protocol Contribution
-Improve the KDNA specification, schema, validators, CLI, loader, skills, or documentation.
+### 1. Crypto / Loader Fix
 
-**Scope:** SPEC.md, schema/*, packages/kdna-core/*, docs/*
+If you find a divergence with the JS implementation, the JS repo is
+authoritative. Open a PR here with a test case demonstrating the
+divergence, then a fix.
 
-### 2. Judgment Pattern Contribution
-Submit a reusable judgment pattern — the smallest unit of KDNA.
+### 2. Platform Adaptation
 
-**Template:**
-```
-Pattern ID: (e.g., discussion-vs-decision)
-Surface Signal: (what the user says or what data shows)
-Common Misread: (how ordinary AI gets this wrong)
-Expert Frame: (how an expert re-interprets the signal)
-Diagnostic Questions: (what to ask before acting)
-Decision Boundary: (when to classify as unresolved)
-Action Implication: (what follows from the judgment)
-Positive Cases: (at least 2 examples where the pattern works)
-Negative Cases: (at least 1 example where the pattern should NOT trigger)
-```
+Improvements specific to macOS / iOS (e.g., Keychain integration,
+Secure Enclave use) belong here. They must not change wire formats.
 
-**Submit to:** `benchmarks/judgment-benchmark.json` via PR
+### 3. Performance / API Ergonomics
 
-### 3. KDNA Example Contribution
-Submit a packaged `.kdna` example candidate.
+Internal improvements are welcome. Public API must remain stable across
+minor versions; major API changes require coordination with the JS
+implementation.
 
-1. Create or adapt the judgment through the official toolchain.
-2. Export a packaged `.kdna` file.
-3. Run `kdna validate`, `kdna plan-load`, and `kdna load`.
-4. Provide a release card: SHA256, usage commands, before/after evidence,
-   applies/does-not-apply boundaries, known limitations, and provenance
-   metadata.
-5. Source JSON may be used for authoring or audit, but it is not the public
-   consumption unit.
+### 4. Documentation
 
-### 4. Case Contribution
-Submit test cases that prove KDNA changes judgment.
-
-Add entries to existing domain `tests/before-after.json` or submit new test files following the format:
-```json
-{
-  "input": "...",
-  "without_kdna": { "expected_approach": "...", "common_mistake": "..." },
-  "with_kdna": { "expected_approach": "...", "signal_reading": "...", "diagnosis_path": "..." },
-  "domain": "...",
-  "trigger": "..."
-}
-```
-
-### 5. Composition Contribution
-Submit composition guidance for multiple packaged `.kdna` files.
-
-1. Reference packaged `.kdna` files by file identity, version, and optional
-   digest.
-2. Include composition rules and routing questions.
-3. Do not turn a source directory or registry entry into the user-facing asset.
-
-### 6. Evaluation Report Contribution
-Submit a report comparing agent judgment with and without KDNA.
-
-Include: domain name, model used, test cases, baseline scores, KDNA-loaded scores, specific improvements observed.
+Improvements to README, SECURITY.md, or inline doc comments.
 
 ## Quality Requirements
 
 All contributions must:
-- Pass `kdna dev validate` (for packages) or JSON schema validation (for clusters)
-- Have unique IDs across the submission
-- Include reasons for every banned term and key distinctions for every misunderstanding
-- Not contain proprietary or private data
-- Use clear domain boundaries
+- Pass `swift test` (no failing or skipped tests without explanation)
+- Maintain parity with the JavaScript reference where applicable
+- Follow Swift API Design Guidelines
+- Use Swift Concurrency (`async`/`await`) for new I/O code
+- Not depend on third-party packages without discussion (this package
+  currently has zero runtime dependencies)
 
 ## License
 
 - Code contributions: Apache 2.0
-- Documentation and examples: CC BY 4.0
-- Domain assets: Contributor's choice (CC BY 4.0 recommended for open domains)
