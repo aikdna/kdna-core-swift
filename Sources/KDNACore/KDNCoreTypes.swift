@@ -1,4 +1,6 @@
-//  KDNACore — Swift implementation of the KDNA Protocol v1.0-rc
+//  KDNACore — Swift implementation of the KDNA Protocol v0.7
+//  (file history: previously labeled "v1.0-rc"; the v0.7 launch 2026-05-22
+//   superseded that label. See CHANGELOG.md for the version timeline.)
 //  https://github.com/aikdna/kdna
 
 import Foundation
@@ -456,7 +458,7 @@ public struct KDNAJudgment {
 // MARK: - Manifest Types
 
 /// Parsed kdna.json manifest for a KDNA domain asset.
-/// Aligns with SPEC.md v1.0-rc Section 3.4
+/// Aligns with SPEC.md v0.7 Section 3.4
 public struct KDNAManifest: Codable {
     public let format: String?
     public let format_version: String?
@@ -556,7 +558,7 @@ public struct KDNAProductContractTrace: Codable {
     public let self_checks_passed: Int
     public let self_checks_failed: Int
 
-    public init(trace_id: String = UUID().uuidString, domain_id: String, domain_version: String? = nil, mode: String, timestamp: String = ISO8601DateFormatter().string(from: Date()), agent: String = "kdnachat", input_summary: String? = nil, signals_detected: [String] = [], axioms_triggered: [String] = [], patterns_matched: [String] = [], misunderstandings_avoided: [String] = [], violations_blocked: [String] = [], judgment_delta: KDNAContractJudgmentDelta? = nil, confidence: Double? = nil, limitations: [String] = [], self_checks_passed: Int = 0, self_checks_failed: Int = 0) {
+    public init(trace_id: String = UUID().uuidString, domain_id: String, domain_version: String? = nil, mode: String, timestamp: String = ISO8601DateFormatter().string(from: Date()), agent: String = "unknown", input_summary: String? = nil, signals_detected: [String] = [], axioms_triggered: [String] = [], patterns_matched: [String] = [], misunderstandings_avoided: [String] = [], violations_blocked: [String] = [], judgment_delta: KDNAContractJudgmentDelta? = nil, confidence: Double? = nil, limitations: [String] = [], self_checks_passed: Int = 0, self_checks_failed: Int = 0) {
         self.trace_id = trace_id; self.domain_id = domain_id; self.domain_version = domain_version
         self.mode = mode; self.timestamp = timestamp; self.agent = agent
         self.input_summary = input_summary; self.signals_detected = signals_detected
@@ -586,7 +588,7 @@ public struct KDNAFeedbackEvent: Codable {
     public let suggested_action: String
     public let timestamp: String
 
-    public init(event_id: String = UUID().uuidString, source: String = "kdnachat", domain_id: String, trace_id: String, user_feedback: KDNAUserFeedback, suggested_action: String = "none", timestamp: String = ISO8601DateFormatter().string(from: Date())) {
+    public init(event_id: String = UUID().uuidString, source: String = "unknown", domain_id: String, trace_id: String, user_feedback: KDNAUserFeedback, suggested_action: String = "none", timestamp: String = ISO8601DateFormatter().string(from: Date())) {
         self.event_id = event_id; self.source = source; self.domain_id = domain_id
         self.trace_id = trace_id; self.user_feedback = user_feedback
         self.suggested_action = suggested_action; self.timestamp = timestamp

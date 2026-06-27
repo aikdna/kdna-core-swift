@@ -1,4 +1,6 @@
-//  KDNACore — Swift implementation of the KDNA Protocol v1.0-rc
+//  KDNACore — Swift implementation of the KDNA Protocol v0.7
+//  (file history: previously labeled "v1.0-rc"; the v0.7 launch 2026-05-22
+//   superseded that label. See CHANGELOG.md for the version timeline.)
 //  https://github.com/aikdna/kdna
 
 import Foundation
@@ -538,7 +540,7 @@ public class KDNADomainLoader {
 
     // MARK: - Old Field Name Detection
 
-    /// Map of old/informal field names → correct v1.0-rc spec field names.
+    /// Map of old/informal field names → correct v0.7 spec field names.
     public static let fieldAliases: [String: String] = [
         "statement": "one_sentence or full_statement",
         "description": "one_sentence",
@@ -572,7 +574,7 @@ public class KDNADomainLoader {
         for (key, value) in dict {
             let fullPath = path.isEmpty ? key : "\(path).\(key)"
             if let alias = fieldAliases[key] {
-                warnings.append("[KDNA Loader] \(domainName).\(fullPath): field '\(key)' is not in spec v1.0-rc. Use '\(alias)' instead.")
+                warnings.append("[KDNA Loader] \(domainName).\(fullPath): field '\(key)' is not in v0.7 spec. Use '\(alias)' instead.")
             }
             warnings.append(contentsOf: detectOldFieldNames(value, path: fullPath, domainName: domainName))
         }

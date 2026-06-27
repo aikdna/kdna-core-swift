@@ -1,4 +1,6 @@
-//  KDNACore — Swift implementation of the KDNA Protocol v1.0-rc
+//  KDNACore — Swift implementation of the KDNA Protocol v0.7
+//  (file history: previously labeled "v1.0-rc"; the v0.7 launch 2026-05-22
+//   superseded that label. See CHANGELOG.md for the version timeline.)
 //  https://github.com/aikdna/kdna
 
 import Foundation
