@@ -11,7 +11,7 @@ jobs:
     env:
       KDNA_CONFORMANCE_COMMIT: b8e50765b3959cd73e933a0134b238f7fa7a1736
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Checkout fixed kdna conformance fixtures
         run: |
           cd ..
