@@ -27,7 +27,10 @@ let package = Package(
         ),
         .testTarget(
             name: "KDNACoreTests",
-            dependencies: ["KDNACore"]
+            dependencies: ["KDNACore"],
+            resources: [
+                .process("Fixtures")
+            ]
         ),
     ]
 )
