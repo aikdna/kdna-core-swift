@@ -73,7 +73,9 @@ final class GoldenVectorsTests: XCTestCase {
     }
 
     private func loadVectors() throws -> GoldenVectorFile {
-        let url = Bundle(for: GoldenVectorsTests.self)
+        let url = Bundle.module
+            .url(forResource: "golden-v1", withExtension: "json")
+            ?? Bundle(for: GoldenVectorsTests.self)
             .url(forResource: "golden-v1", withExtension: "json", subdirectory: "Fixtures")
             ?? Bundle(for: GoldenVectorsTests.self)
             .url(forResource: "golden-v1", withExtension: "json")
