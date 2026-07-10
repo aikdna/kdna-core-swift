@@ -134,6 +134,18 @@ fail-closed policy independently from `aikdna/kdna`.
 This library is the Swift runtime bridge for products that need to inspect,
 validate, load, or format KDNA-compatible assets locally.
 
+## Consumption traces
+
+Applications can present the result of a KDNA consumption decision through the
+shared trace model and projector. A trace explains which asset was selected,
+which advisors were accepted or rejected, the active budget profile, and the
+decision provenance. It is an application-facing record, not a second asset
+format and not a content endorsement.
+
+Use the CLI and `@aikdna/kdna-eval` as the reference for route, compose, and
+replay policy. Native clients should consume compatible traces rather than
+inventing independent trust or promotion rules.
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE).
