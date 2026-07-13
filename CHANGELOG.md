@@ -9,6 +9,12 @@
 - Require a verified authorization object for account/org LoadPlan readiness;
   plain entitlement status values and password fallback are rejected.
 - Add the shared JavaScript golden vector and fail-closed tamper/expiry tests.
+- Require packaged `.kdna` files for Swift LoadPlan and authorized loading;
+  source directories remain authoring inputs only
+- Run shared authorization conformance against packaged fixtures
+- Advance the pinned shared conformance commit to file-based LoadPlan goldens
+- Remove an internal handoff document and local machine path from the public
+  test-vector tree
 
 ## 0.3.1 (2026-07-13)
 - Replace the revision-pinned Argon2 dependency with stable `Argon2Kit` 0.1.1

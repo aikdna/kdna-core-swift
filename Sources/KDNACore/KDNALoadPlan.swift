@@ -241,6 +241,16 @@ public enum KDNALoadPlanCore {
     public static let mimeType = "application/vnd.kdna.asset"
 
     public static func planLoad(assetURL: URL, environment: KDNALoadEnvironment = KDNALoadEnvironment()) -> KDNALoadPlan {
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: assetURL.path, isDirectory: &isDirectory),
+           isDirectory.boolValue {
+            return invalidPlan(
+                assetURL: assetURL,
+                message: "Runtime loading requires a packaged .kdna asset file. Source directories are authoring inputs only.",
+                code: "KDNA_ASSET_FILE_REQUIRED",
+                sourceKind: "dir"
+            )
+        }
         guard let layout = readLayout(assetURL: assetURL) else {
             return invalidPlan(assetURL: assetURL, message: "not a KDNA runtime asset")
         }
@@ -603,39 +613,7 @@ public enum KDNALoadPlanCore {
     }
 
     private static func readLayout(assetURL: URL) -> SourceLayout? {
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: assetURL.path, isDirectory: &isDirectory),
-              isDirectory.boolValue else {
-            return readZipLayout(assetURL: assetURL)
-        }
-
-        let manifestURL = assetURL.appendingPathComponent("kdna.json")
-        let payloadURL = assetURL.appendingPathComponent("payload.kdnab")
-        let mimeURL = assetURL.appendingPathComponent("mimetype")
-
-        guard let manifestData = try? Data(contentsOf: manifestURL),
-              let payloadData = try? Data(contentsOf: payloadURL),
-              let mimeData = try? Data(contentsOf: mimeURL),
-              let manifest = try? JSONSerialization.jsonObject(with: manifestData) as? [String: Any] else {
-            return nil
-        }
-
-        let checksumsURL = assetURL.appendingPathComponent("checksums.json")
-        let checksums: [String: Any]?
-        if let checksumsData = try? Data(contentsOf: checksumsURL) {
-            checksums = (try? JSONSerialization.jsonObject(with: checksumsData)) as? [String: Any]
-        } else {
-            checksums = nil
-        }
-
-        return SourceLayout(
-            sourceKind: "dir",
-            manifest: manifest,
-            payload: payloadData,
-            checksums: checksums,
-            rawManifest: manifestData,
-            rawMimeType: mimeData
-        )
+        readZipLayout(assetURL: assetURL)
     }
 
     private static func readZipLayout(assetURL: URL) -> SourceLayout? {
@@ -665,7 +643,12 @@ public enum KDNALoadPlanCore {
         )
     }
 
-    private static func invalidPlan(assetURL: URL, message: String) -> KDNALoadPlan {
+    private static func invalidPlan(
+        assetURL: URL,
+        message: String,
+        code: String = "KDNA_FORMAT_INVALID",
+        sourceKind: String? = nil
+    ) -> KDNALoadPlan {
         KDNALoadPlan(
             kdna_version: nil,
             asset: KDNALoadPlanAsset(asset_id: nil, asset_uid: nil, title: nil, version: nil, judgment_version: nil),
@@ -684,8 +667,8 @@ public enum KDNALoadPlanCore {
                 load_contract_valid: false,
                 overall_valid: false
             ),
-            issues: [KDNALoadPlanIssue(code: "KDNA_FORMAT_INVALID", severity: "blocking", message: message)],
-            source: KDNALoadPlanSource(kind: nil, path: assetURL.path)
+            issues: [KDNALoadPlanIssue(code: code, severity: "blocking", message: message)],
+            source: KDNALoadPlanSource(kind: sourceKind, path: assetURL.path)
         )
     }
 

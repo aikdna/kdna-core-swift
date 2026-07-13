@@ -2,6 +2,76 @@ import XCTest
 @testable import KDNACore
 
 final class ExternalKeyGrantTests: XCTestCase {
+    private func makeZip(entries: [(String, Data)]) -> Data {
+        var localParts = [Data]()
+        var centralParts = [Data]()
+        var offset: UInt32 = 0
+
+        func u16(_ n: UInt16) -> Data {
+            var value = n
+            return Data(bytes: &value, count: 2)
+        }
+
+        func u32(_ n: UInt32) -> Data {
+            var value = n
+            return Data(bytes: &value, count: 4)
+        }
+
+        for (name, data) in entries {
+            let nameData = Data(name.utf8)
+            var local = Data()
+            local.append(u32(0x04034b50))
+            local.append(u16(20))
+            local.append(u16(0))
+            local.append(u16(0))
+            local.append(u16(0))
+            local.append(u16(0))
+            local.append(u32(0))
+            local.append(u32(UInt32(data.count)))
+            local.append(u32(UInt32(data.count)))
+            local.append(u16(UInt16(nameData.count)))
+            local.append(u16(0))
+            local.append(nameData)
+            local.append(data)
+            localParts.append(local)
+
+            var central = Data()
+            central.append(u32(0x02014b50))
+            central.append(u16(20))
+            central.append(u16(20))
+            central.append(u16(0))
+            central.append(u16(0))
+            central.append(u16(0))
+            central.append(u16(0))
+            central.append(u32(0))
+            central.append(u32(UInt32(data.count)))
+            central.append(u32(UInt32(data.count)))
+            central.append(u16(UInt16(nameData.count)))
+            central.append(u16(0))
+            central.append(u16(0))
+            central.append(u16(0))
+            central.append(u16(0))
+            central.append(u32(0))
+            central.append(u32(offset))
+            central.append(nameData)
+            centralParts.append(central)
+            offset += UInt32(local.count)
+        }
+
+        let central = centralParts.reduce(Data(), +)
+        let local = localParts.reduce(Data(), +)
+        var eocd = Data()
+        eocd.append(u32(0x06054b50))
+        eocd.append(u16(0))
+        eocd.append(u16(0))
+        eocd.append(u16(UInt16(entries.count)))
+        eocd.append(u16(UInt16(entries.count)))
+        eocd.append(u32(UInt32(central.count)))
+        eocd.append(u32(UInt32(local.count)))
+        eocd.append(u16(0))
+        return local + central + eocd
+    }
+
     private func fixture() throws -> [String: Any] {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "external-grant-v1", withExtension: "json"))
         return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
@@ -79,23 +149,28 @@ final class ExternalKeyGrantTests: XCTestCase {
         let authorization = try authorization(fixture: value)
         let manifest = try XCTUnwrap(value["manifest"] as? [String: Any])
         let envelope = try XCTUnwrap(Data(base64URLEncoded: value["envelope_cbor"] as? String ?? ""))
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        try Data(KDNALoadPlanCore.mimeType.utf8).write(to: directory.appendingPathComponent("mimetype"))
-        try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys, .withoutEscapingSlashes])
-            .write(to: directory.appendingPathComponent("kdna.json"))
-        try envelope.write(to: directory.appendingPathComponent("payload.kdnab"))
+        let assetURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("external-grant-\(UUID().uuidString).kdna")
+        defer { try? FileManager.default.removeItem(at: assetURL) }
+        let manifestData = try JSONSerialization.data(
+            withJSONObject: manifest,
+            options: [.sortedKeys, .withoutEscapingSlashes]
+        )
+        try makeZip(entries: [
+            ("mimetype", Data(KDNALoadPlanCore.mimeType.utf8)),
+            ("kdna.json", manifestData),
+            ("payload.kdnab", envelope),
+        ]).write(to: assetURL)
 
-        XCTAssertEqual(KDNARuntime.planLoad(assetURL: directory).state, "needs_account")
+        XCTAssertEqual(KDNARuntime.planLoad(assetURL: assetURL).state, "needs_account")
         let ready = KDNARuntime.planLoad(
-            assetURL: directory,
+            assetURL: assetURL,
             environment: KDNALoadEnvironment(externalAuthorization: authorization)
         )
         XCTAssertTrue(ready.can_load_now)
         XCTAssertEqual(ready.state, "ready")
         let capsule = try KDNARuntime.load(
-            assetURL: directory,
+            assetURL: assetURL,
             credential: KDNACredential(externalAuthorization: authorization),
             profile: "compact"
         )
