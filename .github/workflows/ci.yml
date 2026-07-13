@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: macos-14
     env:
-      KDNA_CONFORMANCE_COMMIT: 92839b43ece35d3087bbc4955d09d8c1e8623335
+      KDNA_CONFORMANCE_COMMIT: d00ca68787780d9a6698a22c0caa826af16691d4
     steps:
       - uses: actions/checkout@v7
       - name: Checkout fixed kdna conformance fixtures

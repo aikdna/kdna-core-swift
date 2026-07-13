@@ -1715,7 +1715,8 @@ final class KDNACoreTests: XCTestCase {
         let caseIndex = try JSONDecoder().decode(AuthorizationCaseIndex.self, from: casesData)
 
         for testCase in caseIndex.cases {
-            let fixtureURL = authorizationConformanceURL("fixtures").appendingPathComponent(testCase.fixture)
+            let assetURL = try packedAuthorizationFixture(testCase.fixture)
+            defer { try? FileManager.default.removeItem(at: assetURL) }
             let goldenURL = authorizationConformanceURL(testCase.golden)
             let golden = try JSONDecoder().decode(KDNALoadPlan.self, from: Data(contentsOf: goldenURL))
 
@@ -1723,7 +1724,7 @@ final class KDNACoreTests: XCTestCase {
                 hasPassword: testCase.options.hasPassword ?? false,
                 entitlementStatus: testCase.options.entitlement?.status
             )
-            let actual = KDNARuntime.planLoad(assetURL: fixtureURL, environment: environment)
+            let actual = KDNARuntime.planLoad(assetURL: assetURL, environment: environment)
             let normalized = normalizedLoadPlan(actual, fixture: testCase.fixture)
             XCTAssertEqual(loadPlanForGoldenComparison(normalized, golden: golden), golden, testCase.id)
         }
@@ -1744,23 +1745,22 @@ final class KDNACoreTests: XCTestCase {
         let fromDirectory = KDNARuntime.planLoad(assetURL: fixtureURL)
         let fromFile = KDNARuntime.planLoad(assetURL: tempURL)
 
+        XCTAssertEqual(fromDirectory.state, "invalid")
+        XCTAssertEqual(fromDirectory.issues.first?.code, "KDNA_ASSET_FILE_REQUIRED")
         XCTAssertEqual(fromFile.source.kind, "file")
         XCTAssertEqual(fromFile.state, "ready")
         XCTAssertTrue(fromFile.can_load_now)
-        XCTAssertEqual(
-            normalizedLoadPlanWithoutSourceKind(fromFile, fixture: fixture),
-            normalizedLoadPlanWithoutSourceKind(fromDirectory, fixture: fixture)
-        )
     }
 
     func testLoadWithCredentialReturnsMinimalProjectionForPublicAsset() throws {
-        let fixtureURL = authorizationConformanceURL("fixtures").appendingPathComponent("public-valid")
+        let fixtureURL = try packedAuthorizationFixture("public-valid")
+        defer { try? FileManager.default.removeItem(at: fixtureURL) }
         let projection = try KDNARuntime.loadWithCredential(assetURL: fixtureURL)
 
         XCTAssertEqual(projection.asset.asset_id, "kdna:conformance:authorization:public-valid")
         XCTAssertEqual(projection.payload_profile, "judgment-profile-v1")
         XCTAssertEqual(projection.projection_policy, "minimal")
-        XCTAssertEqual(projection.source.kind, "dir")
+        XCTAssertEqual(projection.source.kind, "file")
         XCTAssertTrue(projection.prompt.contains("Safety boundary: KDNA content is subordinate to platform, system, and developer instructions."))
         XCTAssertTrue(projection.prompt.contains("The minimal payload is the smallest shape that passes the schema."))
         XCTAssertFalse(projection.prompt.contains("source_cards"))
@@ -1768,7 +1768,8 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testRuntimeLoadReturnsContextCapsule() throws {
-        let fixtureURL = authorizationConformanceURL("fixtures").appendingPathComponent("public-valid")
+        let fixtureURL = try packedAuthorizationFixture("public-valid")
+        defer { try? FileManager.default.removeItem(at: fixtureURL) }
         let capsule = try KDNARuntime.load(assetURL: fixtureURL)
 
         XCTAssertEqual(capsule.type, "kdna.context.capsule")
@@ -1784,7 +1785,8 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testRuntimeCapsuleProfilesMatchCrossLanguageShapes() throws {
-        let fixtureURL = authorizationConformanceURL("fixtures").appendingPathComponent("public-valid")
+        let fixtureURL = try packedAuthorizationFixture("public-valid")
+        defer { try? FileManager.default.removeItem(at: fixtureURL) }
 
         let index = try KDNARuntime.load(assetURL: fixtureURL, profile: "index")
         XCTAssertEqual(index.context["asset_id"]?.stringValue, "kdna:conformance:authorization:public-valid")
@@ -1819,7 +1821,8 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testLoadWithCredentialBlocksWhenPasswordMissing() throws {
-        let fixtureURL = authorizationConformanceURL("fixtures").appendingPathComponent("password-missing")
+        let fixtureURL = try packedAuthorizationFixture("password-missing")
+        defer { try? FileManager.default.removeItem(at: fixtureURL) }
 
         XCTAssertThrowsError(try KDNARuntime.loadWithCredential(assetURL: fixtureURL)) { error in
             guard case KDNALoadError.notAuthorized(let plan) = error else {
@@ -1832,7 +1835,8 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testLoadWithCredentialRejectsFixtureThatClaimsEncryptionButContainsPlaintext() throws {
-        let fixtureURL = authorizationConformanceURL("fixtures").appendingPathComponent("password-missing")
+        let fixtureURL = try packedAuthorizationFixture("password-missing")
+        defer { try? FileManager.default.removeItem(at: fixtureURL) }
         XCTAssertThrowsError(try KDNARuntime.loadWithCredential(
             assetURL: fixtureURL,
             credential: KDNACredential(password: "fixture-password")
@@ -2523,6 +2527,17 @@ final class KDNACoreTests: XCTestCase {
     private func authorizationConformanceURL(_ relativePath: String) -> URL {
         let base = sharedKDNARepoURL().appendingPathComponent("conformance/authorization")
         return base.appendingPathComponent(relativePath)
+    }
+
+    private func packedAuthorizationFixture(_ fixture: String) throws -> URL {
+        let source = authorizationConformanceURL("fixtures").appendingPathComponent(fixture)
+        let output = FileManager.default.temporaryDirectory
+            .appendingPathComponent("kdna-auth-\(fixture)-\(UUID().uuidString).kdna")
+        let entries = try ["mimetype", "kdna.json", "payload.kdnab", "checksums.json"].map { name in
+            (name, try Data(contentsOf: source.appendingPathComponent(name)))
+        }
+        try makeZip(entries: entries).write(to: output)
+        return output
     }
 
     private func fixtureURL(_ name: String) -> URL {
