@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 (2026-07-13)
+- Replace the revision-pinned Argon2 dependency with stable `Argon2Kit` 0.1.1
+- Restore SwiftPM installation through stable package-version requirements
+- Preserve Argon2id RFC-compatible password derivation and encrypted-asset behavior
+
 ## 0.3.0 (2026-07-13)
 - Enforce the single KDNA runtime container and reject legacy distribution layouts
 - Decode `payload.kdnab` and encrypted envelopes as CBOR with no JSON fallback

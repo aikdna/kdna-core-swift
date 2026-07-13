@@ -1,6 +1,6 @@
 import Foundation
 import CryptoKit
-import Argon2Swift
+import Argon2Kit
 
 // MARK: - RFC-0009 Password-Protected Asset Profile
 
@@ -87,18 +87,20 @@ public func derivePasswordKey(password: String, params: KDNAPasswordKDFParams) t
     guard params.name == PASSWORD_KDF_NAME else {
         throw KDNAError.unsupportedKDF("unsupported password KDF: \(params.name)")
     }
-    let salt = Salt(bytes: Data(base64Encoded: params.salt) ?? Data())
-    let result = try Argon2Swift.hashPasswordBytes(
+    guard let salt = Data(base64Encoded: params.salt), salt.count >= 8 else {
+        throw KDNAError.invalidEnvelope("password KDF salt must be valid base64 with at least 8 bytes")
+    }
+    let result = try Argon2.hash(
         password: Data(password.utf8),
         salt: salt,
-        iterations: params.iterations,
-        memory: params.memory_kib,
-        parallelism: params.parallelism,
+        iterations: UInt32(params.iterations),
+        memory: UInt32(params.memory_kib),
+        threads: UInt32(params.parallelism),
         length: 32,
         type: .id,
-        version: .V13
+        version: .v13
     )
-    return result.hashData()
+    return result.rawData
 }
 
 // MARK: - Encryption / Decryption
