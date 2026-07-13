@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Add RFC-0019 account/device external key grant parsing and verification.
+- Verify Ed25519 grant signatures and all account/device/asset bindings, unwrap
+  the CEK through X25519 + HKDF + AES-KW, and decrypt AES-GCM envelopes only in
+  memory.
+- Require a verified authorization object for account/org LoadPlan readiness;
+  plain entitlement status values and password fallback are rejected.
+- Add the shared JavaScript golden vector and fail-closed tamper/expiry tests.
+
 ## 0.3.1 (2026-07-13)
 - Replace the revision-pinned Argon2 dependency with stable `Argon2Kit` 0.1.1
 - Restore SwiftPM installation through stable package-version requirements
