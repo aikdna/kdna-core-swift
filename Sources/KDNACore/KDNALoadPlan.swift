@@ -5,10 +5,12 @@ import CoreFoundation
 public struct KDNALoadEnvironment: Equatable {
     public var hasPassword: Bool
     public var entitlementStatus: String?
+    public var externalAuthorization: KDNAExternalGrantAuthorization?
 
-    public init(hasPassword: Bool = false, entitlementStatus: String? = nil) {
+    public init(hasPassword: Bool = false, entitlementStatus: String? = nil, externalAuthorization: KDNAExternalGrantAuthorization? = nil) {
         self.hasPassword = hasPassword
         self.entitlementStatus = entitlementStatus
+        self.externalAuthorization = externalAuthorization
     }
 }
 
@@ -58,10 +60,12 @@ public struct KDNALoadPlan: Codable, Equatable {
 public struct KDNACredential: Equatable {
     public let password: String?
     public let entitlementStatus: String?
+    public let externalAuthorization: KDNAExternalGrantAuthorization?
 
-    public init(password: String? = nil, entitlementStatus: String? = nil) {
+    public init(password: String? = nil, entitlementStatus: String? = nil, externalAuthorization: KDNAExternalGrantAuthorization? = nil) {
         self.password = password
         self.entitlementStatus = entitlementStatus
+        self.externalAuthorization = externalAuthorization
     }
 
     public static let none = KDNACredential()
@@ -404,7 +408,8 @@ public enum KDNALoadPlanCore {
             assetURL: assetURL,
             environment: KDNALoadEnvironment(
                 hasPassword: credential.password != nil,
-                entitlementStatus: credential.entitlementStatus
+                entitlementStatus: credential.entitlementStatus,
+                externalAuthorization: credential.externalAuthorization
             )
         )
         guard plan.can_load_now else {
@@ -416,10 +421,14 @@ public enum KDNALoadPlanCore {
 
         let payloadData: Data
         if hasEncryptedPayload(manifest: layout.manifest) {
-            guard let password = credential.password else {
-                throw KDNALoadError.notAuthorized(plan)
-            }
-            do {
+            if let authorization = credential.externalAuthorization {
+                payloadData = try authorization.decrypt(
+                    entryName: "payload.kdnab",
+                    envelopeData: layout.payload,
+                    manifest: layout.manifest
+                )
+            } else if let password = credential.password {
+              do {
                 let envelope = try KDNACBOR.decode(KDNAProtectedEnvelope.self, from: layout.payload)
                 let manifest = KDNAManifest(
                     name: layout.manifest["name"] as? String
@@ -434,8 +443,11 @@ public enum KDNALoadPlanCore {
                     manifest: manifest,
                     password: password
                 )
-            } catch {
+              } catch {
                 throw KDNALoadError.invalidPayload("encrypted payload could not be decrypted")
+              }
+            } else {
+                throw KDNALoadError.notAuthorized(plan)
             }
         } else {
             payloadData = layout.payload
@@ -835,6 +847,13 @@ public enum KDNALoadPlanCore {
         }
 
         if plan.entitlement_profile == "account" {
+            if let authorization = environment.externalAuthorization {
+                plan.state = authorization.entitlementStatus == "offline_grace" ? "offline_grace" : "ready"
+                plan.required_action = authorization.entitlementStatus == "offline_grace" ? "sync" : "load"
+                plan.can_load_now = true
+                plan.projection_policy = "minimal"
+                return plan
+            }
             plan.state = "needs_account"
             plan.required_action = "sign_in_or_activate"
             plan.issues.append(KDNALoadPlanIssue(
@@ -846,6 +865,13 @@ public enum KDNALoadPlanCore {
         }
 
         if plan.entitlement_profile == "org" {
+            if let authorization = environment.externalAuthorization {
+                plan.state = authorization.entitlementStatus == "offline_grace" ? "offline_grace" : "ready"
+                plan.required_action = authorization.entitlementStatus == "offline_grace" ? "sync" : "load"
+                plan.can_load_now = true
+                plan.projection_policy = "minimal"
+                return plan
+            }
             plan.state = "needs_org_auth"
             plan.required_action = "sign_in_or_activate"
             plan.issues.append(KDNALoadPlanIssue(

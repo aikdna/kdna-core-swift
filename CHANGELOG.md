@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 (2026-07-13)
+
+- Add RFC-0019 account/device external key grant parsing and verification.
+- Verify Ed25519 grant signatures and all account/device/asset bindings, unwrap
+  the CEK through X25519 + HKDF + AES-KW, and decrypt AES-GCM envelopes only in
+  memory.
+- Require a verified authorization object for account/org LoadPlan readiness;
+  plain entitlement status values and password fallback are rejected.
+- Add the shared JavaScript golden vector and fail-closed tamper/expiry tests.
 - Require packaged `.kdna` files for Swift LoadPlan and authorized loading;
   source directories remain authoring inputs only
 - Run shared authorization conformance against packaged fixtures

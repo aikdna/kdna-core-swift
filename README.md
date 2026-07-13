@@ -27,7 +27,7 @@ raw manifest fields.
 Add to your Package.swift:
 
 ```
-.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.3.1")
+.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.4.0")
 ```
 
 Then add `KDNACore` to your target dependencies:
@@ -81,6 +81,7 @@ print("Content digest:", result.contentDigest ?? "")
 | `KDNCoreTypes.swift` | Codable structs for all KDNA domain types (Domain, Axiom, Ontology, Framework, Misunderstanding, SelfCheck, etc.) |
 | `KDNADomainLoader.swift` | Domain loading, scanning, task classification, context formatting |
 | `KDNADomainValidator.swift` | Structural lint, cross-file validation, ID uniqueness |
+| `KDNAExternalKeyGrant.swift` | RFC-0019 signature/binding verification, X25519 unwrap, and in-memory decryption |
 | `KDNJudgmentPipeline.swift` | Pre-filtering, system prompt construction, post-validation of agent outputs |
 | `KDNARouter.swift` | **7-State Domain Router** — full routing pipeline (Intent Gate → Negative Match → Domain Fit → Trust Gate → Ambiguity Gate) |
 | `KDNAComposer.swift` | **Multi-Domain Composer** — combines primary + constraint domains with conflict detection |
@@ -95,10 +96,17 @@ print("Content digest:", result.contentDigest ?? "")
 | LoadPlan authorization planning | Beta |
 | CBOR payload and encrypted-envelope decoding | Beta |
 | Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Beta |
+| RFC-0019 account/device external grant verification | Beta; shared JS golden vector |
 | `KDNAJudgmentProjection` rendering | Beta |
 | Developer fixture loading | Developer compatibility |
 | Route / compose / match APIs | Experimental |
 | Complete JS parity | Not claimed; requires fixed shared conformance evidence |
+
+RFC-0019 callers persist the highest verified `status_version` and verified
+wall-clock value in the platform SecretStore, then pass them as
+`minimumStatusVersion` and `minimumVerifiedTime`. Rollback fails closed. Call
+`dispose()` when a verified authorization is no longer needed to clear its
+in-memory CEK eagerly.
 
 ## Runtime Authorization Contract
 
@@ -115,6 +123,15 @@ implementation covers developer fixtures and packed `.kdna` runtime
 containers, and is tested against the shared authorization conformance goldens.
 Product code should use the returned `KDNALoadPlan.state`, `required_action`,
 `can_load_now`, and `issues` fields as its UI/runtime source of truth.
+
+For an account/device asset, construct a `KDNAExternalGrantAuthorization` only
+through `authorize(...)`, passing issuer keys pinned by the application and the
+device agreement private key loaded from Keychain. The verifier checks the
+signature, time window, account, device, asset identity/version/digest, and
+encrypted entry before LoadPlan can become ready. Its initializer is private,
+so a plain status value cannot manufacture authorization. The CEK stays inside
+the in-memory authorization object and is cleared on deinitialization; account
+assets never fall back to password loading.
 
 `load` returns a `KDNAContextCapsule`, not the raw payload. Its context follows
 the selected `index`, `compact`, `scenario`, or `full` load profile. The older
