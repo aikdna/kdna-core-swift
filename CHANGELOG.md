@@ -4,6 +4,7 @@
 - Require packaged `.kdna` files for Swift LoadPlan and authorized loading;
   source directories remain authoring inputs only
 - Run shared authorization conformance against packaged fixtures
+- Advance the pinned shared conformance commit to file-based LoadPlan goldens
 - Remove an internal handoff document and local machine path from the public
   test-vector tree
 
