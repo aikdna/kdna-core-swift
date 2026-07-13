@@ -27,7 +27,7 @@ raw manifest fields.
 Add to your Package.swift:
 
 ```
-.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.2.0")
+.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.3.0")
 ```
 
 Then add `KDNACore` to your target dependencies:
@@ -49,8 +49,9 @@ let manifest = try reader.readManifest(asset: asset)
 // Plan authorization before loading
 let plan = KDNARuntime.planLoad(assetURL: fileURL)
 if plan.can_load_now {
-    let projection = try KDNARuntime.loadWithCredential(assetURL: fileURL)
-    print(projection.prompt)
+    // Agents consume the verified Runtime Capsule, never raw asset entries.
+    let capsule = try KDNARuntime.load(assetURL: fileURL)
+    print(capsule.context)
 } else {
     print("Required action:", plan.required_action)
 }
@@ -67,7 +68,8 @@ print("Content digest:", result.contentDigest ?? "")
 
 - **Open and verify** local `.kdna` runtime files
 - **Plan runtime loading** through LoadPlan before emitting judgment context
-- **Project authorized v1 runtime payloads** through `KDNAJudgmentProjection`
+- **Emit authorized Runtime Capsules** with the same profile-specific context
+  shapes as the JavaScript Core
 - **Validate** developer fixtures for compatibility testing
 - **Format** loaded judgment context for native application integration
 - **Route / compose / match** through beta Swift APIs used by native experiments
@@ -91,6 +93,8 @@ print("Content digest:", result.contentDigest ?? "")
 | Open local `.kdna` runtime containers | Beta |
 | Verify local `.kdna` container digests | Beta |
 | LoadPlan authorization planning | Beta |
+| CBOR payload and encrypted-envelope decoding | Beta |
+| Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Beta |
 | `KDNAJudgmentProjection` rendering | Beta |
 | Developer fixture loading | Developer compatibility |
 | Route / compose / match APIs | Experimental |
@@ -106,15 +110,16 @@ The source of truth is `aikdna/kdna`:
 - `conformance/authorization/goldens/*.loadplan.json`
 
 Swift Core consumes that contract through `KDNARuntime.planLoad(assetURL:environment:)`
-and `KDNARuntime.loadWithCredential(assetURL:credential:)`. The current
+and `KDNARuntime.load(assetURL:credential:profile:)`. The current
 implementation covers developer fixtures and packed `.kdna` runtime
 containers, and is tested against the shared authorization conformance goldens.
 Product code should use the returned `KDNALoadPlan.state`, `required_action`,
 `can_load_now`, and `issues` fields as its UI/runtime source of truth.
 
-`loadWithCredential` returns a `KDNAJudgmentProjection`, not the raw payload.
-The projection contains minimal task-safe sections and prompt text derived from
-authorized `payload.kdnab` content.
+`load` returns a `KDNAContextCapsule`, not the raw payload. Its context follows
+the selected `index`, `compact`, `scenario`, or `full` load profile. The older
+`loadWithCredential` projection API remains available to native UI code, but
+Agent consumption should use the Capsule path.
 
 Swift Core must not define access modes, entitlement profiles, issue codes, or
 fail-closed policy independently from `aikdna/kdna`.
@@ -123,7 +128,7 @@ fail-closed policy independently from `aikdna/kdna`.
 
 ```
 ┌──────────────────────────────────┐
-│        KDNA Core v1 format        │  ← Judgment-asset contract
+│     KDNA Asset Container          │  ← Judgment-asset contract
 ├──────────────────────────────────┤
 │  kdna-core (JS)  │ kdna-core-swift│  ← Core libraries (Apache 2.0)
 ├──────────────────────────────────┤

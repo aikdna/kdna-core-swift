@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import CoreFoundation
 
 public struct KDNALoadEnvironment: Equatable {
     public var hasPassword: Bool
@@ -82,6 +83,114 @@ public struct KDNAJudgmentProjection: Codable, Equatable {
     public let source: KDNALoadPlanSource
 }
 
+public struct KDNAContextCapsuleSignature: Codable, Equatable {
+    public let state: String
+    public let issuer: String?
+}
+
+public struct KDNAContextCapsuleTrace: Codable, Equatable {
+    public let payload_encoding: String
+    public let loaded_by: String
+    public let loaded_at: String
+    public let schema_valid: Bool
+    public let signature_state: String
+    public let profile: String
+}
+
+/// JSON-compatible value used by the cross-language Runtime Capsule contract.
+///
+/// The Capsule context changes shape by load profile (`index`, `compact`,
+/// `scenario`, or `full`), so a single Swift struct would either lose fields or
+/// invent a Swift-only wire shape. This enum preserves the same JSON value tree
+/// emitted by the JavaScript Core while remaining Codable and type-safe at the
+/// boundary.
+public enum KDNAJSONValue: Codable, Equatable {
+    case object([String: KDNAJSONValue])
+    case array([KDNAJSONValue])
+    case string(String)
+    case number(Double)
+    case bool(Bool)
+    case null
+
+    public init(any value: Any) {
+        switch value {
+        case is NSNull:
+            self = .null
+        case let value as Bool:
+            self = .bool(value)
+        case let value as String:
+            self = .string(value)
+        case let value as NSNumber:
+            if CFGetTypeID(value) == CFBooleanGetTypeID() {
+                self = .bool(value.boolValue)
+            } else {
+                self = .number(value.doubleValue)
+            }
+        case let value as [Any]:
+            self = .array(value.map(KDNAJSONValue.init(any:)))
+        case let value as [String: Any]:
+            self = .object(value.mapValues(KDNAJSONValue.init(any:)))
+        default:
+            self = .null
+        }
+    }
+
+    public var objectValue: [String: KDNAJSONValue]? {
+        guard case .object(let value) = self else { return nil }
+        return value
+    }
+
+    public var stringValue: String? {
+        guard case .string(let value) = self else { return nil }
+        return value
+    }
+
+    public var arrayValue: [KDNAJSONValue]? {
+        guard case .array(let value) = self else { return nil }
+        return value
+    }
+
+    public subscript(key: String) -> KDNAJSONValue? {
+        objectValue?[key]
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() { self = .null }
+        else if let value = try? container.decode(Bool.self) { self = .bool(value) }
+        else if let value = try? container.decode(Double.self) { self = .number(value) }
+        else if let value = try? container.decode(String.self) { self = .string(value) }
+        else if let value = try? container.decode([KDNAJSONValue].self) { self = .array(value) }
+        else { self = .object(try container.decode([String: KDNAJSONValue].self)) }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .object(let value): try container.encode(value)
+        case .array(let value): try container.encode(value)
+        case .string(let value): try container.encode(value)
+        case .number(let value): try container.encode(value)
+        case .bool(let value): try container.encode(value)
+        case .null: try container.encodeNil()
+        }
+    }
+}
+
+public struct KDNAContextCapsule: Codable, Equatable {
+    public let type: String
+    public let version: String
+    public let domain: String?
+    public let judgment_version: String?
+    public let asset_digest: String?
+    public let signature: KDNAContextCapsuleSignature
+    public let access: String
+    public let risk_level: String?
+    public let profile: String
+    public let context: KDNAJSONValue
+    public let trace: KDNAContextCapsuleTrace
+}
+
 public enum KDNALoadError: Error, Equatable, LocalizedError {
     case notAuthorized(KDNALoadPlan)
     case invalidPayload(String)
@@ -110,14 +219,26 @@ public enum KDNARuntime {
     ) throws -> KDNAJudgmentProjection {
         try KDNALoadPlanCore.loadWithCredential(assetURL: assetURL, credential: credential)
     }
+
+    public static func load(
+        assetURL: URL,
+        credential: KDNACredential = .none,
+        profile: String = "compact"
+    ) throws -> KDNAContextCapsule {
+        try KDNALoadPlanCore.loadCapsule(
+            assetURL: assetURL,
+            credential: credential,
+            profile: profile
+        )
+    }
 }
 
 public enum KDNALoadPlanCore {
-    public static let v1MimeType = "application/vnd.kdna.asset"
+    public static let mimeType = "application/vnd.kdna.asset"
 
     public static func planLoad(assetURL: URL, environment: KDNALoadEnvironment = KDNALoadEnvironment()) -> KDNALoadPlan {
-        guard let layout = readV1Layout(assetURL: assetURL) else {
-            return invalidPlan(assetURL: assetURL, message: "not a KDNA Core v1 runtime asset")
+        guard let layout = readLayout(assetURL: assetURL) else {
+            return invalidPlan(assetURL: assetURL, message: "not a KDNA runtime asset")
         }
 
         let manifest = layout.manifest
@@ -206,20 +327,9 @@ public enum KDNALoadPlanCore {
         assetURL: URL,
         credential: KDNACredential = .none
     ) throws -> KDNAJudgmentProjection {
-        let environment = KDNALoadEnvironment(
-            hasPassword: credential.password != nil,
-            entitlementStatus: credential.entitlementStatus
-        )
-        let plan = planLoad(assetURL: assetURL, environment: environment)
-        guard plan.can_load_now else {
-            throw KDNALoadError.notAuthorized(plan)
-        }
-        guard let layout = readV1Layout(assetURL: assetURL) else {
-            throw KDNALoadError.invalidPayload("runtime layout could not be read")
-        }
-        guard let payload = try? JSONSerialization.jsonObject(with: layout.payload) as? [String: Any] else {
-            throw KDNALoadError.invalidPayload("payload.kdnab is not a JSON object")
-        }
+        let loaded = try authorizedPayload(assetURL: assetURL, credential: credential)
+        let plan = loaded.plan
+        let payload = loaded.payload
 
         let profile = payload["profile"] as? String
         guard profile == "judgment-profile-v1" else {
@@ -238,7 +348,240 @@ public enum KDNALoadPlanCore {
         )
     }
 
-    private struct V1SourceLayout {
+    public static func loadCapsule(
+        assetURL: URL,
+        credential: KDNACredential = .none,
+        profile: String = "compact"
+    ) throws -> KDNAContextCapsule {
+        let loaded = try authorizedPayload(assetURL: assetURL, credential: credential)
+        let plan = loaded.plan
+        let layout = loaded.layout
+        let context = try profileContent(profile: profile, manifest: layout.manifest, payload: loaded.payload)
+        let checksums = layout.checksums
+        let assetDigest = checksums?["asset_digest"] as? String
+        let creator = layout.manifest["creator"] as? [String: Any]
+        let issuer = creator?["pubkey"] as? String
+        let signatureState = issuer == nil ? "absent" : "not_checked"
+        let formatter = ISO8601DateFormatter()
+
+        return KDNAContextCapsule(
+            type: "kdna.context.capsule",
+            version: "1.0",
+            domain: layout.manifest["name"] as? String ?? layout.manifest["asset_id"] as? String,
+            judgment_version: layout.manifest["judgment_version"] as? String,
+            asset_digest: assetDigest,
+            signature: KDNAContextCapsuleSignature(state: signatureState, issuer: issuer),
+            access: plan.access ?? "public",
+            risk_level: layout.manifest["risk_level"] as? String,
+            profile: profile,
+            context: KDNAJSONValue(any: context),
+            trace: KDNAContextCapsuleTrace(
+                payload_encoding: "cbor",
+                loaded_by: "kdna-core-swift",
+                loaded_at: formatter.string(from: Date()),
+                schema_valid: payloadMatchesSchema(loaded.payload),
+                signature_state: signatureState,
+                profile: profile
+            )
+        )
+    }
+
+    private static func authorizedPayload(
+        assetURL: URL,
+        credential: KDNACredential
+    ) throws -> (plan: KDNALoadPlan, layout: SourceLayout, payload: [String: Any]) {
+        let plan = planLoad(
+            assetURL: assetURL,
+            environment: KDNALoadEnvironment(
+                hasPassword: credential.password != nil,
+                entitlementStatus: credential.entitlementStatus
+            )
+        )
+        guard plan.can_load_now else {
+            throw KDNALoadError.notAuthorized(plan)
+        }
+        guard let layout = readLayout(assetURL: assetURL) else {
+            throw KDNALoadError.invalidPayload("runtime layout could not be read")
+        }
+
+        let payloadData: Data
+        if hasEncryptedPayload(manifest: layout.manifest) {
+            guard let password = credential.password else {
+                throw KDNALoadError.notAuthorized(plan)
+            }
+            do {
+                let envelope = try KDNACBOR.decode(KDNAProtectedEnvelope.self, from: layout.payload)
+                let manifest = KDNAManifest(
+                    name: layout.manifest["name"] as? String
+                        ?? layout.manifest["asset_id"] as? String
+                        ?? "",
+                    version: layout.manifest["version"] as? String ?? "0.0.0",
+                    access: layout.manifest["access"] as? String
+                )
+                payloadData = try decryptProtectedEntry(
+                    envelope: envelope,
+                    entryName: "payload.kdnab",
+                    manifest: manifest,
+                    password: password
+                )
+            } catch {
+                throw KDNALoadError.invalidPayload("encrypted payload could not be decrypted")
+            }
+        } else {
+            payloadData = layout.payload
+        }
+
+        let payload: [String: Any]
+        do {
+            payload = try KDNACBOR.decodeObject(payloadData)
+        } catch {
+            throw KDNALoadError.invalidPayload("payload.kdnab is not a valid CBOR map")
+        }
+        guard (payload["profile"] as? String) == "judgment-profile-v1" else {
+            throw KDNALoadError.unsupportedPayloadProfile(payload["profile"] as? String)
+        }
+        guard payloadMatchesSchema(payload) else {
+            throw KDNALoadError.invalidPayload("payload.kdnab does not match judgment-profile-v1")
+        }
+        return (plan, layout, payload)
+    }
+
+    private static func payloadMatchesSchema(_ payload: [String: Any]) -> Bool {
+        guard payload["profile"] as? String == "judgment-profile-v1",
+              let core = payload["core"] as? [String: Any],
+              core["highest_question"] is String,
+              core["axioms"] is [Any] else {
+            return false
+        }
+        for key in ["boundaries"] where core[key] != nil && !(core[key] is [Any]) { return false }
+        if core["risk_model"] != nil && !(core["risk_model"] is [String: Any]) { return false }
+        for key in ["patterns", "scenarios", "cases"] where payload[key] != nil && !(payload[key] is [Any]) { return false }
+
+        if let reasoning = payload["reasoning"] {
+            guard let object = reasoning as? [String: Any] else { return false }
+            if let selfCheck = object["self_check"] {
+                guard let items = selfCheck as? [Any] else { return false }
+                for item in items {
+                    if item is String { continue }
+                    guard let card = item as? [String: Any], card["question"] is String else { return false }
+                }
+            }
+            if let failureModes = object["failure_modes"] {
+                guard let items = failureModes as? [Any], items.allSatisfy({ $0 is [String: Any] }) else { return false }
+            }
+        }
+        if let evolution = payload["evolution"] {
+            guard let object = evolution as? [String: Any] else { return false }
+            if let changelog = object["changelog"] {
+                guard let items = changelog as? [Any], items.allSatisfy({ $0 is [String: Any] }) else { return false }
+            }
+            if let notes = object["version_notes"] {
+                guard let items = notes as? [Any], items.allSatisfy({ $0 is String }) else { return false }
+            }
+        }
+        return true
+    }
+
+    private static func profileContent(
+        profile: String,
+        manifest: [String: Any],
+        payload: [String: Any]
+    ) throws -> [String: Any] {
+        switch profile {
+        case "index":
+            let profileNames = ((manifest["load_contract"] as? [String: Any])?["profiles"] as? [String: Any])?.keys.sorted() ?? []
+            let compact = (((manifest["load_contract"] as? [String: Any])?["profiles"] as? [String: Any])?["compact"] as? [String: Any])
+            return [
+                "asset_id": manifest["asset_id"] ?? NSNull(),
+                "asset_uid": manifest["asset_uid"] ?? NSNull(),
+                "title": manifest["title"] ?? NSNull(),
+                "version": manifest["version"] ?? NSNull(),
+                "judgment_version": manifest["judgment_version"] ?? NSNull(),
+                "asset_type": manifest["asset_type"] ?? NSNull(),
+                "summary": manifest["summary"] ?? NSNull(),
+                "language": manifest["language"] ?? NSNull(),
+                "keywords": manifest["keywords"] ?? [],
+                "profiles_available": profileNames,
+                "max_tokens_hint": compact?["max_tokens_hint"] ?? NSNull()
+            ]
+        case "compact":
+            let core = payload["core"] as? [String: Any] ?? [:]
+            let reasoning = payload["reasoning"] as? [String: Any] ?? [:]
+            return [
+                "highest_question": core["highest_question"] ?? NSNull(),
+                "axioms": (core["axioms"] as? [Any] ?? []).compactMap(normalizeCompactAxiom),
+                "boundaries": normalizeCompactList(core["boundaries"]),
+                "self_checks": normalizeCompactList(reasoning["self_checks"]),
+                "failure_modes": normalizeCompactList(reasoning["failure_modes"]),
+                "patterns": Array(normalizeCompactList(payload["patterns"]).prefix(3))
+            ]
+        case "scenario":
+            return ["scenarios": payload["scenarios"] as? [Any] ?? []]
+        case "full":
+            return ["manifest": manifest, "payload": payload]
+        default:
+            throw KDNALoadError.invalidPayload("unknown load profile: \(profile)")
+        }
+    }
+
+    private static func normalizeCompactAxiom(_ value: Any) -> [String: Any]? {
+        if let text = value as? String, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return [
+                "type": "axiom_applicability",
+                "statement": text,
+                "one_sentence": text,
+                "applies_when": [],
+                "does_not_apply_when": [],
+                "failure_risk": NSNull()
+            ]
+        }
+        guard let axiom = value as? [String: Any] else { return nil }
+        let statement = axiom["statement"] as? String
+            ?? axiom["one_sentence"] as? String
+            ?? axiom["full_statement"] as? String
+            ?? axiom["id"] as? String
+        guard let statement, !statement.isEmpty else { return nil }
+        let declaredOneSentence = axiom["one_sentence"] as? String
+        let fullStatement = axiom["full_statement"] as? String
+        let oneSentence: String
+        if let declaredOneSentence, !declaredOneSentence.hasPrefix("<TBD") {
+            oneSentence = declaredOneSentence
+        } else if let fullStatement, !fullStatement.isEmpty {
+            oneSentence = fullStatement.count > 120 ? String(fullStatement.prefix(120)) + "…" : fullStatement
+        } else {
+            oneSentence = statement
+        }
+        return [
+            "type": "axiom_applicability",
+            "id": axiom["id"] ?? NSNull(),
+            "statement": statement,
+            "one_sentence": oneSentence,
+            "applies_when": normalizeTextList(axiom["applies_when"]),
+            "does_not_apply_when": normalizeTextList(axiom["does_not_apply_when"]),
+            "failure_risk": axiom["failure_risk"] ?? NSNull()
+        ]
+    }
+
+    private static func normalizeCompactList(_ value: Any?) -> [Any] {
+        (value as? [Any] ?? []).compactMap { item in
+            if let text = item as? String { return ["type": "text", "text": text] }
+            if item is [String: Any] { return item }
+            return nil
+        }
+    }
+
+    private static func normalizeTextList(_ value: Any?) -> [String] {
+        if let items = value as? [Any] {
+            return items.compactMap { ($0 as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        }
+        if let item = value as? String {
+            let trimmed = item.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? [] : [trimmed]
+        }
+        return []
+    }
+
+    private struct SourceLayout {
         let sourceKind: String
         let manifest: [String: Any]
         let payload: Data
@@ -247,11 +590,11 @@ public enum KDNALoadPlanCore {
         let rawMimeType: Data
     }
 
-    private static func readV1Layout(assetURL: URL) -> V1SourceLayout? {
+    private static func readLayout(assetURL: URL) -> SourceLayout? {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: assetURL.path, isDirectory: &isDirectory),
               isDirectory.boolValue else {
-            return readV1ZipLayout(assetURL: assetURL)
+            return readZipLayout(assetURL: assetURL)
         }
 
         let manifestURL = assetURL.appendingPathComponent("kdna.json")
@@ -273,7 +616,7 @@ public enum KDNALoadPlanCore {
             checksums = nil
         }
 
-        return V1SourceLayout(
+        return SourceLayout(
             sourceKind: "dir",
             manifest: manifest,
             payload: payloadData,
@@ -283,7 +626,7 @@ public enum KDNALoadPlanCore {
         )
     }
 
-    private static func readV1ZipLayout(assetURL: URL) -> V1SourceLayout? {
+    private static func readZipLayout(assetURL: URL) -> SourceLayout? {
         let reader = KDNAAssetReader()
         guard let asset = try? reader.open(url: assetURL),
               let mimeData = try? reader.readEntry(asset: asset, name: "mimetype"),
@@ -300,7 +643,7 @@ public enum KDNALoadPlanCore {
             checksums = nil
         }
 
-        return V1SourceLayout(
+        return SourceLayout(
             sourceKind: "file",
             manifest: manifest,
             payload: payloadData,
@@ -334,7 +677,7 @@ public enum KDNALoadPlanCore {
         )
     }
 
-    private static func validate(layout: V1SourceLayout) -> (result: KDNALoadPlanChecks, problems: [String]) {
+    private static func validate(layout: SourceLayout) -> (result: KDNALoadPlanChecks, problems: [String]) {
         var result = KDNALoadPlanChecks(
             format_valid: true,
             schema_valid: true,
@@ -345,14 +688,14 @@ public enum KDNALoadPlanCore {
         )
         var problems: [String] = []
 
-        if String(data: layout.rawMimeType, encoding: .utf8) != v1MimeType {
+        if String(data: layout.rawMimeType, encoding: .utf8) != mimeType {
             result.format_valid = false
-            problems.append("format: mimetype is not \(v1MimeType)")
+            problems.append("format: mimetype is not \(mimeType)")
         }
 
-        if (try? JSONSerialization.jsonObject(with: layout.payload)) == nil {
+        if (try? KDNACBOR.decodeObject(layout.payload)) == nil {
             result.payload_valid = false
-            problems.append("payload: not valid JSON")
+            problems.append("payload: not valid CBOR")
         }
 
         if let checksums = layout.checksums {
@@ -450,7 +793,7 @@ public enum KDNALoadPlanCore {
             return profile
         }
         if let encryption = manifest["encryption"] as? [String: Any],
-           encryption["profile"] as? String == "kdna-password-protected-v1" {
+           (encryption["profile"] as? String)?.hasPrefix("kdna-password-protected-v1") == true {
             return "password"
         }
         if manifest["access"] as? String == "protected" {

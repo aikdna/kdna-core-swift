@@ -219,7 +219,7 @@ public func decryptProtectedEntry(
 
 public func createPasswordDecryptEntry(password: String) -> KDNADecryptEntry {
     return { asset, manifest, entryName, ciphertext in
-        let envelope = try JSONDecoder().decode(KDNAProtectedEnvelope.self, from: ciphertext)
+        let envelope = try KDNACBOR.decode(KDNAProtectedEnvelope.self, from: ciphertext)
         return try decryptProtectedEntry(
             envelope: envelope,
             entryName: entryName,
@@ -231,7 +231,7 @@ public func createPasswordDecryptEntry(password: String) -> KDNADecryptEntry {
 
 public func createRecoveryDecryptEntry(recoveryCode: String) -> KDNADecryptEntry {
     return { asset, manifest, entryName, ciphertext in
-        let envelope = try JSONDecoder().decode(KDNAProtectedEnvelope.self, from: ciphertext)
+        let envelope = try KDNACBOR.decode(KDNAProtectedEnvelope.self, from: ciphertext)
         return try decryptProtectedEntry(
             envelope: envelope,
             entryName: entryName,
