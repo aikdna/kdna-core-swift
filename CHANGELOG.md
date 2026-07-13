@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 (2026-07-13)
 
 - Add RFC-0019 account/device external key grant parsing and verification.
 - Verify Ed25519 grant signatures and all account/device/asset bindings, unwrap

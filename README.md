@@ -27,7 +27,7 @@ raw manifest fields.
 Add to your Package.swift:
 
 ```
-.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.3.1")
+.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.4.0")
 ```
 
 Then add `KDNACore` to your target dependencies:
