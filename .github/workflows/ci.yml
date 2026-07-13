@@ -12,6 +12,8 @@ jobs:
       KDNA_CONFORMANCE_COMMIT: d00ca68787780d9a6698a22c0caa826af16691d4
     steps:
       - uses: actions/checkout@v7
+      - name: Audit public surface
+        run: python3 scripts/check_public_surface.py
       - name: Checkout fixed kdna conformance fixtures
         run: |
           cd ..

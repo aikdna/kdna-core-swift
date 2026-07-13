@@ -1,7 +1,7 @@
 //  KDNACore — Cryptographic verification utilities
 //
 //  SHA-256 digest, Ed25519 signature verification, hex encoding/decoding.
-//  Previously duplicated in KDNaStudio and KDNAChat app Services/.
+//  Previously duplicated across native application service layers.
 
 import Foundation
 import CryptoKit
