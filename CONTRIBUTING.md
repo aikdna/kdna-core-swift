@@ -1,6 +1,6 @@
 # Contributing to kdna-core-swift
 
-This is the Swift implementation of the KDNA Core v1 spec. It mirrors the
+This is the Swift implementation of the KDNA Core specification. It mirrors the
 JavaScript `@aikdna/kdna-core` package, focusing on macOS-first consumption
 from the Studio Swift app and other Swift-based tools.
 
