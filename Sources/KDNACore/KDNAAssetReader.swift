@@ -17,8 +17,7 @@ public struct KDNAAsset {
 }
 
 public class KDNAAssetReader {
-    public static let legacyMediaType = "application/vnd.aikdna.kdna+zip"
-    public static let coreV1MediaType = "application/vnd.kdna.asset"
+    public static let kdnaMediaType = "application/vnd.kdna.asset"
 
     public init() {}
 
@@ -120,7 +119,7 @@ public class KDNAAssetReader {
     public func verifyMediaType(asset: KDNAAsset) -> Bool {
         guard let data = try? readEntry(asset: asset, name: "mimetype") else { return false }
         let mediaType = String(data: data, encoding: .utf8)
-        return mediaType == Self.legacyMediaType || mediaType == Self.coreV1MediaType
+        return mediaType == Self.kdnaMediaType
     }
 
     public func mediaType(asset: KDNAAsset) -> String? {
@@ -149,12 +148,7 @@ public class KDNAAssetReader {
 
         if !hasEntry(asset: asset, name: "kdna.json") { errors.append("required entry missing: kdna.json") }
         if !verifyMediaType(asset: asset) { errors.append("invalid or missing mimetype") }
-        if mediaType(asset: asset) == Self.coreV1MediaType {
-            if !hasEntry(asset: asset, name: "payload.kdnab") { errors.append("required entry missing: payload.kdnab") }
-        } else {
-            if !hasEntry(asset: asset, name: "KDNA_Core.json") { errors.append("required entry missing: KDNA_Core.json") }
-            if !hasEntry(asset: asset, name: "KDNA_Patterns.json") { errors.append("required entry missing: KDNA_Patterns.json") }
-        }
+        if !hasEntry(asset: asset, name: "payload.kdnab") { errors.append("required entry missing: payload.kdnab") }
 
         if requireDecryption {
             if let manifest = try? decodeManifest(asset: asset),

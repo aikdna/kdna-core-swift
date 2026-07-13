@@ -29,7 +29,7 @@ public class KDNALicensedEntryDecryptor {
 
     /// Decrypt a single licensed entry.
     public func decrypt(entryName: String, envelopeData: Data, manifest: KDNAManifest) throws -> Data {
-        let envelope = try JSONDecoder().decode(KDNALicensedEntryEnvelope.self, from: envelopeData)
+        let envelope = try KDNACBOR.decode(KDNALicensedEntryEnvelope.self, from: envelopeData)
 
         switch envelope.profile {
         case "kdna-licensed-entry-v1":
