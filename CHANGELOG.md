@@ -8,7 +8,9 @@
   `schema_valid` trace.
 - Match full AJV date-time and URI format boundaries through a Node-generated
   shared fixture, including lowercase/whitespace RFC 3339 forms and invalid
-  Foundation URL edge cases.
+  Foundation URL edge cases. Use the exact ECMAScript whitespace set and an
+  ASCII-only RFC 3986 URI boundary so ICU Unicode digits and case folding
+  cannot create Swift-only valid values.
 - Preserve frozen Capsule 1 extensibility at the top level and in trace while
   retaining strict decoding for its closed signature object.
 - Support generic digest evidence whose unavailable observations carry a null

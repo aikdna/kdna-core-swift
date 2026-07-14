@@ -109,8 +109,9 @@ LoadPlan validates `kdna.json`, decrypted `payload.kdnab`, and referenced
 pinned to `aikdna/kdna@f2f9ac4`. Resource SHA-256 locks make missing or drifted
 schema files fail closed. Date-time and URI formats follow the same full
 `ajv-formats` behavior as Node rather than Foundation's more permissive
-parsers. Encrypted payload structure is validated after authorized in-memory
-decryption, before a Runtime Capsule can be emitted.
+parsers, including ECMAScript's exact whitespace set and ASCII-only RFC 3986
+URI matching. Encrypted payload structure is validated after authorized
+in-memory decryption, before a Runtime Capsule can be emitted.
 
 ### Digest vocabulary
 

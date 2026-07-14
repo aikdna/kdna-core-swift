@@ -177,6 +177,43 @@ final class SchemaValidationTests: XCTestCase {
         XCTAssertFalse(contractPlan.checks.schema_valid)
         XCTAssertFalse(contractPlan.checks.load_contract_valid)
         XCTAssertFalse(contractPlan.can_load_now)
+
+        for invalidURI in [
+            "https://example.com:１２/path",
+            "https://example.com:١٢/path",
+            "Kttps://example.com",
+            "https://example.Kom",
+            "ſttps://example.com",
+        ] {
+            let bytes = try mutatedGolden { manifest, _ in
+                manifest["asset_uid"] = invalidURI
+            }
+            let plan = KDNALoadPlanCore.planLoad(assetData: bytes)
+            XCTAssertFalse(plan.checks.schema_valid, "Invalid AJV URI was schema-valid: \(invalidURI)")
+            XCTAssertFalse(plan.can_load_now)
+        }
+
+        for invalidDate in [
+            "2026-07-15\u{0085}12:34:56Z",
+            "2026-07-15ſ12:34:56Z",
+        ] {
+            let bytes = try mutatedGolden { manifest, _ in
+                manifest["created_at"] = invalidDate
+            }
+            let plan = KDNALoadPlanCore.planLoad(assetData: bytes)
+            XCTAssertFalse(plan.checks.schema_valid, "Invalid AJV date-time was schema-valid.")
+            XCTAssertFalse(plan.can_load_now)
+        }
+
+        let validFEFFDateBytes = try mutatedGolden { manifest, _ in
+            manifest["created_at"] = "2026-07-15\u{FEFF}12:34:56Z"
+            manifest["updated_at"] = "2026-07-15\u{FEFF}12:34:56Z"
+        }
+        let validFEFFPlan = KDNALoadPlanCore.planLoad(assetData: validFEFFDateBytes)
+        XCTAssertTrue(validFEFFPlan.checks.schema_valid, validFEFFPlan.issues.map(\.message).joined(separator: "\n"))
+        XCTAssertTrue(validFEFFPlan.can_load_now)
+        let validFEFFCapsule = try KDNACapsuleV2.load(assetData: validFEFFDateBytes)
+        XCTAssertTrue(validFEFFCapsule.trace.schema_valid)
     }
 
     func testGenericDigestEvidenceRoundTripsUnavailableNullObservation() throws {

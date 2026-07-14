@@ -19,6 +19,10 @@ const candidates = {
     '2026-07-15T12:34:56',
     '2026-07-15T12:34:56Ztrailing',
     '2026-07-15T24:00:00Z',
+    '2026-07-15\u008512:34:56Z',
+    '2026-07-15\uFEFF12:34:56Z',
+    '2026-07-15ſ12:34:56Z',
+    '2026-07-15K12:34:56Z',
   ],
   uri: [
     'urn:uuid:00190000-0000-4000-8000-000000000001',
@@ -29,6 +33,11 @@ const candidates = {
     'relative/path',
     'https://exa mple.com',
     'urn:%zz',
+    'https://example.com:１２/path',
+    'https://example.com:١٢/path',
+    'Kttps://example.com',
+    'https://example.Kom',
+    'ſttps://example.com',
   ],
 };
 
@@ -43,4 +52,7 @@ for (const [format, values] of Object.entries(candidates)) {
   const validate = ajv.compile({ type: 'string', format });
   output[format] = values.map((value) => ({ value, valid: validate(value) }));
 }
-process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+const rendered = JSON.stringify(output, null, 2)
+  .replaceAll('\u0085', '\\u0085')
+  .replaceAll('\uFEFF', '\\uFEFF');
+process.stdout.write(`${rendered}\n`);

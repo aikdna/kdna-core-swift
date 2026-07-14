@@ -81,28 +81,50 @@ enum KDNACanonicalSchemas {
 enum KDNAJSONFormats {
     /// Matches the full `ajv-formats` RFC 3339 date-time validator used by the
     /// canonical Node schema tests, including its case-insensitive T/Z and
-    /// single-whitespace separator behavior.
+    /// exact ECMAScript whitespace separator behavior. Foundation/ICU `\s`
+    /// differs from JavaScript (notably for U+0085 and U+FEFF), so separator
+    /// recognition is deliberately scalar-based.
     static func isDateTime(_ value: String) -> Bool {
-        guard let separator = try? NSRegularExpression(pattern: #"t|\s"#, options: [.caseInsensitive]) else {
-            return false
+        let scalars = value.unicodeScalars
+        var separatorIndex: String.UnicodeScalarView.Index?
+        for index in scalars.indices {
+            let scalar = scalars[index]
+            guard scalar == "T" || scalar == "t" || isECMAScriptWhitespace(scalar) else { continue }
+            guard separatorIndex == nil else { return false }
+            separatorIndex = index
         }
-        let fullRange = NSRange(value.startIndex..<value.endIndex, in: value)
-        let matches = separator.matches(in: value, range: fullRange)
-        guard matches.count == 1,
-              let range = Range(matches[0].range, in: value) else { return false }
-        return isDate(String(value[..<range.lowerBound])) && isTime(String(value[range.upperBound...]))
+        guard let separatorIndex else { return false }
+        let timeStart = scalars.index(after: separatorIndex)
+        return isDate(String(scalars[..<separatorIndex])) &&
+            isTime(String(scalars[timeStart...]))
     }
 
     /// Matches the full `ajv-formats` URI expression rather than Foundation's
     /// permissive URL parser. AJV additionally requires at least `/` or `:`.
     static func isURI(_ value: String) -> Bool {
+        // The canonical RFC 3986 expression is ASCII-only. ICU's
+        // case-insensitive matching and Unicode digit classes otherwise admit
+        // values that ECMAScript/AJV rejects (for example K or full-width
+        // digits), so reject non-ASCII scalars before entering the regex.
+        guard value.unicodeScalars.allSatisfy({ $0.value <= 0x7F }) else { return false }
         guard value.contains("/") || value.contains(":") else { return false }
-        let pattern = #"^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)(?:\?(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?$"#
+        let pattern = #"^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|(?:[a-z0-9\-._~!$&'()*+,;=]|%[0-9a-f]{2})*)(?::[0-9]*)?(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)(?:\?(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?$"#
         guard let expression = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
             return false
         }
         let range = NSRange(value.startIndex..<value.endIndex, in: value)
         return expression.firstMatch(in: value, range: range)?.range == range
+    }
+
+    private static func isECMAScriptWhitespace(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.value {
+        case 0x0009...0x000D, 0x0020, 0x00A0, 0x1680,
+             0x2000...0x200A, 0x2028, 0x2029, 0x202F, 0x205F,
+             0x3000, 0xFEFF:
+            return true
+        default:
+            return false
+        }
     }
 
     private static func isDate(_ value: String) -> Bool {

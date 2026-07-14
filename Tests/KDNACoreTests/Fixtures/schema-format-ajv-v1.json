@@ -34,6 +34,22 @@
     {
       "value": "2026-07-15T24:00:00Z",
       "valid": false
+    },
+    {
+      "value": "2026-07-15\u008512:34:56Z",
+      "valid": false
+    },
+    {
+      "value": "2026-07-15\uFEFF12:34:56Z",
+      "valid": true
+    },
+    {
+      "value": "2026-07-15ſ12:34:56Z",
+      "valid": false
+    },
+    {
+      "value": "2026-07-15K12:34:56Z",
+      "valid": false
     }
   ],
   "uri": [
@@ -67,6 +83,26 @@
     },
     {
       "value": "urn:%zz",
+      "valid": false
+    },
+    {
+      "value": "https://example.com:１２/path",
+      "valid": false
+    },
+    {
+      "value": "https://example.com:١٢/path",
+      "valid": false
+    },
+    {
+      "value": "Kttps://example.com",
+      "valid": false
+    },
+    {
+      "value": "https://example.Kom",
+      "valid": false
+    },
+    {
+      "value": "ſttps://example.com",
       "valid": false
     }
   ]
