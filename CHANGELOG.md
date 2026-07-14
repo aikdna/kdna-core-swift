@@ -8,6 +8,15 @@
 - Match the JavaScript Capsule 2 golden bytes and A/C/E/P values, preserve
   legacy domain/access/extensions only as adapter metadata, and fail closed on
   independent digest mismatches.
+- Make direct Capsule 1 output byte-for-byte equivalent to the Capsule 2
+  adapter, including the shared `kdna-core` loader identifier and the original
+  `open`, `protected`, or `runtime` access spelling on the frozen v1 wire.
+- Reject unknown Capsule properties and missing required-but-nullable fields
+  during decoding, including nested signature, trace, digest, evidence,
+  compatibility, and extension objects.
+- Make the public Capsule and LoadPlan value graph `Sendable`, and keep the
+  test suite clean under Swift 6 complete concurrency checking with warnings
+  as errors.
 - Order content-tree entry paths by UTF-8 bytes while retaining RFC 8785 UTF-16
   object-key ordering, and compute Capsule 1 E even without checksums.json.
 - Hash non-JSON content-digest entries as their original bytes and add a

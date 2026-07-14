@@ -89,6 +89,17 @@ SHA-256 over strict RFC 8785 JCS bytes of the delivered Capsule and is not
 embedded in the Capsule itself. `KDNAJCS` rejects non-finite numbers rather
 than converting them to `null`.
 
+Direct Capsule 1 loading and Capsule 2 adaptation emit the same frozen wire
+shape. Capsule 1 preserves a manifest's legacy `open`, `protected`, or
+`runtime` access spelling, while LoadPlan and Capsule 2 use the canonical
+`public`, `licensed`, or `remote` value for policy decisions. Its trace uses
+the cross-language loader identifier `kdna-core`.
+
+All public Capsule value types conform to `Sendable`. Decoding Capsule 1 or 2
+is fail closed: required-but-nullable fields must be present, unknown object
+properties are rejected, and nested trace, signature, digest, compatibility,
+and extension values are validated before a Capsule value is returned.
+
 ### Digest vocabulary
 
 - `KDNAAsset.assetDigest` is the SHA-256 digest of the complete `.kdna` file
@@ -129,6 +140,7 @@ and never returns a value matching the `sha256:` digest shape on invalid input.
 | `KDNADomainValidator.swift` | Structural lint, cross-file validation, ID uniqueness |
 | `KDNAExternalKeyGrant.swift` | RFC-0019 signature/binding verification, X25519 unwrap, and in-memory decryption |
 | `KDNACapsuleV2.swift` | Opt-in A/C/E evidence, strict RFC 8785 JCS/P, Capsule 2 model, and v2-to-v1 adapter |
+| `KDNAStrictCodable.swift` | Shared fail-closed Capsule decoding helpers |
 | `KDNJudgmentPipeline.swift` | Pre-filtering, system prompt construction, post-validation of agent outputs |
 | `KDNARouter.swift` | **7-State Domain Router** — full routing pipeline (Intent Gate → Negative Match → Domain Fit → Trust Gate → Ambiguity Gate) |
 | `KDNAComposer.swift` | **Multi-Domain Composer** — combines primary + constraint domains with conflict detection |

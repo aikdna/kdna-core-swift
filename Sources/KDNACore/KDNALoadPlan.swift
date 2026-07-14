@@ -14,7 +14,7 @@ public struct KDNALoadEnvironment: Equatable {
     }
 }
 
-public struct KDNALoadPlanAsset: Codable, Equatable {
+public struct KDNALoadPlanAsset: Codable, Equatable, Sendable {
     public let asset_id: String?
     public let asset_uid: String?
     public let title: String?
@@ -22,7 +22,7 @@ public struct KDNALoadPlanAsset: Codable, Equatable {
     public let judgment_version: String?
 }
 
-public struct KDNALoadPlanChecks: Codable, Equatable {
+public struct KDNALoadPlanChecks: Codable, Equatable, Sendable {
     public var format_valid: Bool
     public var schema_valid: Bool
     public var payload_valid: Bool
@@ -31,18 +31,18 @@ public struct KDNALoadPlanChecks: Codable, Equatable {
     public var overall_valid: Bool
 }
 
-public struct KDNALoadPlanIssue: Codable, Equatable {
+public struct KDNALoadPlanIssue: Codable, Equatable, Sendable {
     public let code: String
     public let severity: String
     public let message: String
 }
 
-public struct KDNALoadPlanSource: Codable, Equatable {
+public struct KDNALoadPlanSource: Codable, Equatable, Sendable {
     public let kind: String?
     public let path: String
 }
 
-public struct KDNALoadPlan: Codable, Equatable {
+public struct KDNALoadPlan: Codable, Equatable, Sendable {
     public let kdna_version: String?
     public let asset: KDNALoadPlanAsset
     public var access: String?
@@ -68,7 +68,7 @@ public struct KDNACredential: Equatable {
         self.externalAuthorization = externalAuthorization
     }
 
-    public static let none = KDNACredential()
+    public static var none: KDNACredential { KDNACredential() }
 }
 
 public struct KDNAProjectionSection: Codable, Equatable {
@@ -87,18 +87,95 @@ public struct KDNAJudgmentProjection: Codable, Equatable {
     public let source: KDNALoadPlanSource
 }
 
-public struct KDNAContextCapsuleSignature: Codable, Equatable {
+public struct KDNAContextCapsuleSignature: Codable, Equatable, Sendable {
     public let state: String
     public let issuer: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case state, issuer
+    }
+
+    public init(state: String, issuer: String? = nil) {
+        self.state = state
+        self.issuer = issuer
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: ["state", "issuer"],
+            type: "Capsule signature"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        state = try container.decode(String.self, forKey: .state)
+        issuer = try container.kdnaDecodeOptionalNonNull(String.self, forKey: .issuer)
+        try kdnaRequire(
+            ["verified", "not_checked", "absent"].contains(state),
+            from: decoder,
+            "Capsule signature state is invalid."
+        )
+        try kdnaRequire(issuer == nil || issuer?.isEmpty == false, from: decoder, "Capsule issuer is empty.")
+    }
 }
 
-public struct KDNAContextCapsuleTrace: Codable, Equatable {
+public struct KDNAContextCapsuleTrace: Codable, Equatable, Sendable {
     public let payload_encoding: String
     public let loaded_by: String
     public let loaded_at: String
     public let schema_valid: Bool
     public let signature_state: String
     public let profile: String
+
+    private enum CodingKeys: String, CodingKey {
+        case payload_encoding, loaded_by, loaded_at, schema_valid, signature_state, profile
+    }
+
+    public init(
+        payload_encoding: String,
+        loaded_by: String,
+        loaded_at: String,
+        schema_valid: Bool,
+        signature_state: String,
+        profile: String
+    ) {
+        self.payload_encoding = payload_encoding
+        self.loaded_by = loaded_by
+        self.loaded_at = loaded_at
+        self.schema_valid = schema_valid
+        self.signature_state = signature_state
+        self.profile = profile
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: [
+                "payload_encoding", "loaded_by", "loaded_at", "schema_valid",
+                "signature_state", "profile",
+            ],
+            type: "Capsule 1 trace"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        payload_encoding = try container.decode(String.self, forKey: .payload_encoding)
+        loaded_by = try container.decode(String.self, forKey: .loaded_by)
+        loaded_at = try container.decode(String.self, forKey: .loaded_at)
+        schema_valid = try container.decode(Bool.self, forKey: .schema_valid)
+        signature_state = try container.decode(String.self, forKey: .signature_state)
+        profile = try container.decode(String.self, forKey: .profile)
+        try kdnaRequire(payload_encoding == "cbor", from: decoder, "Capsule payload encoding is invalid.")
+        try kdnaRequire(loaded_by == "kdna-core", from: decoder, "Capsule loaded_by is invalid.")
+        try kdnaRequire(kdnaIsISODate(loaded_at), from: decoder, "Capsule loaded_at is invalid.")
+        try kdnaRequire(
+            ["verified", "not_checked", "absent"].contains(signature_state),
+            from: decoder,
+            "Capsule trace signature state is invalid."
+        )
+        try kdnaRequire(
+            ["index", "compact", "scenario", "full"].contains(profile),
+            from: decoder,
+            "Capsule trace profile is invalid."
+        )
+    }
 }
 
 /// JSON-compatible value used by the cross-language Runtime Capsule contract.
@@ -108,7 +185,7 @@ public struct KDNAContextCapsuleTrace: Codable, Equatable {
 /// invent a Swift-only wire shape. This enum preserves the same JSON value tree
 /// emitted by the JavaScript Core while remaining Codable and type-safe at the
 /// boundary.
-public enum KDNAJSONValue: Codable, Equatable {
+public enum KDNAJSONValue: Codable, Equatable, Sendable {
     case object([String: KDNAJSONValue])
     case array([KDNAJSONValue])
     case string(String)
@@ -181,7 +258,7 @@ public enum KDNAJSONValue: Codable, Equatable {
     }
 }
 
-public struct KDNAContextCapsule: Codable, Equatable {
+public struct KDNAContextCapsule: Codable, Equatable, Sendable {
     public let type: String
     public let version: String
     public let domain: String?
@@ -259,6 +336,88 @@ public struct KDNAContextCapsule: Codable, Equatable {
         try container.encodeIfPresent(inheritance_applied, forKey: .inheritance_applied)
         try container.encodeIfPresent(resolved_dependencies, forKey: .resolved_dependencies)
         try container.encodeIfPresent(rag_isolation_policy, forKey: .rag_isolation_policy)
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: [
+                "type", "version", "domain", "judgment_version", "asset_digest",
+                "signature", "access", "risk_level", "profile", "context", "trace",
+                "extends_chain", "inheritance_applied", "resolved_dependencies",
+                "rag_isolation_policy",
+            ],
+            type: "Capsule 1"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decode(String.self, forKey: .type)
+        version = try container.decode(String.self, forKey: .version)
+        domain = try container.kdnaDecodeRequiredNullable(String.self, forKey: .domain)
+        judgment_version = try container.kdnaDecodeRequiredNullable(
+            String.self,
+            forKey: .judgment_version
+        )
+        asset_digest = try container.kdnaDecodeRequiredNullable(String.self, forKey: .asset_digest)
+        signature = try container.decode(KDNAContextCapsuleSignature.self, forKey: .signature)
+        access = try container.decode(String.self, forKey: .access)
+        risk_level = try container.kdnaDecodeRequiredNullable(String.self, forKey: .risk_level)
+        profile = try container.decode(String.self, forKey: .profile)
+        context = try container.decode(KDNAJSONValue.self, forKey: .context)
+        trace = try container.decode(KDNAContextCapsuleTrace.self, forKey: .trace)
+        extends_chain = try container.kdnaDecodeOptionalNonNull(
+            KDNAJSONValue.self,
+            forKey: .extends_chain
+        )
+        inheritance_applied = try container.kdnaDecodeOptionalNonNull(
+            Bool.self,
+            forKey: .inheritance_applied
+        )
+        resolved_dependencies = try container.kdnaDecodeOptionalNonNull(
+            KDNAJSONValue.self,
+            forKey: .resolved_dependencies
+        )
+        rag_isolation_policy = try container.kdnaDecodeOptionalNonNull(
+            KDNAJSONValue.self,
+            forKey: .rag_isolation_policy
+        )
+
+        try kdnaRequire(type == "kdna.context.capsule", from: decoder, "Capsule 1 type is invalid.")
+        try kdnaRequire(version == "1.0", from: decoder, "Capsule 1 version is invalid.")
+        if let asset_digest {
+            try kdnaRequire(
+                kdnaMatches(asset_digest, pattern: "^sha256:[0-9a-f]{64}$"),
+                from: decoder,
+                "Capsule 1 asset_digest is invalid."
+            )
+        }
+        try kdnaRequire(
+            ["index", "compact", "scenario", "full"].contains(profile),
+            from: decoder,
+            "Capsule 1 profile is invalid."
+        )
+        try kdnaRequire(context.objectValue != nil, from: decoder, "Capsule 1 context must be an object.")
+        try kdnaRequire(
+            signature.state == trace.signature_state && profile == trace.profile,
+            from: decoder,
+            "Capsule 1 trace is inconsistent."
+        )
+        if let extends_chain {
+            try kdnaRequire(extends_chain.arrayValue != nil, from: decoder, "extends_chain must be an array.")
+        }
+        if let resolved_dependencies {
+            try kdnaRequire(
+                resolved_dependencies.arrayValue != nil,
+                from: decoder,
+                "resolved_dependencies must be an array."
+            )
+        }
+        if let rag_isolation_policy {
+            try kdnaRequire(
+                rag_isolation_policy.objectValue != nil,
+                from: decoder,
+                "rag_isolation_policy must be an object."
+            )
+        }
     }
 }
 
@@ -474,7 +633,6 @@ public enum KDNALoadPlanCore {
             sourcePath: sourcePath,
             credential: credential
         )
-        let plan = loaded.plan
         let layout = loaded.layout
         let context = try profileContent(profile: profile, manifest: layout.manifest, payload: loaded.payload)
         // Capsule 1.0 keeps its historical `asset_digest` wire field. Its
@@ -496,13 +654,15 @@ public enum KDNALoadPlanCore {
             judgment_version: layout.manifest["judgment_version"] as? String,
             asset_digest: assetDigest,
             signature: KDNAContextCapsuleSignature(state: signatureState, issuer: issuer),
-            access: plan.access ?? "public",
+            // Capsule 1 wire compatibility preserves the manifest spelling.
+            // LoadPlan authorization uses its normalized access separately.
+            access: layout.manifest["access"] as? String ?? "public",
             risk_level: layout.manifest["risk_level"] as? String,
             profile: profile,
             context: KDNAJSONValue(any: context),
             trace: KDNAContextCapsuleTrace(
                 payload_encoding: "cbor",
-                loaded_by: "kdna-core-swift",
+                loaded_by: "kdna-core",
                 loaded_at: loadedAt ?? formatter.string(from: Date()),
                 schema_valid: payloadMatchesSchema(loaded.payload),
                 signature_state: signatureState,

@@ -1850,6 +1850,7 @@ final class KDNACoreTests: XCTestCase {
         )
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated non-throwing compatibility wrapper")
     func testInvalidJSONFailsVerificationInsteadOfProducingDigest() throws {
         let asset = try KDNAAssetReader().open(data: makeZip(entries: [
             ("mimetype", Data(KDNAAssetReader.kdnaMediaType.utf8)),
@@ -2739,7 +2740,7 @@ final class KDNACoreTests: XCTestCase {
         if let root = ProcessInfo.processInfo.environment["KDNA_CONFORMANCE_ROOT"], !root.isEmpty {
             return URL(fileURLWithPath: root)
         }
-        return URL(fileURLWithPath: #file)
+        return URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent() // KDNACoreTests/
             .deletingLastPathComponent() // Tests/
             .deletingLastPathComponent() // kdna-core-swift/

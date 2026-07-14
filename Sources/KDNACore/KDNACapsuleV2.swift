@@ -2,7 +2,7 @@ import Foundation
 import CryptoKit
 
 /// Stable protocol error surfaced by the opt-in Capsule 2 APIs.
-public struct KDNACapsule2Error: Error, LocalizedError, Equatable {
+public struct KDNACapsule2Error: Error, LocalizedError, Equatable, Sendable {
     public let code: String
     public let message: String
 
@@ -14,7 +14,7 @@ public struct KDNACapsule2Error: Error, LocalizedError, Equatable {
     public var errorDescription: String? { "\(code): \(message)" }
 }
 
-public struct KDNAExpectedDigest: Equatable {
+public struct KDNAExpectedDigest: Equatable, Sendable {
     public let value: String
     public let source: String
 
@@ -24,7 +24,7 @@ public struct KDNAExpectedDigest: Equatable {
     }
 }
 
-public struct KDNAExpectedDigests: Equatable {
+public struct KDNAExpectedDigests: Equatable, Sendable {
     public let asset: KDNAExpectedDigest?
     public let content: KDNAExpectedDigest?
     public let runtime_entry_set: KDNAExpectedDigest?
@@ -40,7 +40,7 @@ public struct KDNAExpectedDigests: Equatable {
     }
 }
 
-public struct KDNADigestComparison: Codable, Equatable {
+public struct KDNADigestComparison: Codable, Equatable, Sendable {
     public let state: String
     public let against: String?
     public let expected: String?
@@ -67,9 +67,59 @@ public struct KDNADigestComparison: Codable, Equatable {
         if let source { try container.encode(source, forKey: .source) }
         else { try container.encodeNil(forKey: .source) }
     }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: ["state", "against", "expected", "source"],
+            type: "Digest comparison"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        state = try container.decode(String.self, forKey: .state)
+        against = try container.kdnaDecodeRequiredNullable(String.self, forKey: .against)
+        expected = try container.kdnaDecodeRequiredNullable(String.self, forKey: .expected)
+        source = try container.kdnaDecodeRequiredNullable(String.self, forKey: .source)
+
+        try kdnaRequire(
+            ["matched", "mismatched", "not_compared"].contains(state),
+            from: decoder,
+            "Digest comparison state is invalid."
+        )
+        if state == "matched" || state == "mismatched" {
+            try kdnaRequire(
+                against.map {
+                    ["external_expected", "manifest_declaration", "checksum_declaration"].contains($0)
+                } == true,
+                from: decoder,
+                "Compared digest target is invalid."
+            )
+            try kdnaRequire(
+                expected.map { kdnaMatches($0, pattern: "^sha256:[0-9a-f]{64}$") } == true,
+                from: decoder,
+                "Compared digest expectation is invalid."
+            )
+            try kdnaRequire(
+                source.map {
+                    [
+                        "caller", "registry", "install_receipt", "lockfile",
+                        "kdna.json.content_digest", "kdna.json.authoring.content_digest",
+                        "checksums.json.entry_set_digest", "checksums.json.asset_digest",
+                    ].contains($0)
+                } == true,
+                from: decoder,
+                "Compared digest source is invalid."
+            )
+        } else {
+            try kdnaRequire(
+                against == nil && expected == nil && source == nil,
+                from: decoder,
+                "not_compared digest evidence must contain explicit null metadata."
+            )
+        }
+    }
 }
 
-public struct KDNADigestObservation: Codable, Equatable {
+public struct KDNADigestObservation: Codable, Equatable, Sendable {
     public let value: String
     public let basis: String
     public let comparison: KDNADigestComparison
@@ -79,9 +129,30 @@ public struct KDNADigestObservation: Codable, Equatable {
         self.basis = basis
         self.comparison = comparison
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case value, basis, comparison
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: ["value", "basis", "comparison"],
+            type: "Digest observation"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        value = try container.decode(String.self, forKey: .value)
+        basis = try container.decode(String.self, forKey: .basis)
+        comparison = try container.decode(KDNADigestComparison.self, forKey: .comparison)
+        try kdnaRequire(
+            kdnaMatches(value, pattern: "^sha256:[0-9a-f]{64}$"),
+            from: decoder,
+            "Digest observation value is invalid."
+        )
+    }
 }
 
-public struct KDNADigestEvidence: Codable, Equatable {
+public struct KDNADigestEvidence: Codable, Equatable, Sendable {
     public let profile: String
     public let asset: KDNADigestObservation
     public let content: KDNADigestObservation
@@ -98,9 +169,41 @@ public struct KDNADigestEvidence: Codable, Equatable {
         self.content = content
         self.runtime_entry_set = runtime_entry_set
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case profile, asset, content, runtime_entry_set
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: ["profile", "asset", "content", "runtime_entry_set"],
+            type: "Digest evidence"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        profile = try container.decode(String.self, forKey: .profile)
+        asset = try container.decode(KDNADigestObservation.self, forKey: .asset)
+        content = try container.decode(KDNADigestObservation.self, forKey: .content)
+        runtime_entry_set = try container.decode(
+            KDNADigestObservation.self,
+            forKey: .runtime_entry_set
+        )
+        try kdnaRequire(
+            profile == "kdna-capsule-digests-v1",
+            from: decoder,
+            "Digest evidence profile is invalid."
+        )
+        try kdnaRequire(asset.basis == "kdna-container-bytes-v1", from: decoder, "A basis is invalid.")
+        try kdnaRequire(content.basis == "kdna-content-tree-v1", from: decoder, "C basis is invalid.")
+        try kdnaRequire(
+            runtime_entry_set.basis == "kdna-runtime-entry-set-v1",
+            from: decoder,
+            "E basis is invalid."
+        )
+    }
 }
 
-public struct KDNAContextCapsule2Asset: Codable, Equatable {
+public struct KDNAContextCapsule2Asset: Codable, Equatable, Sendable {
     public let asset_id: String
     public let asset_uid: String
     public let version: String
@@ -112,9 +215,46 @@ public struct KDNAContextCapsule2Asset: Codable, Equatable {
         self.version = version
         self.judgment_version = judgment_version
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case asset_id, asset_uid, version, judgment_version
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: ["asset_id", "asset_uid", "version", "judgment_version"],
+            type: "Capsule 2 asset"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        asset_id = try container.decode(String.self, forKey: .asset_id)
+        asset_uid = try container.decode(String.self, forKey: .asset_uid)
+        version = try container.decode(String.self, forKey: .version)
+        judgment_version = try container.decode(String.self, forKey: .judgment_version)
+        try kdnaRequire(
+            kdnaMatches(asset_id, pattern: "^[a-zA-Z][a-zA-Z0-9_-]*(:[a-zA-Z0-9_.-]+)+$"),
+            from: decoder,
+            "Capsule 2 asset_id is invalid."
+        )
+        try kdnaRequire(
+            URL(string: asset_uid)?.scheme != nil,
+            from: decoder,
+            "Capsule 2 asset_uid is invalid."
+        )
+        try kdnaRequire(
+            kdnaMatches(version, pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+([+-].+)?$"),
+            from: decoder,
+            "Capsule 2 version is invalid."
+        )
+        try kdnaRequire(
+            kdnaMatches(judgment_version, pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+([+-].+)?$"),
+            from: decoder,
+            "Capsule 2 judgment_version is invalid."
+        )
+    }
 }
 
-public struct KDNAContextCapsule2Trace: Codable, Equatable {
+public struct KDNAContextCapsule2Trace: Codable, Equatable, Sendable {
     public let payload_encoding: String
     public let loaded_by: String
     public let loaded_at: String
@@ -143,9 +283,54 @@ public struct KDNAContextCapsule2Trace: Codable, Equatable {
         self.signature_state = signature_state
         self.profile = profile
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case payload_encoding, loaded_by, loaded_at, input_kind, runtime_eligible
+        case schema_valid, signature_state, profile
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: [
+                "payload_encoding", "loaded_by", "loaded_at", "input_kind",
+                "runtime_eligible", "schema_valid", "signature_state", "profile",
+            ],
+            type: "Capsule 2 trace"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        payload_encoding = try container.decode(String.self, forKey: .payload_encoding)
+        loaded_by = try container.decode(String.self, forKey: .loaded_by)
+        loaded_at = try container.decode(String.self, forKey: .loaded_at)
+        input_kind = try container.decode(String.self, forKey: .input_kind)
+        runtime_eligible = try container.decode(Bool.self, forKey: .runtime_eligible)
+        schema_valid = try container.decode(Bool.self, forKey: .schema_valid)
+        signature_state = try container.decode(String.self, forKey: .signature_state)
+        profile = try container.decode(String.self, forKey: .profile)
+        try kdnaRequire(payload_encoding == "cbor", from: decoder, "Capsule 2 encoding is invalid.")
+        try kdnaRequire(loaded_by == "kdna-core", from: decoder, "Capsule 2 loaded_by is invalid.")
+        try kdnaRequire(kdnaIsISODate(loaded_at), from: decoder, "Capsule 2 loaded_at is invalid.")
+        try kdnaRequire(
+            ["packaged_file", "packaged_bytes"].contains(input_kind),
+            from: decoder,
+            "Capsule 2 input_kind is invalid."
+        )
+        try kdnaRequire(runtime_eligible, from: decoder, "Capsule 2 is not runtime eligible.")
+        try kdnaRequire(schema_valid, from: decoder, "Capsule 2 schema_valid is false.")
+        try kdnaRequire(
+            ["verified", "not_checked", "absent"].contains(signature_state),
+            from: decoder,
+            "Capsule 2 signature state is invalid."
+        )
+        try kdnaRequire(
+            ["index", "compact", "scenario", "full"].contains(profile),
+            from: decoder,
+            "Capsule 2 profile is invalid."
+        )
+    }
 }
 
-public struct KDNAContextCapsule1Extensions: Codable, Equatable {
+public struct KDNAContextCapsule1Extensions: Codable, Equatable, Sendable {
     public let extends_chain: KDNAJSONValue?
     public let inheritance_applied: Bool?
     public let resolved_dependencies: KDNAJSONValue?
@@ -163,13 +348,63 @@ public struct KDNAContextCapsule1Extensions: Codable, Equatable {
         self.rag_isolation_policy = rag_isolation_policy
     }
 
+    private enum CodingKeys: String, CodingKey {
+        case extends_chain, inheritance_applied, resolved_dependencies, rag_isolation_policy
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: [
+                "extends_chain", "inheritance_applied", "resolved_dependencies",
+                "rag_isolation_policy",
+            ],
+            type: "Capsule 1 extensions"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        extends_chain = try container.kdnaDecodeOptionalNonNull(
+            KDNAJSONValue.self,
+            forKey: .extends_chain
+        )
+        inheritance_applied = try container.kdnaDecodeOptionalNonNull(
+            Bool.self,
+            forKey: .inheritance_applied
+        )
+        resolved_dependencies = try container.kdnaDecodeOptionalNonNull(
+            KDNAJSONValue.self,
+            forKey: .resolved_dependencies
+        )
+        rag_isolation_policy = try container.kdnaDecodeOptionalNonNull(
+            KDNAJSONValue.self,
+            forKey: .rag_isolation_policy
+        )
+        try kdnaRequire(!isEmpty, from: decoder, "Capsule 1 extensions must not be empty.")
+        if let extends_chain {
+            try kdnaRequire(extends_chain.arrayValue != nil, from: decoder, "extends_chain must be an array.")
+        }
+        if let resolved_dependencies {
+            try kdnaRequire(
+                resolved_dependencies.arrayValue != nil,
+                from: decoder,
+                "resolved_dependencies must be an array."
+            )
+        }
+        if let rag_isolation_policy {
+            try kdnaRequire(
+                rag_isolation_policy.objectValue != nil,
+                from: decoder,
+                "rag_isolation_policy must be an object."
+            )
+        }
+    }
+
     var isEmpty: Bool {
         extends_chain == nil && inheritance_applied == nil &&
             resolved_dependencies == nil && rag_isolation_policy == nil
     }
 }
 
-public struct KDNAContextCapsule2Compatibility: Codable, Equatable {
+public struct KDNAContextCapsule2Compatibility: Codable, Equatable, Sendable {
     public let capsule_1_domain: String?
     public let capsule_1_access: String?
     public let capsule_1_extensions: KDNAContextCapsule1Extensions?
@@ -184,12 +419,50 @@ public struct KDNAContextCapsule2Compatibility: Codable, Equatable {
         self.capsule_1_extensions = capsule_1_extensions
     }
 
+    private enum CodingKeys: String, CodingKey {
+        case capsule_1_domain, capsule_1_access, capsule_1_extensions
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: ["capsule_1_domain", "capsule_1_access", "capsule_1_extensions"],
+            type: "Capsule 2 compatibility"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        capsule_1_domain = try container.kdnaDecodeOptionalNonNull(
+            String.self,
+            forKey: .capsule_1_domain
+        )
+        capsule_1_access = try container.kdnaDecodeOptionalNonNull(
+            String.self,
+            forKey: .capsule_1_access
+        )
+        capsule_1_extensions = try container.kdnaDecodeOptionalNonNull(
+            KDNAContextCapsule1Extensions.self,
+            forKey: .capsule_1_extensions
+        )
+        try kdnaRequire(!isEmpty, from: decoder, "Capsule 2 compatibility must not be empty.")
+        try kdnaRequire(
+            capsule_1_domain == nil || capsule_1_domain?.isEmpty == false,
+            from: decoder,
+            "Capsule 1 compatibility domain is empty."
+        )
+        if let capsule_1_access {
+            try kdnaRequire(
+                ["open", "protected", "runtime"].contains(capsule_1_access),
+                from: decoder,
+                "Capsule 1 compatibility access is invalid."
+            )
+        }
+    }
+
     var isEmpty: Bool {
         capsule_1_domain == nil && capsule_1_access == nil && capsule_1_extensions == nil
     }
 }
 
-public struct KDNAContextCapsule2: Codable, Equatable {
+public struct KDNAContextCapsule2: Codable, Equatable, Sendable {
     public let type: String
     public let version: String
     public let asset: KDNAContextCapsule2Asset
@@ -247,6 +520,43 @@ public struct KDNAContextCapsule2: Codable, Equatable {
         try container.encode(context, forKey: .context)
         try container.encode(trace, forKey: .trace)
         try container.encodeIfPresent(compatibility, forKey: .compatibility)
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: [
+                "type", "version", "asset", "digests", "signature", "access",
+                "risk_level", "profile", "context", "trace", "compatibility",
+            ],
+            type: "Capsule 2"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decode(String.self, forKey: .type)
+        version = try container.decode(String.self, forKey: .version)
+        asset = try container.decode(KDNAContextCapsule2Asset.self, forKey: .asset)
+        digests = try container.decode(KDNADigestEvidence.self, forKey: .digests)
+        signature = try container.decode(KDNAContextCapsuleSignature.self, forKey: .signature)
+        access = try container.decode(String.self, forKey: .access)
+        risk_level = try container.kdnaDecodeRequiredNullable(String.self, forKey: .risk_level)
+        profile = try container.decode(String.self, forKey: .profile)
+        context = try container.decode(KDNAJSONValue.self, forKey: .context)
+        trace = try container.decode(KDNAContextCapsule2Trace.self, forKey: .trace)
+        compatibility = try container.kdnaDecodeOptionalNonNull(
+            KDNAContextCapsule2Compatibility.self,
+            forKey: .compatibility
+        )
+        do {
+            try KDNACapsuleV2.validateSuccessfulCapsule(
+                self,
+                code: "KDNA_CAPSULE_DECODING_INVALID"
+            )
+        } catch {
+            throw DecodingError.dataCorrupted(DecodingError.Context(
+                codingPath: decoder.codingPath,
+                debugDescription: error.localizedDescription
+            ))
+        }
     }
 }
 
@@ -673,12 +983,12 @@ public enum KDNACapsuleV2 {
             ),
             compatibility: compatibility.isEmpty ? nil : compatibility
         )
-        try assertCapsule2Success(capsule, code: "KDNA_CAPSULE_2_BUILD_INVALID")
+        try validateSuccessfulCapsule(capsule, code: "KDNA_CAPSULE_2_BUILD_INVALID")
         return capsule
     }
 
     public static func adaptToV1(_ capsule: KDNAContextCapsule2) throws -> KDNAContextCapsule {
-        try assertCapsule2Success(capsule, code: "KDNA_CAPSULE_ADAPTER_INPUT_INVALID")
+        try validateSuccessfulCapsule(capsule, code: "KDNA_CAPSULE_ADAPTER_INPUT_INVALID")
         let domain = capsule.compatibility?.capsule_1_domain ?? capsule.asset.asset_id
         guard !domain.isEmpty else {
             throw protocolError(
@@ -931,7 +1241,7 @@ public enum KDNACapsuleV2 {
         }
     }
 
-    private static func assertCapsule2Success(
+    static func validateSuccessfulCapsule(
         _ capsule: KDNAContextCapsule2,
         code: String
     ) throws {

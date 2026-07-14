@@ -68,6 +68,13 @@ final class CapsuleV2Tests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(KDNAContextCapsule2.self, from: encoded), capsule)
 
         let capsule1 = try KDNACapsuleV2.adaptToV1(capsule)
+        let direct = try KDNALoadPlanCore.loadCapsule(
+            assetData: bytes,
+            sourcePath: "<packaged-bytes>",
+            profile: "compact",
+            loadedAt: loadedAt
+        )
+        XCTAssertEqual(capsule1, direct)
         XCTAssertEqual(capsule1.version, "1.0")
         XCTAssertEqual(capsule1.domain, capsule.asset.asset_id)
         XCTAssertEqual(capsule1.judgment_version, capsule.asset.judgment_version)
@@ -283,8 +290,160 @@ final class CapsuleV2Tests: XCTestCase {
         }
     }
 
+    func testRealLegacyAccessAliasesPreserveDirectWireAndAdapterParity() throws {
+        let canonicalByAlias = [
+            "open": "public",
+            "protected": "licensed",
+            "runtime": "remote",
+        ]
+        for alias in ["open", "protected"] {
+            let bytes = try assetBytes(access: alias)
+            let credential = alias == "protected"
+                ? KDNACredential(password: "legacy-access-presence")
+                : .none
+            let environment = KDNALoadEnvironment(hasPassword: alias == "protected")
+            let plan = KDNALoadPlanCore.planLoad(
+                assetData: bytes,
+                sourcePath: "<\(alias)-asset>",
+                environment: environment
+            )
+            XCTAssertEqual(plan.access, canonicalByAlias[alias])
+            XCTAssertEqual(plan.access_alias, alias)
+            XCTAssertTrue(plan.can_load_now)
+
+            let direct = try KDNALoadPlanCore.loadCapsule(
+                assetData: bytes,
+                sourcePath: "<\(alias)-asset>",
+                credential: credential,
+                loadedAt: loadedAt
+            )
+            let capsule2 = try KDNACapsuleV2.load(
+                assetData: bytes,
+                credential: credential,
+                loadedAt: loadedAt
+            )
+            XCTAssertEqual(direct.access, alias)
+            XCTAssertEqual(capsule2.access, canonicalByAlias[alias])
+            XCTAssertEqual(capsule2.compatibility?.capsule_1_access, alias)
+            XCTAssertEqual(try KDNACapsuleV2.adaptToV1(capsule2), direct)
+        }
+
+        // A runtime alias is a real remote access path. It must preserve its
+        // spelling and mapping, but local loading remains blocked until a
+        // Runtime endpoint supplies the projection.
+        let runtimeBytes = try assetBytes(access: "runtime")
+        let runtimePlan = KDNALoadPlanCore.planLoad(
+            assetData: runtimeBytes,
+            sourcePath: "<runtime-asset>"
+        )
+        XCTAssertEqual(runtimePlan.access, "remote")
+        XCTAssertEqual(runtimePlan.access_alias, "runtime")
+        XCTAssertEqual(runtimePlan.state, "needs_runtime")
+        XCTAssertFalse(runtimePlan.can_load_now)
+        XCTAssertThrowsError(try KDNACapsuleV2.load(assetData: runtimeBytes, loadedAt: loadedAt))
+
+        let publicDirect = try KDNALoadPlanCore.loadCapsule(
+            assetData: try goldenBytes(),
+            sourcePath: "<packaged-bytes>",
+            loadedAt: loadedAt
+        )
+        let reader = KDNAAssetReader()
+        let runtimeAsset = try reader.open(data: runtimeBytes)
+        let runtimeManifest = try XCTUnwrap(reader.readManifest(asset: runtimeAsset))
+        let runtimeEvidence = try KDNACapsuleV2.computeDigestEvidence(assetData: runtimeBytes)
+        let runtimeDirect = capsule1ReplacingAccess(
+            publicDirect,
+            access: "runtime",
+            assetDigest: runtimeEvidence.runtime_entry_set.value
+        )
+        let runtimeCapsule2 = try KDNACapsuleV2.build(
+            capsule1: runtimeDirect,
+            manifest: runtimeManifest,
+            digests: runtimeEvidence,
+            inputKind: "packaged_bytes",
+            loadedAt: loadedAt
+        )
+        XCTAssertEqual(runtimeCapsule2.access, "remote")
+        XCTAssertEqual(runtimeCapsule2.compatibility?.capsule_1_access, "runtime")
+        XCTAssertEqual(try KDNACapsuleV2.adaptToV1(runtimeCapsule2), runtimeDirect)
+    }
+
+    func testStrictCodableRejectsMissingRequiredNullAndUnknownProperties() throws {
+        let capsule2 = try KDNACapsuleV2.load(assetData: goldenBytes(), loadedAt: loadedAt)
+        let capsule2Object = try jsonObject(JSONEncoder().encode(capsule2))
+
+        var missingRisk = capsule2Object
+        missingRisk.removeValue(forKey: "risk_level")
+        XCTAssertThrowsError(try decodeCapsule2(missingRisk))
+
+        var unknownTop = capsule2Object
+        unknownTop["asset_digest"] = expectedE
+        XCTAssertThrowsError(try decodeCapsule2(unknownTop))
+
+        var unknownNested = capsule2Object
+        var trace = try XCTUnwrap(unknownNested["trace"] as? [String: Any])
+        trace["host_claim"] = "not-observed"
+        unknownNested["trace"] = trace
+        XCTAssertThrowsError(try decodeCapsule2(unknownNested))
+
+        var nullOptional = capsule2Object
+        nullOptional["compatibility"] = NSNull()
+        XCTAssertThrowsError(try decodeCapsule2(nullOptional))
+
+        var nullIssuer = capsule2Object
+        var signature = try XCTUnwrap(nullIssuer["signature"] as? [String: Any])
+        signature["issuer"] = NSNull()
+        nullIssuer["signature"] = signature
+        XCTAssertThrowsError(try decodeCapsule2(nullIssuer))
+
+        var missingComparisonNull = capsule2Object
+        var digests = try XCTUnwrap(missingComparisonNull["digests"] as? [String: Any])
+        var asset = try XCTUnwrap(digests["asset"] as? [String: Any])
+        var comparison = try XCTUnwrap(asset["comparison"] as? [String: Any])
+        comparison.removeValue(forKey: "against")
+        asset["comparison"] = comparison
+        digests["asset"] = asset
+        missingComparisonNull["digests"] = digests
+        XCTAssertThrowsError(try decodeCapsule2(missingComparisonNull))
+
+        XCTAssertEqual(try decodeCapsule2(capsule2Object), capsule2)
+
+        let capsule1 = try KDNACapsuleV2.adaptToV1(capsule2)
+        let capsule1Object = try jsonObject(JSONEncoder().encode(capsule1))
+        var missingV1Risk = capsule1Object
+        missingV1Risk.removeValue(forKey: "risk_level")
+        XCTAssertThrowsError(try decodeCapsule1(missingV1Risk))
+
+        var unknownV1 = capsule1Object
+        unknownV1["unexpected_extension"] = true
+        XCTAssertThrowsError(try decodeCapsule1(unknownV1))
+
+        var nullV1Extension = capsule1Object
+        nullV1Extension["extends_chain"] = NSNull()
+        XCTAssertThrowsError(try decodeCapsule1(nullV1Extension))
+        XCTAssertEqual(try decodeCapsule1(capsule1Object), capsule1)
+    }
+
+    func testCapsulePublicValueGraphIsSendable() {
+        requireSendable(KDNACapsule2Error.self)
+        requireSendable(KDNAExpectedDigest.self)
+        requireSendable(KDNAExpectedDigests.self)
+        requireSendable(KDNADigestComparison.self)
+        requireSendable(KDNADigestObservation.self)
+        requireSendable(KDNADigestEvidence.self)
+        requireSendable(KDNAContextCapsuleSignature.self)
+        requireSendable(KDNAContextCapsuleTrace.self)
+        requireSendable(KDNAJSONValue.self)
+        requireSendable(KDNAContextCapsule.self)
+        requireSendable(KDNAContextCapsule2Asset.self)
+        requireSendable(KDNAContextCapsule2Trace.self)
+        requireSendable(KDNAContextCapsule1Extensions.self)
+        requireSendable(KDNAContextCapsule2Compatibility.self)
+        requireSendable(KDNAContextCapsule2.self)
+    }
+
     private func goldenBytes() throws -> Data {
-        let url = URL(fileURLWithPath: #file)
+        let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .appendingPathComponent("Fixtures/capsule-v2-minimal.kdna.b64")
         let encoded = try String(contentsOf: url, encoding: .utf8)
@@ -295,6 +454,82 @@ final class CapsuleV2Tests: XCTestCase {
     private func sha256Hex(_ data: Data) -> String {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
+
+    private func assetBytes(access: String) throws -> Data {
+        let bytes = try goldenBytes()
+        let reader = KDNAAssetReader()
+        let asset = try reader.open(data: bytes)
+        let payload = try reader.readEntry(asset: asset, name: "payload.kdnab")
+        let mimetype = try reader.readEntry(asset: asset, name: "mimetype")
+        var manifest = try XCTUnwrap(reader.readManifest(asset: asset))
+        manifest["access"] = access
+        let manifestData = try JSONSerialization.data(
+            withJSONObject: manifest,
+            options: [.sortedKeys, .withoutEscapingSlashes]
+        )
+        let entrySetDigest = KDNAChecksumDigests.computeRuntimeEntrySetDigest(
+            manifest: manifestData,
+            payload: payload
+        )
+        let checksums = try JSONSerialization.data(withJSONObject: [
+            "algorithm": "sha256",
+            "digest_profile": "kdna-runtime-entry-set-v1",
+            "covered_entries": ["kdna.json", "payload.kdnab"],
+            "manifest_digest": "sha256:\(sha256Hex(manifestData))",
+            "payload_digest": "sha256:\(sha256Hex(payload))",
+            "entry_set_digest": entrySetDigest,
+        ], options: [.sortedKeys, .withoutEscapingSlashes])
+        return makeZip(entries: [
+            ("mimetype", mimetype),
+            ("checksums.json", checksums),
+            ("kdna.json", manifestData),
+            ("payload.kdnab", payload),
+        ])
+    }
+
+    private func capsule1ReplacingAccess(
+        _ capsule: KDNAContextCapsule,
+        access: String,
+        assetDigest: String? = nil
+    ) -> KDNAContextCapsule {
+        KDNAContextCapsule(
+            type: capsule.type,
+            version: capsule.version,
+            domain: capsule.domain,
+            judgment_version: capsule.judgment_version,
+            asset_digest: assetDigest ?? capsule.asset_digest,
+            signature: capsule.signature,
+            access: access,
+            risk_level: capsule.risk_level,
+            profile: capsule.profile,
+            context: capsule.context,
+            trace: capsule.trace,
+            extends_chain: capsule.extends_chain,
+            inheritance_applied: capsule.inheritance_applied,
+            resolved_dependencies: capsule.resolved_dependencies,
+            rag_isolation_policy: capsule.rag_isolation_policy
+        )
+    }
+
+    private func jsonObject(_ data: Data) throws -> [String: Any] {
+        try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
+
+    private func decodeCapsule2(_ object: [String: Any]) throws -> KDNAContextCapsule2 {
+        try JSONDecoder().decode(
+            KDNAContextCapsule2.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+    }
+
+    private func decodeCapsule1(_ object: [String: Any]) throws -> KDNAContextCapsule {
+        try JSONDecoder().decode(
+            KDNAContextCapsule.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+    }
+
+    private func requireSendable<T: Sendable>(_: T.Type) {}
 
     private func makeZip(entries: [(String, Data)]) -> Data {
         var localParts = [Data]()
