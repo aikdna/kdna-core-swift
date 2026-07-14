@@ -77,4 +77,3 @@ if findings:
     raise SystemExit(1)
 
 print(f"public-surface check passed: {scanned} tracked text files, 0 findings")
-
