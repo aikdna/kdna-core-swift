@@ -19,7 +19,10 @@ let package = Package(
     targets: [
         .target(
             name: "KDNACore",
-            dependencies: ["Argon2Kit"]
+            dependencies: ["Argon2Kit"],
+            resources: [
+                .copy("Resources/Schemas")
+            ]
         ),
         .testTarget(
             name: "KDNACoreTests",

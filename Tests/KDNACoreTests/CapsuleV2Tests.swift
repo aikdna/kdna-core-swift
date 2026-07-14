@@ -406,6 +406,20 @@ final class CapsuleV2Tests: XCTestCase {
         missingComparisonNull["digests"] = digests
         XCTAssertThrowsError(try decodeCapsule2(missingComparisonNull))
 
+        var unavailableSuccess = capsule2Object
+        var unavailableDigests = try XCTUnwrap(unavailableSuccess["digests"] as? [String: Any])
+        var unavailableAsset = try XCTUnwrap(unavailableDigests["asset"] as? [String: Any])
+        var unavailableComparison = try XCTUnwrap(unavailableAsset["comparison"] as? [String: Any])
+        unavailableAsset["value"] = NSNull()
+        unavailableComparison["state"] = "unavailable"
+        unavailableComparison["against"] = NSNull()
+        unavailableComparison["expected"] = NSNull()
+        unavailableComparison["source"] = NSNull()
+        unavailableAsset["comparison"] = unavailableComparison
+        unavailableDigests["asset"] = unavailableAsset
+        unavailableSuccess["digests"] = unavailableDigests
+        XCTAssertThrowsError(try decodeCapsule2(unavailableSuccess))
+
         XCTAssertEqual(try decodeCapsule2(capsule2Object), capsule2)
 
         let capsule1 = try KDNACapsuleV2.adaptToV1(capsule2)
@@ -416,11 +430,23 @@ final class CapsuleV2Tests: XCTestCase {
 
         var unknownV1 = capsule1Object
         unknownV1["unexpected_extension"] = true
-        XCTAssertThrowsError(try decodeCapsule1(unknownV1))
+        XCTAssertEqual(try decodeCapsule1(unknownV1), capsule1)
+
+        var unknownV1Trace = capsule1Object
+        var v1Trace = try XCTUnwrap(unknownV1Trace["trace"] as? [String: Any])
+        v1Trace["future_runtime_observation"] = ["observed": false]
+        unknownV1Trace["trace"] = v1Trace
+        XCTAssertEqual(try decodeCapsule1(unknownV1Trace), capsule1)
+
+        var unknownV1Signature = capsule1Object
+        var v1Signature = try XCTUnwrap(unknownV1Signature["signature"] as? [String: Any])
+        v1Signature["future_trust_claim"] = false
+        unknownV1Signature["signature"] = v1Signature
+        XCTAssertThrowsError(try decodeCapsule1(unknownV1Signature))
 
         var nullV1Extension = capsule1Object
         nullV1Extension["extends_chain"] = NSNull()
-        XCTAssertThrowsError(try decodeCapsule1(nullV1Extension))
+        XCTAssertEqual(try decodeCapsule1(nullV1Extension), capsule1)
         XCTAssertEqual(try decodeCapsule1(capsule1Object), capsule1)
     }
 

@@ -147,14 +147,8 @@ public struct KDNAContextCapsuleTrace: Codable, Equatable, Sendable {
     }
 
     public init(from decoder: Decoder) throws {
-        try kdnaRejectUnknownKeys(
-            from: decoder,
-            allowed: [
-                "payload_encoding", "loaded_by", "loaded_at", "schema_valid",
-                "signature_state", "profile",
-            ],
-            type: "Capsule 1 trace"
-        )
+        // Capsule 1 is a frozen extensible wire schema: trace explicitly allows
+        // additional properties. Unknown fields are intentionally ignored.
         let container = try decoder.container(keyedBy: CodingKeys.self)
         payload_encoding = try container.decode(String.self, forKey: .payload_encoding)
         loaded_by = try container.decode(String.self, forKey: .loaded_by)
@@ -339,16 +333,9 @@ public struct KDNAContextCapsule: Codable, Equatable, Sendable {
     }
 
     public init(from decoder: Decoder) throws {
-        try kdnaRejectUnknownKeys(
-            from: decoder,
-            allowed: [
-                "type", "version", "domain", "judgment_version", "asset_digest",
-                "signature", "access", "risk_level", "profile", "context", "trace",
-                "extends_chain", "inheritance_applied", "resolved_dependencies",
-                "rag_isolation_policy",
-            ],
-            type: "Capsule 1"
-        )
+        // Capsule 1 is a frozen extensible wire schema. Preserve strict checks
+        // for declared fields (including the closed signature object), while
+        // accepting legal top-level extension properties.
         let container = try decoder.container(keyedBy: CodingKeys.self)
         type = try container.decode(String.self, forKey: .type)
         version = try container.decode(String.self, forKey: .version)
@@ -364,22 +351,10 @@ public struct KDNAContextCapsule: Codable, Equatable, Sendable {
         profile = try container.decode(String.self, forKey: .profile)
         context = try container.decode(KDNAJSONValue.self, forKey: .context)
         trace = try container.decode(KDNAContextCapsuleTrace.self, forKey: .trace)
-        extends_chain = try container.kdnaDecodeOptionalNonNull(
-            KDNAJSONValue.self,
-            forKey: .extends_chain
-        )
-        inheritance_applied = try container.kdnaDecodeOptionalNonNull(
-            Bool.self,
-            forKey: .inheritance_applied
-        )
-        resolved_dependencies = try container.kdnaDecodeOptionalNonNull(
-            KDNAJSONValue.self,
-            forKey: .resolved_dependencies
-        )
-        rag_isolation_policy = try container.kdnaDecodeOptionalNonNull(
-            KDNAJSONValue.self,
-            forKey: .rag_isolation_policy
-        )
+        extends_chain = try container.decodeIfPresent(KDNAJSONValue.self, forKey: .extends_chain)
+        inheritance_applied = try container.decodeIfPresent(Bool.self, forKey: .inheritance_applied)
+        resolved_dependencies = try container.decodeIfPresent(KDNAJSONValue.self, forKey: .resolved_dependencies)
+        rag_isolation_policy = try container.decodeIfPresent(KDNAJSONValue.self, forKey: .rag_isolation_policy)
 
         try kdnaRequire(type == "kdna.context.capsule", from: decoder, "Capsule 1 type is invalid.")
         try kdnaRequire(version == "1.0", from: decoder, "Capsule 1 version is invalid.")
@@ -664,7 +639,7 @@ public enum KDNALoadPlanCore {
                 payload_encoding: "cbor",
                 loaded_by: "kdna-core",
                 loaded_at: loadedAt ?? formatter.string(from: Date()),
-                schema_valid: payloadMatchesSchema(loaded.payload),
+                schema_valid: loaded.plan.checks.schema_valid && loaded.plan.checks.payload_valid,
                 signature_state: signatureState,
                 profile: profile
             )
@@ -747,46 +722,13 @@ public enum KDNALoadPlanCore {
         guard (payload["profile"] as? String) == "judgment-profile-v1" else {
             throw KDNALoadError.unsupportedPayloadProfile(payload["profile"] as? String)
         }
-        guard payloadMatchesSchema(payload) else {
-            throw KDNALoadError.invalidPayload("payload.kdnab does not match judgment-profile-v1")
+        let payloadIssues = KDNACanonicalSchemas.validatePayload(payload)
+        guard payloadIssues.isEmpty else {
+            throw KDNALoadError.invalidPayload(
+                "payload.kdnab does not match judgment-profile-v1: \(payloadIssues.joined(separator: "; "))"
+            )
         }
         return (plan, layout, payload)
-    }
-
-    private static func payloadMatchesSchema(_ payload: [String: Any]) -> Bool {
-        guard payload["profile"] as? String == "judgment-profile-v1",
-              let core = payload["core"] as? [String: Any],
-              core["highest_question"] is String,
-              core["axioms"] is [Any] else {
-            return false
-        }
-        for key in ["boundaries"] where core[key] != nil && !(core[key] is [Any]) { return false }
-        if core["risk_model"] != nil && !(core["risk_model"] is [String: Any]) { return false }
-        for key in ["patterns", "scenarios", "cases"] where payload[key] != nil && !(payload[key] is [Any]) { return false }
-
-        if let reasoning = payload["reasoning"] {
-            guard let object = reasoning as? [String: Any] else { return false }
-            if let selfCheck = object["self_check"] {
-                guard let items = selfCheck as? [Any] else { return false }
-                for item in items {
-                    if item is String { continue }
-                    guard let card = item as? [String: Any], card["question"] is String else { return false }
-                }
-            }
-            if let failureModes = object["failure_modes"] {
-                guard let items = failureModes as? [Any], items.allSatisfy({ $0 is [String: Any] }) else { return false }
-            }
-        }
-        if let evolution = payload["evolution"] {
-            guard let object = evolution as? [String: Any] else { return false }
-            if let changelog = object["changelog"] {
-                guard let items = changelog as? [Any], items.allSatisfy({ $0 is [String: Any] }) else { return false }
-            }
-            if let notes = object["version_notes"] {
-                guard let items = notes as? [Any], items.allSatisfy({ $0 is String }) else { return false }
-            }
-        }
-        return true
     }
 
     private static func profileContent(
@@ -979,9 +921,28 @@ public enum KDNALoadPlanCore {
             problems.append("format: mimetype is not \(mimeType)")
         }
 
-        if (try? KDNACBOR.decodeObject(layout.payload)) == nil {
+        let decodedPayload = try? KDNACBOR.decodeObject(layout.payload)
+        if decodedPayload == nil {
             result.payload_valid = false
             problems.append("payload: not valid CBOR")
+        }
+
+        let manifestIssues = KDNACanonicalSchemas.validateManifest(layout.manifest)
+        if !manifestIssues.isEmpty {
+            result.schema_valid = false
+            problems += manifestIssues.map { "schema: \($0)" }
+        }
+        if let loadContract = layout.manifest["load_contract"],
+           !KDNACanonicalSchemas.validateLoadContract(loadContract).isEmpty {
+            result.load_contract_valid = false
+        }
+
+        if let decodedPayload, !hasEncryptedPayload(manifest: layout.manifest) {
+            let payloadIssues = KDNACanonicalSchemas.validatePayload(decodedPayload)
+            if !payloadIssues.isEmpty {
+                result.payload_valid = false
+                problems += payloadIssues.map { "payload schema: \($0)" }
+            }
         }
 
         if let checksums = layout.checksums {

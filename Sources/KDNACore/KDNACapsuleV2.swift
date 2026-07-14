@@ -81,7 +81,7 @@ public struct KDNADigestComparison: Codable, Equatable, Sendable {
         source = try container.kdnaDecodeRequiredNullable(String.self, forKey: .source)
 
         try kdnaRequire(
-            ["matched", "mismatched", "not_compared"].contains(state),
+            ["matched", "mismatched", "not_compared", "unavailable"].contains(state),
             from: decoder,
             "Digest comparison state is invalid."
         )
@@ -113,18 +113,18 @@ public struct KDNADigestComparison: Codable, Equatable, Sendable {
             try kdnaRequire(
                 against == nil && expected == nil && source == nil,
                 from: decoder,
-                "not_compared digest evidence must contain explicit null metadata."
+                "Non-compared digest evidence must contain explicit null metadata."
             )
         }
     }
 }
 
 public struct KDNADigestObservation: Codable, Equatable, Sendable {
-    public let value: String
+    public let value: String?
     public let basis: String
     public let comparison: KDNADigestComparison
 
-    public init(value: String, basis: String, comparison: KDNADigestComparison) {
+    public init(value: String?, basis: String, comparison: KDNADigestComparison) {
         self.value = value
         self.basis = basis
         self.comparison = comparison
@@ -134,6 +134,14 @@ public struct KDNADigestObservation: Codable, Equatable, Sendable {
         case value, basis, comparison
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        if let value { try container.encode(value, forKey: .value) }
+        else { try container.encodeNil(forKey: .value) }
+        try container.encode(basis, forKey: .basis)
+        try container.encode(comparison, forKey: .comparison)
+    }
+
     public init(from decoder: Decoder) throws {
         try kdnaRejectUnknownKeys(
             from: decoder,
@@ -141,14 +149,18 @@ public struct KDNADigestObservation: Codable, Equatable, Sendable {
             type: "Digest observation"
         )
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        value = try container.decode(String.self, forKey: .value)
+        value = try container.kdnaDecodeRequiredNullable(String.self, forKey: .value)
         basis = try container.decode(String.self, forKey: .basis)
         comparison = try container.decode(KDNADigestComparison.self, forKey: .comparison)
-        try kdnaRequire(
-            kdnaMatches(value, pattern: "^sha256:[0-9a-f]{64}$"),
-            from: decoder,
-            "Digest observation value is invalid."
-        )
+        if comparison.state == "unavailable" {
+            try kdnaRequire(value == nil, from: decoder, "Unavailable digest observation must be null.")
+        } else {
+            try kdnaRequire(
+                value.map { kdnaMatches($0, pattern: "^sha256:[0-9a-f]{64}$") } == true,
+                from: decoder,
+                "Digest observation value is invalid."
+            )
+        }
     }
 }
 
@@ -237,7 +249,7 @@ public struct KDNAContextCapsule2Asset: Codable, Equatable, Sendable {
             "Capsule 2 asset_id is invalid."
         )
         try kdnaRequire(
-            URL(string: asset_uid)?.scheme != nil,
+            KDNAJSONFormats.isURI(asset_uid),
             from: decoder,
             "Capsule 2 asset_uid is invalid."
         )
@@ -939,7 +951,7 @@ public enum KDNACapsuleV2 {
         }
 
         let timestamp = loadedAt ?? capsule1.trace.loaded_at
-        guard validISODate(timestamp) else {
+        guard KDNAJSONFormats.isDateTime(timestamp) else {
             throw protocolError(
                 "KDNA_CAPSULE_2_BUILD_INVALID",
                 "Capsule 2 loaded_at must be an ISO date-time string."
@@ -1218,13 +1230,6 @@ public enum KDNACapsuleV2 {
         accessAliases[access] ?? access
     }
 
-    private static func validISODate(_ value: String) -> Bool {
-        let withFractional = ISO8601DateFormatter()
-        withFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if withFractional.date(from: value) != nil { return true }
-        return ISO8601DateFormatter().date(from: value) != nil
-    }
-
     private static func assertCapsule1Success(
         _ capsule: KDNAContextCapsule,
         code: String
@@ -1247,7 +1252,7 @@ public enum KDNACapsuleV2 {
     ) throws {
         guard capsule.type == "kdna.context.capsule", capsule.version == "2.0",
               matches(assetIDPattern, capsule.asset.asset_id),
-              URL(string: capsule.asset.asset_uid)?.scheme != nil,
+              KDNAJSONFormats.isURI(capsule.asset.asset_uid),
               matches(versionPattern, capsule.asset.version),
               matches(versionPattern, capsule.asset.judgment_version),
               ["public", "licensed", "remote"].contains(capsule.access),
@@ -1255,7 +1260,7 @@ public enum KDNACapsuleV2 {
               signatureStates.contains(capsule.signature.state),
               capsule.trace.payload_encoding == "cbor",
               capsule.trace.loaded_by == "kdna-core",
-              validISODate(capsule.trace.loaded_at),
+              KDNAJSONFormats.isDateTime(capsule.trace.loaded_at),
               ["packaged_file", "packaged_bytes"].contains(capsule.trace.input_kind),
               capsule.trace.runtime_eligible,
               capsule.trace.schema_valid,
@@ -1313,7 +1318,7 @@ public enum KDNACapsuleV2 {
             ),
         ]
         for (name, item, basis, mismatchCode) in observations {
-            guard validDigest(item.value), item.basis == basis else {
+            guard let value = item.value, validDigest(value), item.basis == basis else {
                 throw protocolError(
                     "KDNA_CAPSULE_2_DIGEST_EVIDENCE_INVALID",
                     "Capsule 2 \(name) digest evidence is invalid."
@@ -1323,7 +1328,7 @@ public enum KDNACapsuleV2 {
             case "mismatched":
                 throw protocolError(mismatchCode, "Capsule 2 cannot be emitted with \(name) mismatch.")
             case "matched":
-                guard item.comparison.expected == item.value,
+                guard item.comparison.expected == value,
                       let against = item.comparison.against,
                       comparisonTargets.contains(against),
                       let source = item.comparison.source,
@@ -1362,7 +1367,7 @@ public enum KDNACapsuleV2 {
 
     private static func observationJSON(_ observation: KDNADigestObservation) -> KDNAJSONValue {
         .object([
-            "value": .string(observation.value),
+            "value": observation.value.map(KDNAJSONValue.string) ?? .null,
             "basis": .string(observation.basis),
             "comparison": .object([
                 "state": .string(observation.comparison.state),

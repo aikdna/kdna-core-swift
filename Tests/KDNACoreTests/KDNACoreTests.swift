@@ -90,6 +90,9 @@ final class KDNACoreTests: XCTestCase {
             "title": "Checksum Digest Fixture",
             "version": "1.0.0",
             "judgment_version": "1.0.0",
+            "created_at": "2026-07-15T00:00:00Z",
+            "updated_at": "2026-07-15T00:00:00Z",
+            "compatibility": ["min_loader_version": "0.16.0", "profile": "judgment-profile-v1"],
             "access": "public",
             "payload": ["path": "payload.kdnab", "encoding": "cbor", "encrypted": false]
         ], options: [.sortedKeys, .withoutEscapingSlashes])
@@ -2506,13 +2509,16 @@ final class KDNACoreTests: XCTestCase {
         let tmpURL = tmpDir.appendingPathComponent("protected.kdna")
         let manifestData = try JSONSerialization.data(withJSONObject: [
             "kdna_version": "1.0",
-            "asset_id": "@test/protected",
+            "asset_id": "kdna:test:protected",
             "asset_uid": "urn:uuid:00000000-0000-4000-8000-000000000009",
             "asset_type": "fixture",
             "name": "@test/protected",
             "title": "Protected Runtime Asset",
             "version": "0.1.0",
             "judgment_version": "0.1.0",
+            "created_at": "2026-07-15T00:00:00Z",
+            "updated_at": "2026-07-15T00:00:00Z",
+            "compatibility": ["min_loader_version": "0.16.0", "profile": "judgment-profile-v1"],
             "access": "licensed",
             "entitlement": ["profile": "password", "offline": true, "revocable": false],
             "payload": ["path": "payload.kdnab", "encoding": "cbor", "encrypted": true],

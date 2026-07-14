@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Validate runtime manifests, payload profiles, and referenced load contracts
+  against digest-locked copies of the canonical Node schemas; malformed nested
+  values now block LoadPlan and Capsule emission instead of producing a false
+  `schema_valid` trace.
+- Match full AJV date-time and URI format boundaries through a Node-generated
+  shared fixture, including lowercase/whitespace RFC 3339 forms and invalid
+  Foundation URL edge cases.
+- Preserve frozen Capsule 1 extensibility at the top level and in trace while
+  retaining strict decoding for its closed signature object.
+- Support generic digest evidence whose unavailable observations carry a null
+  value, while continuing to reject unavailable or mismatched evidence from a
+  successful Capsule 2.
 - Add opt-in Runtime Capsule 2 loading with explicit A/C/E digest evidence,
   strict RFC 8785 JCS delivery digest P, successful-Capsule invariants, and a
   one-way Capsule 2 to frozen Capsule 1 adapter.

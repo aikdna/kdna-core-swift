@@ -46,9 +46,7 @@ func kdnaMatches(_ value: String, pattern: String) -> Bool {
 }
 
 func kdnaIsISODate(_ value: String) -> Bool {
-    let fractional = ISO8601DateFormatter()
-    fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return fractional.date(from: value) != nil || ISO8601DateFormatter().date(from: value) != nil
+    KDNAJSONFormats.isDateTime(value)
 }
 
 extension KeyedDecodingContainer {

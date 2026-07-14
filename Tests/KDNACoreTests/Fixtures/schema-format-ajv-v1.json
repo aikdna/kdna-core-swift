@@ -1,0 +1,73 @@
+{
+  "generator": "scripts/generate_schema_format_fixture.js",
+  "canonical_commit": "f2f9ac4b8300413b1fda58b43fdb6d12d4545820",
+  "ajv_formats": "3.0.1",
+  "date-time": [
+    {
+      "value": "2026-07-15T12:34:56Z",
+      "valid": true
+    },
+    {
+      "value": "2026-07-15t12:34:56z",
+      "valid": true
+    },
+    {
+      "value": "2026-07-15 12:34:56+23:59",
+      "valid": true
+    },
+    {
+      "value": "2000-02-29T23:59:60Z",
+      "valid": true
+    },
+    {
+      "value": "2025-02-29T12:00:00Z",
+      "valid": false
+    },
+    {
+      "value": "2026-07-15T12:34:56",
+      "valid": false
+    },
+    {
+      "value": "2026-07-15T12:34:56Ztrailing",
+      "valid": false
+    },
+    {
+      "value": "2026-07-15T24:00:00Z",
+      "valid": false
+    }
+  ],
+  "uri": [
+    {
+      "value": "urn:uuid:00190000-0000-4000-8000-000000000001",
+      "valid": true
+    },
+    {
+      "value": "https://example.com/a?b#c",
+      "valid": true
+    },
+    {
+      "value": "mailto:test@example.com",
+      "valid": true
+    },
+    {
+      "value": "a:",
+      "valid": false
+    },
+    {
+      "value": "a: x",
+      "valid": false
+    },
+    {
+      "value": "relative/path",
+      "valid": false
+    },
+    {
+      "value": "https://exa mple.com",
+      "valid": false
+    },
+    {
+      "value": "urn:%zz",
+      "valid": false
+    }
+  ]
+}

@@ -96,9 +96,21 @@ shape. Capsule 1 preserves a manifest's legacy `open`, `protected`, or
 the cross-language loader identifier `kdna-core`.
 
 All public Capsule value types conform to `Sendable`. Decoding Capsule 1 or 2
-is fail closed: required-but-nullable fields must be present, unknown object
-properties are rejected, and nested trace, signature, digest, compatibility,
-and extension values are validated before a Capsule value is returned.
+is fail closed for declared fields: required-but-nullable fields must be
+present, closed objects reject unknown properties, and nested trace, signature,
+digest, compatibility, and extension values are validated before a Capsule
+value is returned. The frozen Capsule 1 schema intentionally remains
+extensible at its top level and in `trace`; legal future properties there are
+ignored by older Swift clients, while its closed `signature` object stays
+strict.
+
+LoadPlan validates `kdna.json`, decrypted `payload.kdnab`, and referenced
+`load_contract` values against byte-for-byte copies of the canonical schemas
+pinned to `aikdna/kdna@f2f9ac4`. Resource SHA-256 locks make missing or drifted
+schema files fail closed. Date-time and URI formats follow the same full
+`ajv-formats` behavior as Node rather than Foundation's more permissive
+parsers. Encrypted payload structure is validated after authorized in-memory
+decryption, before a Runtime Capsule can be emitted.
 
 ### Digest vocabulary
 
