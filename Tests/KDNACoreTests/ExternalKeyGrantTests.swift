@@ -80,12 +80,13 @@ final class ExternalKeyGrantTests: XCTestCase {
     private func authorization(
         fixture: [String: Any],
         grantOverride: [String: Any]? = nil,
+        checksumsOverride: [String: Any]? = nil,
         minimumStatusVersion: Int? = nil,
         minimumVerifiedTime: Date? = nil,
         now: Date = ISO8601DateFormatter().date(from: "2026-07-13T12:00:00Z")!
     ) throws -> KDNAExternalGrantAuthorization {
         let manifest = try XCTUnwrap(fixture["manifest"] as? [String: Any])
-        let checksums = try XCTUnwrap(fixture["checksums"] as? [String: Any])
+        let checksums = try XCTUnwrap(checksumsOverride ?? fixture["checksums"] as? [String: Any])
         let keys = try XCTUnwrap(fixture["test_keys"] as? [String: String])
         let grant = try XCTUnwrap(grantOverride ?? fixture["grant"] as? [String: Any])
         let grantData = try JSONSerialization.data(withJSONObject: grant, options: [.sortedKeys, .withoutEscapingSlashes])
@@ -117,6 +118,25 @@ final class ExternalKeyGrantTests: XCTestCase {
         let plaintext = try authorization.decrypt(entryName: "payload.kdnab", envelopeData: envelope, manifest: manifest)
         XCTAssertEqual(plaintext, expected)
         XCTAssertEqual(try KDNACBOR.decodeObject(plaintext)["profile"] as? String, "judgment-profile-v1")
+    }
+
+    func testGrantV1AcceptsCanonicalEntrySetDigestNameWithoutChangingBinding() throws {
+        let value = try fixture()
+        var checksums = try XCTUnwrap(value["checksums"] as? [String: Any])
+        checksums["entry_set_digest"] = checksums.removeValue(forKey: "asset_digest")
+
+        let authorization = try self.authorization(fixture: value, checksumsOverride: checksums)
+        XCTAssertEqual(authorization.grant.asset.digest, checksums["entry_set_digest"] as? String)
+    }
+
+    func testGrantV1RejectsConflictingEntrySetDigestAliases() throws {
+        let value = try fixture()
+        var checksums = try XCTUnwrap(value["checksums"] as? [String: Any])
+        checksums["entry_set_digest"] = "sha256:" + String(repeating: "0", count: 64)
+
+        XCTAssertThrowsError(try authorization(fixture: value, checksumsOverride: checksums)) { error in
+            XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_GRANT_DIGEST_MISMATCH")
+        }
     }
 
     func testTamperAndExpiryFailClosed() throws {

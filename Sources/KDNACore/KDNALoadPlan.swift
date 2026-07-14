@@ -372,7 +372,11 @@ public enum KDNALoadPlanCore {
         let layout = loaded.layout
         let context = try profileContent(profile: profile, manifest: layout.manifest, payload: loaded.payload)
         let checksums = layout.checksums
-        let assetDigest = checksums?["asset_digest"] as? String
+        // Capsule 1.0 keeps its historical `asset_digest` wire field. Its
+        // value is the integrity-covered entry-set digest, now declared by the
+        // unambiguous `entry_set_digest` checksum field (or the deprecated
+        // `asset_digest` alias in existing KDNA 1.0 assets).
+        let assetDigest = checksums.flatMap { try? KDNAChecksumDigests.entrySetDigest(in: $0) }
         let creator = layout.manifest["creator"] as? [String: Any]
         let issuer = creator?["pubkey"] as? String
         let signatureState = issuer == nil ? "absent" : "not_checked"
@@ -698,6 +702,27 @@ public enum KDNALoadPlanCore {
                 result.checksums_valid = false
                 problems.append("checksums: unsupported digest algorithm \(checksums["algorithm"] ?? "") (supported: sha256)")
             }
+            do {
+                try KDNAChecksumDigests.validateMetadata(in: checksums)
+            } catch KDNAChecksumDigests.ResolutionError.invalidDigestProfile {
+                result.checksums_valid = false
+                problems.append("checksums: digest_profile must be kdna-runtime-entry-set-v1")
+            } catch KDNAChecksumDigests.ResolutionError.invalidCoveredEntries {
+                result.checksums_valid = false
+                problems.append("checksums: covered_entries must be [kdna.json, payload.kdnab]")
+            } catch {
+                result.checksums_valid = false
+                problems.append("checksums: invalid entry-set metadata")
+            }
+            do {
+                _ = try KDNAChecksumDigests.entrySetDigest(in: checksums)
+            } catch KDNAChecksumDigests.ResolutionError.invalidEntrySetDigestDeclaration {
+                result.checksums_valid = false
+                problems.append("checksums: entry-set digest declarations must be strings")
+            } catch {
+                result.checksums_valid = false
+                problems.append("checksums: entry_set_digest and deprecated asset_digest alias disagree")
+            }
             verifyDigest(
                 key: "manifest_digest",
                 entryName: "kdna.json",
@@ -714,7 +739,7 @@ public enum KDNALoadPlanCore {
                 result: &result,
                 problems: &problems
             )
-            verifyAssetDigest(
+            verifyEntrySetDigest(
                 entries: [
                     ("kdna.json", layout.rawManifest),
                     ("payload.kdnab", layout.payload),
@@ -750,13 +775,19 @@ public enum KDNALoadPlanCore {
         }
     }
 
-    private static func verifyAssetDigest(
+    private static func verifyEntrySetDigest(
         entries: [(String, Data)],
         checksums: [String: Any],
         result: inout KDNALoadPlanChecks,
         problems: inout [String]
     ) {
-        guard let declared = checksums["asset_digest"] as? String else { return }
+        let declared: String?
+        do {
+            declared = try KDNAChecksumDigests.entrySetDigest(in: checksums)
+        } catch {
+            return
+        }
+        guard let declared else { return }
         let expected = declared.replacingOccurrences(of: "sha256:", with: "")
         // Sort entries by name, compute `name:hex_digest` pairs, join with newline, hash
         let combined = entries
@@ -766,7 +797,8 @@ public enum KDNALoadPlanCore {
         let actual = sha256Hex(Data(combined.utf8))
         if actual != expected {
             result.checksums_valid = false
-            problems.append("checksums: asset_digest mismatch (declared \(String(expected.prefix(8)))..., actual \(String(actual.prefix(8)))...)")
+            let field = checksums["entry_set_digest"] == nil ? "asset_digest" : "entry_set_digest"
+            problems.append("checksums: \(field) mismatch (declared \(String(expected.prefix(8)))..., actual \(String(actual.prefix(8)))...)")
         }
     }
 

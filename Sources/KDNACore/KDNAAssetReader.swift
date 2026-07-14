@@ -150,6 +150,8 @@ public class KDNAAssetReader {
         if !verifyMediaType(asset: asset) { errors.append("invalid or missing mimetype") }
         if !hasEntry(asset: asset, name: "payload.kdnab") { errors.append("required entry missing: payload.kdnab") }
 
+        verifyDeclaredChecksums(asset: asset, errors: &errors)
+
         if requireDecryption {
             if let manifest = try? decodeManifest(asset: asset),
                let encryptedEntries = manifest.encryption?.encrypted_entries,
@@ -168,7 +170,13 @@ public class KDNAAssetReader {
             }
         }
 
-        let contentDigest = KDNAContentDigest.compute(asset: asset, reader: self)
+        let contentDigest: String?
+        do {
+            contentDigest = try KDNAContentDigest.computeValidated(asset: asset, reader: self)
+        } catch {
+            contentDigest = nil
+            errors.append(error.localizedDescription)
+        }
         let assetDigest = asset.assetDigest
 
         return VerifyResult(
@@ -179,6 +187,60 @@ public class KDNAAssetReader {
             assetDigest: assetDigest,
             signatureValid: nil
         )
+    }
+
+    private func verifyDeclaredChecksums(asset: KDNAAsset, errors: inout [String]) {
+        guard hasEntry(asset: asset, name: "checksums.json") else { return }
+        let checksums: [String: Any]
+        do {
+            let data = try readEntry(asset: asset, name: "checksums.json")
+            guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                errors.append("checksums.json: expected a JSON object")
+                return
+            }
+            checksums = object
+        } catch {
+            errors.append("checksums.json: invalid JSON")
+            return
+        }
+
+        if checksums["algorithm"] as? String ?? "sha256" != "sha256" {
+            errors.append("checksums.json: unsupported digest algorithm")
+        }
+        do {
+            try KDNAChecksumDigests.validateMetadata(in: checksums)
+        } catch {
+            errors.append("checksums.json: invalid entry-set metadata")
+        }
+
+        let entrySetDigest: String?
+        do {
+            entrySetDigest = try KDNAChecksumDigests.entrySetDigest(in: checksums)
+        } catch {
+            errors.append("checksums.json: conflicting or invalid entry-set digest declarations")
+            return
+        }
+
+        let covered = KDNAChecksumDigests.runtimeCoveredEntries.compactMap { name -> (String, Data)? in
+            guard let data = try? readEntry(asset: asset, name: name) else { return nil }
+            return (name, data)
+        }
+        for (key, name) in [("manifest_digest", "kdna.json"), ("payload_digest", "payload.kdnab")] {
+            guard let declared = checksums[key] as? String,
+                  let data = covered.first(where: { $0.0 == name })?.1 else { continue }
+            if declared != "sha256:\(KDNACrypto.sha256Hex(data))" {
+                errors.append("checksums.json: \(key) mismatch")
+            }
+        }
+        if let entrySetDigest {
+            let combined = covered
+                .sorted { $0.0 < $1.0 }
+                .map { "\($0.0):\(KDNACrypto.sha256Hex($0.1))" }
+                .joined(separator: "\n")
+            if entrySetDigest != "sha256:\(KDNACrypto.sha256Hex(Data(combined.utf8)))" {
+                errors.append("checksums.json: entry-set digest mismatch")
+            }
+        }
     }
 
     // MARK: - ZIP Central Directory Parser

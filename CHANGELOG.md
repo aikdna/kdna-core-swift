@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Hash non-JSON content-digest entries as their original bytes and add a
+  JavaScript/Swift binary-payload conformance vector.
+- Add throwing content-digest computation for fail-closed invalid JSON while
+  retaining a deprecated non-throwing compatibility wrapper.
+- Accept the explicit `entry_set_digest` checksum field and its metadata while
+  retaining the KDNA 1.0 `asset_digest` alias; conflicting declarations are
+  rejected.
+- Preserve Runtime Capsule 1.0 and external grant v1 entry-set bindings while
+  improving JSON string, key-order, and number canonicalization parity.
+
 ## 0.4.0 (2026-07-13)
 
 - Add RFC-0019 account/device external key grant parsing and verification.

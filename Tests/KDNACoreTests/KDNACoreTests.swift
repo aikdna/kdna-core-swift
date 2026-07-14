@@ -75,6 +75,57 @@ final class KDNACoreTests: XCTestCase {
         return local + central + eocd
     }
 
+    private func sha256Hex(_ data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func checksumRuntimeAsset(
+        fields: (String) -> [String: Any]
+    ) throws -> (url: URL, entrySetDigest: String) {
+        let manifest = try JSONSerialization.data(withJSONObject: [
+            "kdna_version": "1.0",
+            "asset_id": "kdna:test:checksum-digest",
+            "asset_uid": "urn:uuid:00000000-0000-4000-8000-000000000099",
+            "asset_type": "fixture",
+            "title": "Checksum Digest Fixture",
+            "version": "1.0.0",
+            "judgment_version": "1.0.0",
+            "access": "public",
+            "payload": ["path": "payload.kdnab", "encoding": "cbor", "encrypted": false]
+        ], options: [.sortedKeys, .withoutEscapingSlashes])
+        let payload = try KDNACBOR.encode([
+            "profile": "judgment-profile-v1",
+            "core": [
+                "highest_question": "Which checksum field names the entry set?",
+                "axioms": [] as [Any]
+            ] as [String: Any]
+        ] as [String: Any])
+        let combined = [
+            "kdna.json:\(sha256Hex(manifest))",
+            "payload.kdnab:\(sha256Hex(payload))"
+        ].joined(separator: "\n")
+        let entrySetDigest = "sha256:\(sha256Hex(Data(combined.utf8)))"
+        var checksums: [String: Any] = [
+            "algorithm": "sha256",
+            "manifest_digest": "sha256:\(sha256Hex(manifest))",
+            "payload_digest": "sha256:\(sha256Hex(payload))"
+        ]
+        checksums.merge(fields(entrySetDigest)) { _, replacement in replacement }
+        let checksumsData = try JSONSerialization.data(
+            withJSONObject: checksums,
+            options: [.sortedKeys, .withoutEscapingSlashes]
+        )
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("kdna-checksum-digest-\(UUID().uuidString).kdna")
+        try makeZip(entries: [
+            ("mimetype", Data(KDNAAssetReader.kdnaMediaType.utf8)),
+            ("kdna.json", manifest),
+            ("payload.kdnab", payload),
+            ("checksums.json", checksumsData)
+        ]).write(to: url)
+        return (url, entrySetDigest)
+    }
+
     // MARK: - Test Fixtures
 
     func testAssetReaderAcceptsRuntimeContainer() throws {
@@ -1680,6 +1731,146 @@ final class KDNACoreTests: XCTestCase {
     }
 
     // MARK: - Cross-Platform Conformance
+
+    func testContentDigestMatchesNodeForBinaryCrossLanguageFixture() throws {
+        let fixtureURL = try XCTUnwrap(Bundle.module.url(
+            forResource: "content-digest-binary-v1",
+            withExtension: "json"
+        ))
+        let fixture = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: Data(contentsOf: fixtureURL)) as? [String: Any]
+        )
+        let encodedEntries = try XCTUnwrap(fixture["entries"] as? [[String: String]])
+        let entries = try encodedEntries.map { entry -> (String, Data) in
+            let name = try XCTUnwrap(entry["name"])
+            let encoded = try XCTUnwrap(entry["data"])
+            return (name, try XCTUnwrap(Data(base64Encoded: encoded)))
+        }
+        let binaryPayload = try XCTUnwrap(entries.first(where: { $0.0 == "payload.kdnab" })?.1)
+        XCTAssertNil(String(data: binaryPayload, encoding: .utf8), "fixture must exercise non-UTF-8 payload bytes")
+
+        let asset = try KDNAAssetReader().open(data: makeZip(entries: entries), path: "binary-vector.kdna")
+        XCTAssertEqual(
+            try KDNAContentDigest.computeValidated(asset: asset),
+            fixture["expected_content_digest"] as? String
+        )
+    }
+
+    func testCanonicalEntrySetDigestAndLegacyAliasAreCompatible() throws {
+        for fields in [
+            {
+                [
+                    "entry_set_digest": $0,
+                    "digest_profile": "kdna-runtime-entry-set-v1",
+                    "covered_entries": ["kdna.json", "payload.kdnab"]
+                ] as [String: Any]
+            },
+            { ["asset_digest": $0] as [String: Any] },
+            {
+                [
+                    "entry_set_digest": $0,
+                    "asset_digest": $0,
+                    "digest_profile": "kdna-runtime-entry-set-v1",
+                    "covered_entries": ["kdna.json", "payload.kdnab"]
+                ] as [String: Any]
+            }
+        ] as [(String) -> [String: Any]] {
+            let fixture = try checksumRuntimeAsset(fields: fields)
+            defer { try? FileManager.default.removeItem(at: fixture.url) }
+
+            let plan = KDNARuntime.planLoad(assetURL: fixture.url)
+            XCTAssertTrue(plan.can_load_now, plan.issues.map(\.message).joined(separator: "\n"))
+            XCTAssertTrue(plan.checks.checksums_valid)
+            let capsule = try KDNARuntime.load(assetURL: fixture.url)
+            XCTAssertEqual(capsule.version, "1.0")
+            XCTAssertEqual(capsule.asset_digest, fixture.entrySetDigest)
+        }
+    }
+
+    func testConflictingEntrySetDigestAliasesFailClosed() throws {
+        let fixture = try checksumRuntimeAsset { digest in
+            [
+                "entry_set_digest": digest,
+                "asset_digest": "sha256:" + String(repeating: "0", count: 64)
+            ]
+        }
+        defer { try? FileManager.default.removeItem(at: fixture.url) }
+
+        let plan = KDNARuntime.planLoad(assetURL: fixture.url)
+        XCTAssertFalse(plan.can_load_now)
+        XCTAssertFalse(plan.checks.checksums_valid)
+        XCTAssertTrue(plan.issues.contains { $0.code == "KDNA_INTEGRITY_DIGEST_FAILED" })
+        let asset = try KDNAAssetReader().open(url: fixture.url)
+        XCTAssertFalse(KDNAAssetReader().verifySync(asset).ok)
+        XCTAssertThrowsError(try KDNARuntime.load(assetURL: fixture.url))
+    }
+
+    func testInvalidEntrySetMetadataFailsClosedWhileLegacyOmissionRemainsCompatible() throws {
+        for invalidFields in [
+            { ["entry_set_digest": $0, "digest_profile": "other-profile"] as [String: Any] },
+            { _ in ["entry_set_digest": 7] as [String: Any] },
+            {
+                [
+                    "entry_set_digest": $0,
+                    "digest_profile": "kdna-runtime-entry-set-v1",
+                    "covered_entries": ["payload.kdnab", "kdna.json"]
+                ] as [String: Any]
+            }
+        ] as [(String) -> [String: Any]] {
+            let fixture = try checksumRuntimeAsset(fields: invalidFields)
+            defer { try? FileManager.default.removeItem(at: fixture.url) }
+
+            let plan = KDNARuntime.planLoad(assetURL: fixture.url)
+            XCTAssertFalse(plan.can_load_now)
+            XCTAssertFalse(plan.checks.checksums_valid)
+            XCTAssertTrue(plan.issues.contains { $0.code == "KDNA_INTEGRITY_DIGEST_FAILED" })
+            let asset = try KDNAAssetReader().open(url: fixture.url)
+            XCTAssertFalse(KDNAAssetReader().verifySync(asset).ok)
+        }
+    }
+
+    func testStableStringifyMatchesJavaScriptEscapesAndNumberThresholds() throws {
+        let json = Data(#"{"odd\"key":"line\n\b\f\t\r\"\\","numbers":[-0,0.000001,1e-7,1e20,1e21,1000000000000000100]}"#.utf8)
+        let value = try XCTUnwrap(JSONSerialization.jsonObject(with: json) as? [String: Any])
+        XCTAssertEqual(
+            KDNAContentDigest.stableStringify(value),
+            #"{"numbers":[0,0.000001,1e-7,100000000000000000000,1e+21,1000000000000000100],"odd\"key":"line\n\b\f\t\r\"\\"}"#
+        )
+        XCTAssertEqual(
+            KDNAContentDigest.stableStringify(["\u{E000}": 2, "\u{10000}": 1]),
+            "{\"\u{10000}\":1,\"\u{E000}\":2}"
+        )
+        XCTAssertEqual(
+            KDNAContentDigest.canonicalizeJSON(name: "array.json", content: #"[{"b":2,"a":1},true]"#),
+            #"[{"a":1,"b":2},true]"#
+        )
+        XCTAssertEqual(
+            KDNAContentDigest.canonicalizeJSON(name: "kdna.json", content: #"{"_source":"local","a":1}"#),
+            #"{"a":1}"#
+        )
+    }
+
+    func testInvalidJSONFailsVerificationInsteadOfProducingDigest() throws {
+        let asset = try KDNAAssetReader().open(data: makeZip(entries: [
+            ("mimetype", Data(KDNAAssetReader.kdnaMediaType.utf8)),
+            ("kdna.json", Data(#"{"broken":]"#.utf8)),
+            ("payload.kdnab", Data([0xA0]))
+        ]), path: "invalid-json.kdna")
+
+        let result = KDNAAssetReader().verifySync(asset)
+        XCTAssertFalse(result.ok)
+        XCTAssertNil(result.contentDigest)
+        XCTAssertTrue(result.errors.contains { $0.contains("kdna.json: invalid JSON") })
+        XCTAssertEqual(KDNAContentDigest.compute(asset: asset), "invalid:content-digest-input")
+
+        let invalidUTF8 = try KDNAAssetReader().open(data: makeZip(entries: [
+            ("mimetype", Data(KDNAAssetReader.kdnaMediaType.utf8)),
+            ("kdna.json", Data([0x7B, 0x22, 0x61, 0x22, 0x3A, 0x22, 0xFF, 0x22, 0x7D])),
+            ("payload.kdnab", Data([0xA0]))
+        ]), path: "invalid-utf8-json.kdna")
+        XCTAssertThrowsError(try KDNAContentDigest.computeValidated(asset: invalidUTF8))
+        XCTAssertFalse(KDNAAssetReader().verifySync(invalidUTF8).ok)
+    }
 
     func testConformanceBasicFixtureDigestIsDeterministic() throws {
         let fixturePath = fixtureURL("test_conformance.kdna")

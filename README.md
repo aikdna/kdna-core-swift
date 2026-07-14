@@ -64,6 +64,24 @@ print("Content digest:", result.contentDigest ?? "")
 // should start from a packaged .kdna file and the LoadPlan path above.
 ```
 
+### Digest vocabulary
+
+- `KDNAAsset.assetDigest` is the SHA-256 digest of the complete `.kdna` file
+  bytes.
+- `VerifyResult.contentDigest` is the canonical content-tree digest. Binary
+  entries such as `payload.kdnab` are hashed as their original bytes.
+- `checksums.json.entry_set_digest` covers `kdna.json` and `payload.kdnab`
+  under `kdna-runtime-entry-set-v1`. Existing KDNA 1.0 assets may use the
+  deprecated `checksums.json.asset_digest` alias; if both are present they must
+  be identical.
+- Runtime Capsule 1.0 and external grant v1 retain their existing
+  `asset_digest`/`asset.digest` wire names for this entry-set binding.
+
+Use `KDNAContentDigest.computeValidated(asset:reader:)` when computing a
+digest directly so malformed JSON is handled as an error. The older
+non-throwing `compute` overload remains temporarily for source compatibility
+and never returns a value matching the `sha256:` digest shape on invalid input.
+
 ## What It Does
 
 - **Open and verify** local `.kdna` runtime files

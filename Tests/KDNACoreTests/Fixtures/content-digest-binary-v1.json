@@ -1,0 +1,26 @@
+{
+  "contract": "@aikdna/kdna-core KdnaAssetReader.contentDigestSync",
+  "expected_content_digest": "sha256:e254cec68ca95fa2014a2dc384f2be5b86d024afe2a37a2994c220e3cf968e45",
+  "entries": [
+    {
+      "name": "mimetype",
+      "encoding": "base64",
+      "data": "YXBwbGljYXRpb24vdm5kLmtkbmEuYXNzZXQ="
+    },
+    {
+      "name": "kdna.json",
+      "encoding": "base64",
+      "data": "eyJrZG5hX3ZlcnNpb24iOiIxLjAiLCJhc3NldF9pZCI6ImtkbmE6Y29uZm9ybWFuY2U6ZGlnZXN0OmJpbmFyeSIsImFzc2V0X2RpZ2VzdCI6InNoYTI1NjpyZW1vdmVkIiwiY29udGVudF9kaWdlc3QiOiJzaGEyNTY6cmVtb3ZlZCIsImF1dGhvcmluZyI6eyJjb250ZW50X2RpZ2VzdCI6InNoYTI1NjpyZW1vdmVkIiwibm90ZSI6ImxpbmVcblxiXGZcdFxyXCJcXCIsIuaOp+WItiI6IuWAvCJ9LCJudW1iZXJzIjpbMCwwLDAuMDAwMDAxLDFlLTcsMTAwMDAwMDAwMDAwMDAwMDAwMDAwLDFlKzIxLDEwMDAwMDAwMDAwMDAwMDAxMDBdLCJvZGRcImtleSI6InNsYXNoXFxxdW90ZVwiIn0="
+    },
+    {
+      "name": "payload.kdnab",
+      "encoding": "base64",
+      "data": "oQD/gMMoAAo="
+    },
+    {
+      "name": "checksums.json",
+      "encoding": "base64",
+      "data": "eyJhbGdvcml0aG0iOiJzaGEyNTYiLCJlbnRyeV9zZXRfZGlnZXN0Ijoic2hhMjU2OjExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTEiLCJhc3NldF9kaWdlc3QiOiJzaGEyNTY6MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMSJ9"
+    }
+  ]
+}

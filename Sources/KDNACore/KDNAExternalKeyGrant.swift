@@ -151,7 +151,16 @@ public final class KDNAExternalGrantAuthorization: Equatable {
         try equal(grant.asset.asset_id, manifest["asset_id"] as? String ?? manifest["name"] as? String, code: "KDNA_GRANT_ASSET_MISMATCH", label: "asset ID")
         try equal(grant.asset.asset_uid, manifest["asset_uid"] as? String, code: "KDNA_GRANT_ASSET_MISMATCH", label: "asset UID")
         try equal(grant.asset.version, manifest["version"] as? String, code: "KDNA_GRANT_ASSET_MISMATCH", label: "asset version")
-        try equal(grant.asset.digest, checksums["asset_digest"] as? String, code: "KDNA_GRANT_DIGEST_MISMATCH", label: "asset digest")
+        let entrySetDigest: String?
+        do {
+            entrySetDigest = try KDNAChecksumDigests.entrySetDigest(in: checksums)
+        } catch {
+            throw failure("KDNA_GRANT_DIGEST_MISMATCH", "checksum entry-set digest aliases disagree")
+        }
+        // External grant v1 continues to bind the integrity-covered entry set.
+        // Only the checksums.json field name changed; the signed grant and AAD
+        // contracts remain unchanged.
+        try equal(grant.asset.digest, entrySetDigest, code: "KDNA_GRANT_DIGEST_MISMATCH", label: "asset digest")
         try equal(grant.asset.entry_path, envelope.entry_path, code: "KDNA_GRANT_ASSET_MISMATCH", label: "entry path")
         try equal(grant.asset.key_ref, envelope.key_ref, code: "KDNA_GRANT_ASSET_MISMATCH", label: "key reference")
         try equal(grant.asset.issuer_key_id, envelope.issuer_key_id, code: "KDNA_GRANT_ASSET_MISMATCH", label: "issuer asset key")
