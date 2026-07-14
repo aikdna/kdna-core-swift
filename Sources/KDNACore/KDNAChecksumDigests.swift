@@ -6,18 +6,18 @@ import Foundation
 /// `entry_set_digest` is the unambiguous field name. `asset_digest` remains a
 /// deprecated compatibility alias for KDNA 1.0 containers, Runtime Capsule
 /// 1.0, and external grant v1. When both fields are present they must agree.
-enum KDNAChecksumDigests {
-    static let runtimeEntrySetProfile = "kdna-runtime-entry-set-v1"
-    static let runtimeCoveredEntries = ["kdna.json", "payload.kdnab"]
+public enum KDNAChecksumDigests {
+    public static let runtimeEntrySetProfile = "kdna-runtime-entry-set-v1"
+    public static let runtimeCoveredEntries = ["kdna.json", "payload.kdnab"]
 
-    enum ResolutionError: Error {
+    public enum ResolutionError: Error {
         case conflictingEntrySetDigests
         case invalidEntrySetDigestDeclaration
         case invalidDigestProfile
         case invalidCoveredEntries
     }
 
-    static func validateMetadata(in checksums: [String: Any]) throws {
+    public static func validateMetadata(in checksums: [String: Any]) throws {
         if checksums.keys.contains("digest_profile"),
            checksums["digest_profile"] as? String != runtimeEntrySetProfile {
             throw ResolutionError.invalidDigestProfile
@@ -28,7 +28,7 @@ enum KDNAChecksumDigests {
         }
     }
 
-    static func entrySetDigest(in checksums: [String: Any]) throws -> String? {
+    public static func entrySetDigest(in checksums: [String: Any]) throws -> String? {
         if checksums.keys.contains("entry_set_digest"),
            checksums["entry_set_digest"] as? String == nil {
             throw ResolutionError.invalidEntrySetDigestDeclaration
@@ -44,5 +44,24 @@ enum KDNAChecksumDigests {
             throw ResolutionError.conflictingEntrySetDigests
         }
         return declared ?? legacy
+    }
+
+    /// Compute E over the raw Runtime manifest and payload bytes.
+    ///
+    /// A checksum declaration is optional evidence and is never the source of
+    /// this observation.
+    public static func computeRuntimeEntrySetDigest(
+        manifest: Data,
+        payload: Data
+    ) -> String {
+        let entries = [
+            ("kdna.json", manifest),
+            ("payload.kdnab", payload),
+        ]
+        let combined = entries
+            .sorted { KDNAContentDigest.utf8PathLess($0.0, $1.0) }
+            .map { "\($0.0):\(KDNACrypto.sha256Hex($0.1))" }
+            .joined(separator: "\n")
+        return "sha256:\(KDNACrypto.sha256Hex(Data(combined.utf8)))"
     }
 }

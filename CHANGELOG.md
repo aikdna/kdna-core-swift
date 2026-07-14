@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add opt-in Runtime Capsule 2 loading with explicit A/C/E digest evidence,
+  strict RFC 8785 JCS delivery digest P, successful-Capsule invariants, and a
+  one-way Capsule 2 to frozen Capsule 1 adapter.
+- Match the JavaScript Capsule 2 golden bytes and A/C/E/P values, preserve
+  legacy domain/access/extensions only as adapter metadata, and fail closed on
+  independent digest mismatches.
+- Order content-tree entry paths by UTF-8 bytes while retaining RFC 8785 UTF-16
+  object-key ordering, and compute Capsule 1 E even without checksums.json.
 - Hash non-JSON content-digest entries as their original bytes and add a
   JavaScript/Swift binary-payload conformance vector.
 - Add throwing content-digest computation for fail-closed invalid JSON while

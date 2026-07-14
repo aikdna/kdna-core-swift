@@ -64,6 +64,31 @@ print("Content digest:", result.contentDigest ?? "")
 // should start from a packaged .kdna file and the LoadPlan path above.
 ```
 
+### Opt-in Runtime Capsule 2
+
+The existing `KDNARuntime.load(...)` API continues to return the frozen
+Runtime Capsule 1 shape. Call `loadV2` explicitly when a consumer needs named
+A/C/E digest evidence and a delivery digest P:
+
+```swift
+let capsule2 = try KDNARuntime.loadV2(
+    assetURL: fileURL,
+    expected: KDNAExpectedDigests(
+        asset: KDNAExpectedDigest(value: receiptAssetDigest, source: "install_receipt")
+    )
+)
+
+let deliveryDigest = try KDNACapsuleV2.computeDeliveryDigest(capsule2)
+let capsule1 = try KDNACapsuleV2.adaptToV1(capsule2)
+```
+
+Capsule 2 snapshots the packaged file once, computes A from those exact bytes,
+C from the canonical content tree, and E from the raw `kdna.json` and
+`payload.kdnab` entry set. Mismatched evidence blocks Capsule emission. P is
+SHA-256 over strict RFC 8785 JCS bytes of the delivered Capsule and is not
+embedded in the Capsule itself. `KDNAJCS` rejects non-finite numbers rather
+than converting them to `null`.
+
 ### Digest vocabulary
 
 - `KDNAAsset.assetDigest` is the SHA-256 digest of the complete `.kdna` file
@@ -76,6 +101,9 @@ print("Content digest:", result.contentDigest ?? "")
   be identical.
 - Runtime Capsule 1.0 and external grant v1 retain their existing
   `asset_digest`/`asset.digest` wire names for this entry-set binding.
+- Runtime Capsule 2 exposes these values as `digests.asset`,
+  `digests.content`, and `digests.runtime_entry_set`. Its delivery digest uses
+  the separate `kdna-capsule-jcs-v1` basis.
 
 Use `KDNAContentDigest.computeValidated(asset:reader:)` when computing a
 digest directly so malformed JSON is handled as an error. The older
@@ -100,6 +128,7 @@ and never returns a value matching the `sha256:` digest shape on invalid input.
 | `KDNADomainLoader.swift` | Domain loading, scanning, task classification, context formatting |
 | `KDNADomainValidator.swift` | Structural lint, cross-file validation, ID uniqueness |
 | `KDNAExternalKeyGrant.swift` | RFC-0019 signature/binding verification, X25519 unwrap, and in-memory decryption |
+| `KDNACapsuleV2.swift` | Opt-in A/C/E evidence, strict RFC 8785 JCS/P, Capsule 2 model, and v2-to-v1 adapter |
 | `KDNJudgmentPipeline.swift` | Pre-filtering, system prompt construction, post-validation of agent outputs |
 | `KDNARouter.swift` | **7-State Domain Router** — full routing pipeline (Intent Gate → Negative Match → Domain Fit → Trust Gate → Ambiguity Gate) |
 | `KDNAComposer.swift` | **Multi-Domain Composer** — combines primary + constraint domains with conflict detection |
@@ -114,6 +143,7 @@ and never returns a value matching the `sha256:` digest shape on invalid input.
 | LoadPlan authorization planning | Beta |
 | CBOR payload and encrypted-envelope decoding | Beta |
 | Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Beta |
+| Opt-in Runtime Capsule 2 A/C/E/P parity | Beta; shared JavaScript golden vector |
 | RFC-0019 account/device external grant verification | Beta; shared JS golden vector |
 | `KDNAJudgmentProjection` rendering | Beta |
 | Developer fixture loading | Developer compatibility |

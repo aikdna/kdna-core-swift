@@ -43,7 +43,7 @@ public class KDNAContentDigest {
         let excluded: Set<String> = [".DS_Store", "signature.json", "build-receipt.json"]
 
         var parts: [String] = []
-        for name in allEntries.sorted() {
+        for name in allEntries.sorted(by: utf8PathLess) {
             if excluded.contains(name) { continue }
             if name.hasPrefix("reports/") { continue }
 
@@ -79,7 +79,7 @@ public class KDNAContentDigest {
         let excluded: Set<String> = ["signature.json", ".DS_Store", "build-receipt.json"]
 
         var parts: [String] = []
-        for name in files.keys.sorted() {
+        for name in files.keys.sorted(by: utf8PathLess) {
             if excluded.contains(name) { continue }
             if name.hasPrefix("reports/") { continue }
 
@@ -238,6 +238,12 @@ public class KDNAContentDigest {
         lhs.utf16.lexicographicallyPrecedes(rhs.utf16)
     }
 
+    /// Protocol entry paths are ordered by their UTF-8 bytes. This is distinct
+    /// from RFC 8785 object-key ordering, which compares UTF-16 code units.
+    static func utf8PathLess(_ lhs: String, _ rhs: String) -> Bool {
+        lhs.utf8.lexicographicallyPrecedes(rhs.utf8)
+    }
+
     // MARK: - Manifest Templates
 
     /// Strip self-referencing fields from manifest for content_digest computation.
@@ -270,7 +276,7 @@ public class KDNAContentDigest {
     public static func canonicalSigningPayload(entries: [String: Data]) -> String {
         entries.keys
             .filter { $0.lowercased().hasSuffix(".json") && $0 != "signature.json" }
-            .sorted()
+            .sorted(by: utf8PathLess)
             .map { name in
                 let payloadData: Data
                 if name == "kdna.json", let obj = try? JSONSerialization.jsonObject(with: entries[name] ?? Data()) as? [String: Any] {
@@ -290,7 +296,7 @@ public class KDNAContentDigest {
         let parts = entries.keys
             .filter { !excluded.contains($0) }
             .filter { !$0.hasPrefix("reports/") }
-            .sorted()
+            .sorted(by: utf8PathLess)
             .map { name in
                 let digestData: Data
                 if name == "kdna.json", let obj = try? JSONSerialization.jsonObject(with: entries[name] ?? Data()) as? [String: Any] {

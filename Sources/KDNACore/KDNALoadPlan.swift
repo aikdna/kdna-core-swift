@@ -193,6 +193,73 @@ public struct KDNAContextCapsule: Codable, Equatable {
     public let profile: String
     public let context: KDNAJSONValue
     public let trace: KDNAContextCapsuleTrace
+    public let extends_chain: KDNAJSONValue?
+    public let inheritance_applied: Bool?
+    public let resolved_dependencies: KDNAJSONValue?
+    public let rag_isolation_policy: KDNAJSONValue?
+
+    public init(
+        type: String,
+        version: String,
+        domain: String?,
+        judgment_version: String?,
+        asset_digest: String?,
+        signature: KDNAContextCapsuleSignature,
+        access: String,
+        risk_level: String?,
+        profile: String,
+        context: KDNAJSONValue,
+        trace: KDNAContextCapsuleTrace,
+        extends_chain: KDNAJSONValue? = nil,
+        inheritance_applied: Bool? = nil,
+        resolved_dependencies: KDNAJSONValue? = nil,
+        rag_isolation_policy: KDNAJSONValue? = nil
+    ) {
+        self.type = type
+        self.version = version
+        self.domain = domain
+        self.judgment_version = judgment_version
+        self.asset_digest = asset_digest
+        self.signature = signature
+        self.access = access
+        self.risk_level = risk_level
+        self.profile = profile
+        self.context = context
+        self.trace = trace
+        self.extends_chain = extends_chain
+        self.inheritance_applied = inheritance_applied
+        self.resolved_dependencies = resolved_dependencies
+        self.rag_isolation_policy = rag_isolation_policy
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case type, version, domain, judgment_version, asset_digest, signature
+        case access, risk_level, profile, context, trace
+        case extends_chain, inheritance_applied, resolved_dependencies, rag_isolation_policy
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        try container.encode(version, forKey: .version)
+        if let domain { try container.encode(domain, forKey: .domain) }
+        else { try container.encodeNil(forKey: .domain) }
+        if let judgment_version { try container.encode(judgment_version, forKey: .judgment_version) }
+        else { try container.encodeNil(forKey: .judgment_version) }
+        if let asset_digest { try container.encode(asset_digest, forKey: .asset_digest) }
+        else { try container.encodeNil(forKey: .asset_digest) }
+        try container.encode(signature, forKey: .signature)
+        try container.encode(access, forKey: .access)
+        if let risk_level { try container.encode(risk_level, forKey: .risk_level) }
+        else { try container.encodeNil(forKey: .risk_level) }
+        try container.encode(profile, forKey: .profile)
+        try container.encode(context, forKey: .context)
+        try container.encode(trace, forKey: .trace)
+        try container.encodeIfPresent(extends_chain, forKey: .extends_chain)
+        try container.encodeIfPresent(inheritance_applied, forKey: .inheritance_applied)
+        try container.encodeIfPresent(resolved_dependencies, forKey: .resolved_dependencies)
+        try container.encodeIfPresent(rag_isolation_policy, forKey: .rag_isolation_policy)
+    }
 }
 
 public enum KDNALoadError: Error, Equatable, LocalizedError {
@@ -254,7 +321,26 @@ public enum KDNALoadPlanCore {
         guard let layout = readLayout(assetURL: assetURL) else {
             return invalidPlan(assetURL: assetURL, message: "not a KDNA runtime asset")
         }
+        return planLoad(layout: layout, assetURL: assetURL, environment: environment)
+    }
 
+    static func planLoad(
+        assetData: Data,
+        sourcePath: String = "",
+        environment: KDNALoadEnvironment = KDNALoadEnvironment()
+    ) -> KDNALoadPlan {
+        let assetURL = URL(fileURLWithPath: sourcePath.isEmpty ? "<packaged-bytes>" : sourcePath)
+        guard let layout = readLayout(assetData: assetData, sourceKind: "file") else {
+            return invalidPlan(assetURL: assetURL, message: "not a KDNA runtime asset")
+        }
+        return planLoad(layout: layout, assetURL: assetURL, environment: environment)
+    }
+
+    private static func planLoad(
+        layout: SourceLayout,
+        assetURL: URL,
+        environment: KDNALoadEnvironment
+    ) -> KDNALoadPlan {
         let manifest = layout.manifest
         let checks = validate(layout: layout)
         let accessInfo = normalizeAccess(manifest["access"] as? String)
@@ -367,16 +453,37 @@ public enum KDNALoadPlanCore {
         credential: KDNACredential = .none,
         profile: String = "compact"
     ) throws -> KDNAContextCapsule {
-        let loaded = try authorizedPayload(assetURL: assetURL, credential: credential)
+        let assetData = try Data(contentsOf: assetURL)
+        return try loadCapsule(
+            assetData: assetData,
+            sourcePath: assetURL.path,
+            credential: credential,
+            profile: profile
+        )
+    }
+
+    static func loadCapsule(
+        assetData: Data,
+        sourcePath: String,
+        credential: KDNACredential = .none,
+        profile: String = "compact",
+        loadedAt: String? = nil
+    ) throws -> KDNAContextCapsule {
+        let loaded = try authorizedPayload(
+            assetData: assetData,
+            sourcePath: sourcePath,
+            credential: credential
+        )
         let plan = loaded.plan
         let layout = loaded.layout
         let context = try profileContent(profile: profile, manifest: layout.manifest, payload: loaded.payload)
-        let checksums = layout.checksums
         // Capsule 1.0 keeps its historical `asset_digest` wire field. Its
-        // value is the integrity-covered entry-set digest, now declared by the
-        // unambiguous `entry_set_digest` checksum field (or the deprecated
-        // `asset_digest` alias in existing KDNA 1.0 assets).
-        let assetDigest = checksums.flatMap { try? KDNAChecksumDigests.entrySetDigest(in: $0) }
+        // value is E, computed from the raw Runtime entries even when the
+        // optional checksums.json declaration is absent.
+        let assetDigest = KDNAChecksumDigests.computeRuntimeEntrySetDigest(
+            manifest: layout.rawManifest,
+            payload: layout.payload
+        )
         let creator = layout.manifest["creator"] as? [String: Any]
         let issuer = creator?["pubkey"] as? String
         let signatureState = issuer == nil ? "absent" : "not_checked"
@@ -396,7 +503,7 @@ public enum KDNALoadPlanCore {
             trace: KDNAContextCapsuleTrace(
                 payload_encoding: "cbor",
                 loaded_by: "kdna-core-swift",
-                loaded_at: formatter.string(from: Date()),
+                loaded_at: loadedAt ?? formatter.string(from: Date()),
                 schema_valid: payloadMatchesSchema(loaded.payload),
                 signature_state: signatureState,
                 profile: profile
@@ -408,8 +515,22 @@ public enum KDNALoadPlanCore {
         assetURL: URL,
         credential: KDNACredential
     ) throws -> (plan: KDNALoadPlan, layout: SourceLayout, payload: [String: Any]) {
+        let assetData = try Data(contentsOf: assetURL)
+        return try authorizedPayload(
+            assetData: assetData,
+            sourcePath: assetURL.path,
+            credential: credential
+        )
+    }
+
+    static func authorizedPayload(
+        assetData: Data,
+        sourcePath: String,
+        credential: KDNACredential
+    ) throws -> (plan: KDNALoadPlan, layout: SourceLayout, payload: [String: Any]) {
         let plan = planLoad(
-            assetURL: assetURL,
+            assetData: assetData,
+            sourcePath: sourcePath,
             environment: KDNALoadEnvironment(
                 hasPassword: credential.password != nil,
                 entitlementStatus: credential.entitlementStatus,
@@ -419,7 +540,7 @@ public enum KDNALoadPlanCore {
         guard plan.can_load_now else {
             throw KDNALoadError.notAuthorized(plan)
         }
-        guard let layout = readLayout(assetURL: assetURL) else {
+        guard let layout = readLayout(assetData: assetData, sourceKind: "file") else {
             throw KDNALoadError.invalidPayload("runtime layout could not be read")
         }
 
@@ -535,6 +656,11 @@ public enum KDNALoadPlanCore {
             let reasoning = payload["reasoning"] as? [String: Any] ?? [:]
             return [
                 "highest_question": core["highest_question"] ?? NSNull(),
+                "worldview": core["worldview"] as? [Any] ?? [],
+                "value_order": core["value_order"] as? [Any] ?? [],
+                "judgment_role": core["judgment_role"] is [String: Any]
+                    ? core["judgment_role"]!
+                    : NSNull(),
                 "axioms": (core["axioms"] as? [Any] ?? []).compactMap(normalizeCompactAxiom),
                 "boundaries": normalizeCompactList(core["boundaries"]),
                 "self_checks": normalizeCompactList(reasoning["self_checks"]),
@@ -607,7 +733,7 @@ public enum KDNALoadPlanCore {
         return []
     }
 
-    private struct SourceLayout {
+    struct SourceLayout {
         let sourceKind: String
         let manifest: [String: Any]
         let payload: Data
@@ -617,12 +743,13 @@ public enum KDNALoadPlanCore {
     }
 
     private static func readLayout(assetURL: URL) -> SourceLayout? {
-        readZipLayout(assetURL: assetURL)
+        guard let data = try? Data(contentsOf: assetURL) else { return nil }
+        return readLayout(assetData: data, sourceKind: "file")
     }
 
-    private static func readZipLayout(assetURL: URL) -> SourceLayout? {
+    static func readLayout(assetData: Data, sourceKind: String) -> SourceLayout? {
         let reader = KDNAAssetReader()
-        guard let asset = try? reader.open(url: assetURL),
+        guard let asset = try? reader.open(data: assetData),
               let mimeData = try? reader.readEntry(asset: asset, name: "mimetype"),
               let manifestData = try? reader.readEntry(asset: asset, name: "kdna.json"),
               let payloadData = try? reader.readEntry(asset: asset, name: "payload.kdnab"),
@@ -638,7 +765,7 @@ public enum KDNALoadPlanCore {
         }
 
         return SourceLayout(
-            sourceKind: "file",
+            sourceKind: sourceKind,
             manifest: manifest,
             payload: payloadData,
             checksums: checksums,
@@ -789,12 +916,16 @@ public enum KDNALoadPlanCore {
         }
         guard let declared else { return }
         let expected = declared.replacingOccurrences(of: "sha256:", with: "")
-        // Sort entries by name, compute `name:hex_digest` pairs, join with newline, hash
-        let combined = entries
-            .sorted { $0.0 < $1.0 }
-            .map { "\($0.0):\(sha256Hex($0.1))" }
-            .joined(separator: "\n")
-        let actual = sha256Hex(Data(combined.utf8))
+        guard let manifest = entries.first(where: { $0.0 == "kdna.json" })?.1,
+              let payload = entries.first(where: { $0.0 == "payload.kdnab" })?.1 else {
+            result.checksums_valid = false
+            problems.append("checksums: covered Runtime entry missing")
+            return
+        }
+        let actual = KDNAChecksumDigests.computeRuntimeEntrySetDigest(
+            manifest: manifest,
+            payload: payload
+        ).replacingOccurrences(of: "sha256:", with: "")
         if actual != expected {
             result.checksums_valid = false
             let field = checksums["entry_set_digest"] == nil ? "asset_digest" : "entry_set_digest"

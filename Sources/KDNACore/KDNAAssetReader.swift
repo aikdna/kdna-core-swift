@@ -233,11 +233,16 @@ public class KDNAAssetReader {
             }
         }
         if let entrySetDigest {
-            let combined = covered
-                .sorted { $0.0 < $1.0 }
-                .map { "\($0.0):\(KDNACrypto.sha256Hex($0.1))" }
-                .joined(separator: "\n")
-            if entrySetDigest != "sha256:\(KDNACrypto.sha256Hex(Data(combined.utf8)))" {
+            guard let manifest = covered.first(where: { $0.0 == "kdna.json" })?.1,
+                  let payload = covered.first(where: { $0.0 == "payload.kdnab" })?.1 else {
+                errors.append("checksums.json: covered Runtime entry missing")
+                return
+            }
+            let observed = KDNAChecksumDigests.computeRuntimeEntrySetDigest(
+                manifest: manifest,
+                payload: payload
+            )
+            if entrySetDigest != observed {
                 errors.append("checksums.json: entry-set digest mismatch")
             }
         }
