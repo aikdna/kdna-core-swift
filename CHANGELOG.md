@@ -40,6 +40,8 @@
   Host request/receipt, and embedded JudgmentTrace evidence.
 - Build the package for the generic iOS 16 device destination in CI in addition
   to the macOS SwiftPM build and test suite.
+- Keep blocked Runtime negotiation issue codes byte-identical with the
+  canonical Node JudgmentTrace schema and conformance fixtures.
 
 ## 0.4.0 (2026-07-13)
 

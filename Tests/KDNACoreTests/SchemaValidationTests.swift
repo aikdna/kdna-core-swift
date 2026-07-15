@@ -3,10 +3,25 @@ import CryptoKit
 @testable import KDNACore
 
 final class SchemaValidationTests: XCTestCase {
+    func testBlockedCapsuleNegotiationIssueCodeMatchesRuntimeAuthority() throws {
+        let data = try KDNACanonicalSchemas.resourceData(named: "judgment-trace.schema.json")
+        let schema = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        let definitions = try XCTUnwrap(schema["$defs"] as? [String: Any])
+        let runtimeContract = try XCTUnwrap(definitions["runtimeContract"] as? [String: Any])
+        let properties = try XCTUnwrap(runtimeContract["properties"] as? [String: Any])
+        let issueCode = try XCTUnwrap(properties["issue_code"] as? [String: Any])
+        let values = try XCTUnwrap(issueCode["enum"] as? [Any])
+        let codes = Set(values.compactMap { $0 as? String })
+
+        XCTAssertTrue(codes.contains("KDNA_CAPSULE_CONTRACT_VERSION_UNSUPPORTED"))
+    }
+
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "4ede2aa539b94edd45aac973a0b4937c734c544a"
+            "ca6ede2b4536215b3d42fe30404afa7d66cf4ddd"
         )
         for name in KDNACanonicalSchemas.expectedDigests.keys.sorted() {
             _ = try KDNACanonicalSchemas.resourceData(named: name)

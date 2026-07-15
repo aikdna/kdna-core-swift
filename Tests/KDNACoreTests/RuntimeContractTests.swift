@@ -36,7 +36,7 @@ final class RuntimeContractTests: XCTestCase {
     func testCurrentCrossLanguageCoverageMatrixIsPinnedToNodeAuthority() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "4ede2aa539b94edd45aac973a0b4937c734c544a"
+            "ca6ede2b4536215b3d42fe30404afa7d66cf4ddd"
         )
 
         let capsule = try KDNARuntime.load(
@@ -133,6 +133,15 @@ final class RuntimeContractTests: XCTestCase {
                 host_protocol: "kdna.agent-host",
                 issue_code: nil
             )
+        )
+        XCTAssertEqual(
+            KDNARuntimeContracts.negotiateRuntimePair(
+                plan: plan,
+                trustedPlanDigest: trusted,
+                capabilities: capabilities,
+                coreCapsuleVersions: []
+            ).issue_code,
+            "KDNA_CAPSULE_CONTRACT_VERSION_UNSUPPORTED"
         )
         try KDNARuntimeContracts.validateAgentHostRequest(
             request,
