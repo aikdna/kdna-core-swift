@@ -63,6 +63,14 @@ print("Content digest:", result.contentDigest ?? "")
 // Developer fixture APIs are separate from the packaged Runtime path above.
 ```
 
+`compatibility.min_loader_version` is a strict `x.y.z` loader package
+coordinate. `KDNALoaderCompatibility.currentVersion` is `0.19.0`; components
+with leading zeros and coordinates with prefixes, prerelease suffixes, build
+metadata, missing components, or whitespace are invalid. A structurally valid
+asset that requires a newer loader is blocked before projection with
+`KDNA_LOADER_VERSION_UNSUPPORTED`. `verifySync`, `planLoad`, and both Runtime
+load entry points enforce the same decision.
+
 ### Current Runtime contract
 
 `KDNARuntime.load(...)` returns the sole current `KDNARuntimeCapsule`. The
@@ -114,7 +122,7 @@ range; values outside that range fail closed before Swift integer conversion.
 
 LoadPlan, Runtime Capsule, digest evidence, ConsumptionPlan, Agent Host, and
 JudgmentTrace schemas are byte-for-byte resources pinned to
-`aikdna/kdna@a245b291a51ed19de30fd1ced8c803e396ca405c`. SHA-256 resource locks
+`aikdna/kdna@a257b92345af57e6fb20215576bc976a5291b297`. SHA-256 resource locks
 make missing or drifted schemas fail closed. Date-time and URI formats follow
 the canonical Node validation boundaries. Manifest encryption declarations and
 the actual CBOR envelope must agree before authorization; encrypted payloads are

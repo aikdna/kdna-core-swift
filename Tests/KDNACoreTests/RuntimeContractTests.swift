@@ -12,7 +12,7 @@ final class RuntimeContractTests: XCTestCase {
         let capsule = try KDNARuntime.load(
             assetData: bytes,
             expected: KDNAExpectedDigests(asset: KDNAExpectedDigest(
-                value: "sha256:df18a4b15c930940061c58744c0bcac040a0a54c596db358da02c0a31082a23e",
+                value: "sha256:9b2e19abc739f3471826a9af6f423b0e993fd27b0eb4aebf314eb1e6515cd33d",
                 source: "install_receipt"
             )),
             loadedAt: loadedAt
@@ -20,12 +20,12 @@ final class RuntimeContractTests: XCTestCase {
 
         XCTAssertEqual(capsule.type, "kdna.runtime-capsule")
         XCTAssertEqual(capsule.contract_version, "0.1.0")
-        XCTAssertEqual(capsule.digests.asset.value, "sha256:df18a4b15c930940061c58744c0bcac040a0a54c596db358da02c0a31082a23e")
-        XCTAssertEqual(capsule.digests.content.value, "sha256:72595802e214dff1a5b5a1153dd7e343190668d5da5ba32bcff2857774cc9428")
-        XCTAssertEqual(capsule.digests.runtime_entry_set.value, "sha256:52b8ceb0dfe2081dc955487de31bc693e14f3a51ed5a79ece7a4e1ac26249de7")
+        XCTAssertEqual(capsule.digests.asset.value, "sha256:9b2e19abc739f3471826a9af6f423b0e993fd27b0eb4aebf314eb1e6515cd33d")
+        XCTAssertEqual(capsule.digests.content.value, "sha256:51fcee33e96af6cd2a254178c6a821cdd2ce2b30bb2e30782320e75d444c5c90")
+        XCTAssertEqual(capsule.digests.runtime_entry_set.value, "sha256:ade5cc99c48fa0e49e5e86f433fba39d68180e92e4a52a3450f55055ab2de040")
         XCTAssertEqual(
             try KDNARuntimeCapsuleCore.computeDeliveryDigest(capsule),
-            "sha256:3ff3f7986c437460fc6a09de9d864d7d2d3d551571a3a95b2dac21b4a63ee4fa"
+            "sha256:62f6aba550846fe17c3d0e0598fd10d3e4e3dcb952e0f7c34aabef388a866bcd"
         )
         XCTAssertEqual(capsule.jsonValue, KDNAJSONValue(any: expectedCapsule))
 
@@ -36,35 +36,35 @@ final class RuntimeContractTests: XCTestCase {
     func testCurrentCrossLanguageCoverageMatrixIsPinnedToNodeAuthority() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "a245b291a51ed19de30fd1ced8c803e396ca405c"
+            "a257b92345af57e6fb20215576bc976a5291b297"
         )
 
         let capsule = try KDNARuntime.load(
             assetData: packagedBytes(),
             expected: KDNAExpectedDigests(asset: KDNAExpectedDigest(
-                value: "sha256:df18a4b15c930940061c58744c0bcac040a0a54c596db358da02c0a31082a23e",
+                value: "sha256:9b2e19abc739f3471826a9af6f423b0e993fd27b0eb4aebf314eb1e6515cd33d",
                 source: "install_receipt"
             )),
             loadedAt: loadedAt
         )
         XCTAssertEqual(
             capsule.digests.asset.value,
-            "sha256:df18a4b15c930940061c58744c0bcac040a0a54c596db358da02c0a31082a23e",
+            "sha256:9b2e19abc739f3471826a9af6f423b0e993fd27b0eb4aebf314eb1e6515cd33d",
             "A must retain exact packaged-byte parity."
         )
         XCTAssertEqual(
             capsule.digests.content.value,
-            "sha256:72595802e214dff1a5b5a1153dd7e343190668d5da5ba32bcff2857774cc9428",
+            "sha256:51fcee33e96af6cd2a254178c6a821cdd2ce2b30bb2e30782320e75d444c5c90",
             "C must retain cross-language canonical content-tree parity."
         )
         XCTAssertEqual(
             capsule.digests.runtime_entry_set.value,
-            "sha256:52b8ceb0dfe2081dc955487de31bc693e14f3a51ed5a79ece7a4e1ac26249de7",
+            "sha256:ade5cc99c48fa0e49e5e86f433fba39d68180e92e4a52a3450f55055ab2de040",
             "E must retain canonical Runtime entry-set parity."
         )
         XCTAssertEqual(
             try KDNARuntimeCapsuleCore.computeDeliveryDigest(capsule),
-            "sha256:3ff3f7986c437460fc6a09de9d864d7d2d3d551571a3a95b2dac21b4a63ee4fa",
+            "sha256:62f6aba550846fe17c3d0e0598fd10d3e4e3dcb952e0f7c34aabef388a866bcd",
             "P must retain cross-language RFC 8785/JCS parity."
         )
 
@@ -118,7 +118,7 @@ final class RuntimeContractTests: XCTestCase {
 
         XCTAssertEqual(
             try KDNARuntimeContracts.computeConsumptionPlanDigest(plan),
-            "sha256:c3229f99fc39c56131bf255744f98a207e4597acc5f794ed30693ced40c914f1"
+            "sha256:63e19af544125da1d8b9fe7e16cde73e76b305501af18d0aa3c6cebdf3d990d7"
         )
         try KDNARuntimeContracts.validateConsumptionPlan(plan, trustedPlanDigest: trusted)
         XCTAssertEqual(

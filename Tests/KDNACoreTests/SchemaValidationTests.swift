@@ -21,7 +21,7 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "a245b291a51ed19de30fd1ced8c803e396ca405c"
+            "a257b92345af57e6fb20215576bc976a5291b297"
         )
         for name in KDNACanonicalSchemas.expectedDigests.keys.sorted() {
             _ = try KDNACanonicalSchemas.resourceData(named: name)

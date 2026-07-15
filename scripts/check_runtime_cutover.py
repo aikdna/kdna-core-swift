@@ -14,8 +14,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 AUTHORITY = ROOT / "scripts" / "post-cutover-token-authority.json"
-AUTHORITY_SHA256 = "124e7d38f9148fdba1b352f1d09133072b11ddbf0fef9846313d4bf221a4bd08"
-AUTHORITY_COUNT = 62
+AUTHORITY_SHA256 = "3d810cd1c8cabe83e4b9d5ec0a2c74473d93b94968a332ac98ef0077022298b9"
+AUTHORITY_COUNT = 73
 ACTION = re.compile(r"^\s*(?:-\s*)?uses:\s*[^@\s]+@([^\s#]+)", re.MULTILINE)
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 GENERATION_LABEL = re.compile(

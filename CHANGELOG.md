@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Enforce strict `compatibility.min_loader_version` coordinates in default
+  Verify, LoadPlan, and Runtime load paths. Requirements above Swift Core
+  `0.19.0` now block before projection with
+  `KDNA_LOADER_VERSION_UNSUPPORTED`; malformed coordinates remain schema
+  failures, and arbitrary-size decimal components compare without overflow.
+- Execute one lower/equal/higher/huge/malformed vector set in both Swift and
+  the pinned Node Core, and advance embedded schemas, Runtime fixtures, digest
+  evidence, and the retired-token authority to Node commit `a257b923`.
 - Pin the canonical Node authority to Core 0.19.0 and reject missing,
   malformed, unrelated, or envelope-mismatched encryption declarations before
   authorization in Verify, LoadPlan, and Runtime loading.

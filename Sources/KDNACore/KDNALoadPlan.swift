@@ -318,6 +318,17 @@ public enum KDNALoadPlanCore {
             return plan
         }
 
+        let loaderCompatibility = KDNALoaderCompatibility.assess(manifest: manifest)
+        if loaderCompatibility.loaderCompatible == false,
+           let minimum = loaderCompatibility.minimumLoaderVersion {
+            plan.issues.append(KDNALoadPlanIssue(
+                code: "KDNA_LOADER_VERSION_UNSUPPORTED",
+                severity: "blocking",
+                message: KDNALoaderCompatibility.unsupportedMessage(requiredVersion: minimum)
+            ))
+            return plan
+        }
+
         guard let access = plan.access, ["public", "licensed", "remote"].contains(access) else {
             let unknownAccess = plan.access ?? "null"
             plan.access = nil

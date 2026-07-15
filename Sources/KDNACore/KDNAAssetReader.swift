@@ -158,6 +158,13 @@ public class KDNAAssetReader {
             }
             let manifestIssues = KDNACanonicalSchemas.validateManifest(manifest)
             errors.append(contentsOf: manifestIssues.map { "kdna.json: \($0)" })
+            let loaderCompatibility = KDNALoaderCompatibility.assess(manifest: manifest)
+            if loaderCompatibility.loaderCompatible == false,
+               let minimum = loaderCompatibility.minimumLoaderVersion {
+                errors.append(
+                    KDNALoaderCompatibility.unsupportedMessage(requiredVersion: minimum)
+                )
+            }
 
             let payloadData = try readEntry(asset: asset, name: "payload.kdnab")
             let assessment = try KDNAEncryptedPayloadContract.inspect(
