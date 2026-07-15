@@ -21,7 +21,7 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "ca6ede2b4536215b3d42fe30404afa7d66cf4ddd"
+            "a245b291a51ed19de30fd1ced8c803e396ca405c"
         )
         for name in KDNACanonicalSchemas.expectedDigests.keys.sorted() {
             _ = try KDNACanonicalSchemas.resourceData(named: name)
@@ -151,6 +151,59 @@ final class SchemaValidationTests: XCTestCase {
         var badAdditionalSchema = manifest
         badAdditionalSchema["dependencies"] = ["@aikdna/base": 7]
         XCTAssertFalse(KDNACanonicalSchemas.validateManifest(badAdditionalSchema).isEmpty)
+    }
+
+    func testManifestSchemaBindsEncryptedPayloadDeclarationExactly() {
+        var encrypted = validManifest()
+        encrypted["payload"] = [
+            "path": "payload.kdnab",
+            "encoding": "cbor",
+            "encrypted": true,
+        ]
+        encrypted["encryption"] = [
+            "profile": "kdna.encryption.password",
+            "profile_version": "0.1.0",
+            "encrypted_entries": ["payload.kdnab"],
+        ]
+        XCTAssertTrue(KDNACanonicalSchemas.validateManifest(encrypted).isEmpty)
+
+        var missing = encrypted
+        missing.removeValue(forKey: "encryption")
+        XCTAssertFalse(KDNACanonicalSchemas.validateManifest(missing).isEmpty)
+
+        var missingVersion = encrypted
+        var encryption = missingVersion["encryption"] as! [String: Any]
+        encryption.removeValue(forKey: "profile_version")
+        missingVersion["encryption"] = encryption
+        XCTAssertFalse(KDNACanonicalSchemas.validateManifest(missingVersion).isEmpty)
+
+        var wrongVersion = encrypted
+        encryption = wrongVersion["encryption"] as! [String: Any]
+        encryption["profile_version"] = "9.9.9"
+        wrongVersion["encryption"] = encryption
+        XCTAssertFalse(KDNACanonicalSchemas.validateManifest(wrongVersion).isEmpty)
+
+        for entries in [
+            ["other.bin"] as Any,
+            ["payload.kdnab", "other.bin"] as Any,
+            ["entry": "payload.kdnab"] as Any,
+            7 as Any,
+        ] {
+            var candidate = encrypted
+            encryption = candidate["encryption"] as! [String: Any]
+            encryption["encrypted_entries"] = entries
+            candidate["encryption"] = encryption
+            XCTAssertFalse(
+                KDNACanonicalSchemas.validateManifest(candidate).isEmpty,
+                "Malformed encrypted_entries was accepted: \(entries)"
+            )
+        }
+
+        var falsePayloadFlag = encrypted
+        var payload = falsePayloadFlag["payload"] as! [String: Any]
+        payload["encrypted"] = false
+        falsePayloadFlag["payload"] = payload
+        XCTAssertFalse(KDNACanonicalSchemas.validateManifest(falsePayloadFlag).isEmpty)
     }
 
     func testPayloadSchemaEnforcesRequiredAndNestedShapes() {
@@ -403,7 +456,7 @@ final class SchemaValidationTests: XCTestCase {
             "created_at": "2026-07-15T00:00:00Z",
             "updated_at": "2026-07-15T00:00:00Z",
             "compatibility": [
-                "min_loader_version": "0.18.1",
+                "min_loader_version": "0.19.0",
                 "profile": "kdna.payload.judgment",
                 "profile_version": "0.1.0",
             ],

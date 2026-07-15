@@ -149,6 +149,31 @@ public class KDNAAssetReader {
 
         verifyDeclaredChecksums(asset: asset, errors: &errors)
 
+        var payloadAssessment: KDNAEncryptedPayloadAssessment?
+        do {
+            let manifestData = try readEntry(asset: asset, name: "kdna.json")
+            guard let manifest = try JSONSerialization.jsonObject(with: manifestData) as? [String: Any] else {
+                errors.append("kdna.json: expected a JSON object")
+                return finalizeVerify(asset: asset, errors: errors, warnings: warnings)
+            }
+            let manifestIssues = KDNACanonicalSchemas.validateManifest(manifest)
+            errors.append(contentsOf: manifestIssues.map { "kdna.json: \($0)" })
+
+            let payloadData = try readEntry(asset: asset, name: "payload.kdnab")
+            let assessment = try KDNAEncryptedPayloadContract.inspect(
+                manifest: manifest,
+                payloadData: payloadData
+            )
+            payloadAssessment = assessment
+            errors.append(contentsOf: assessment.problems)
+            if !assessment.isEncryptedEnvelope {
+                let payloadIssues = KDNACanonicalSchemas.validatePayload(assessment.payload)
+                errors.append(contentsOf: payloadIssues.map { "payload.kdnab: \($0)" })
+            }
+        } catch {
+            errors.append("current manifest/payload validation failed: \(error.localizedDescription)")
+        }
+
         if requireDecryption {
             do {
                 let manifest = try decodeManifest(asset: asset)
@@ -160,7 +185,7 @@ public class KDNAAssetReader {
                     errors.append("typed manifest does not use the current Runtime coordinates")
                     return finalizeVerify(asset: asset, errors: errors, warnings: warnings)
                 }
-                if manifest.payload.encrypted {
+                if payloadAssessment?.isEncryptedEnvelope == true {
                     guard let encryption = manifest.encryption,
                           [KDNA_LICENSED_ENTRY_PROFILE, PASSWORD_PROTECTED_PROFILE, KDNA_EXTERNAL_ENVELOPE_PROFILE]
                             .contains(encryption.profile),

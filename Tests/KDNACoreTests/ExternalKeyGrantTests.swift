@@ -72,6 +72,37 @@ final class ExternalKeyGrantTests: XCTestCase {
         return local + central + eocd
     }
 
+    private func packagedAsset(
+        manifest: [String: Any],
+        payload: Data
+    ) throws -> Data {
+        let manifestData = try JSONSerialization.data(
+            withJSONObject: manifest,
+            options: [.sortedKeys, .withoutEscapingSlashes]
+        )
+        let hex: (Data) -> String = { data in
+            SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        }
+        let checksums = try JSONSerialization.data(withJSONObject: [
+            "algorithm": "sha256",
+            "digest_profile": KDNAChecksumDigests.runtimeEntrySetProfile,
+            "digest_profile_version": KDNAChecksumDigests.runtimeEntrySetProfileVersion,
+            "covered_entries": KDNAChecksumDigests.runtimeCoveredEntries,
+            "manifest_digest": "sha256:\(hex(manifestData))",
+            "payload_digest": "sha256:\(hex(payload))",
+            "entry_set_digest": KDNAChecksumDigests.computeRuntimeEntrySetDigest(
+                manifest: manifestData,
+                payload: payload
+            ),
+        ], options: [.sortedKeys, .withoutEscapingSlashes])
+        return makeZip(entries: [
+            ("mimetype", Data(KDNALoadPlanCore.mimeType.utf8)),
+            ("checksums.json", checksums),
+            ("kdna.json", manifestData),
+            ("payload.kdnab", payload),
+        ])
+    }
+
     private func fixture() throws -> [String: Any] {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "external-grant", withExtension: "json"))
         return try XCTUnwrap(
@@ -325,6 +356,109 @@ final class ExternalKeyGrantTests: XCTestCase {
             issuerPublicKey: missingDigestGrant.publicKey
         )) { error in
             XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_GRANT_FORMAT_INVALID")
+        }
+    }
+
+    func testVerifiedExternalGrantCannotBypassMalformedEncryptionContract() throws {
+        let value = try fixture()
+        let envelope = try XCTUnwrap(
+            Data(base64URLEncoded: value["envelope_cbor"] as? String ?? "")
+        )
+        let plaintext = try XCTUnwrap(
+            Data(base64URLEncoded: value["plaintext_cbor"] as? String ?? "")
+        )
+        var wrongCoordinateObject = try KDNACBOR.decodeObject(envelope)
+        wrongCoordinateObject["contract_version"] = "9.9.9"
+        let wrongCoordinateEnvelope = try KDNACBOR.encode(wrongCoordinateObject)
+        let cases: [(
+            String,
+            (inout [String: Any]) -> Void,
+            Data?
+        )] = [
+            ("missing encryption", { $0.removeValue(forKey: "encryption") }, nil),
+            ("unrelated entry", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["encrypted_entries"] = ["other.bin"]
+                manifest["encryption"] = encryption
+            }, nil),
+            ("additional entry", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["encrypted_entries"] = ["payload.kdnab", "other.bin"]
+                manifest["encryption"] = encryption
+            }, nil),
+            ("object entry list", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["encrypted_entries"] = ["entry": "payload.kdnab"]
+                manifest["encryption"] = encryption
+            }, nil),
+            ("numeric entry list", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["encrypted_entries"] = 7
+                manifest["encryption"] = encryption
+            }, nil),
+            ("false encrypted flag", { manifest in
+                var payload = manifest["payload"] as! [String: Any]
+                payload["encrypted"] = false
+                manifest["payload"] = payload
+            }, nil),
+            ("profile mismatch", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["profile"] = KDNA_LICENSED_ENTRY_PROFILE
+                manifest["encryption"] = encryption
+            }, nil),
+            ("envelope coordinate mismatch", { _ in }, wrongCoordinateEnvelope),
+            ("matching unsupported coordinates", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["profile_version"] = "9.9.9"
+                manifest["encryption"] = encryption
+            }, wrongCoordinateEnvelope),
+            ("declared encryption with plaintext payload", { _ in }, plaintext),
+            ("envelope without declarations", { manifest in
+                var payload = manifest["payload"] as! [String: Any]
+                payload["encrypted"] = false
+                manifest["payload"] = payload
+                manifest.removeValue(forKey: "encryption")
+            }, nil),
+        ]
+
+        for (name, mutateManifest, payloadOverride) in cases {
+            var manifest = try XCTUnwrap(value["manifest"] as? [String: Any])
+            mutateManifest(&manifest)
+            let assetBytes = try packagedAsset(
+                manifest: manifest,
+                payload: payloadOverride ?? envelope
+            )
+            let assetDigest = "sha256:" + SHA256.hash(data: assetBytes)
+                .map { String(format: "%02x", $0) }.joined()
+            let signed = try signedGrant(fixture: value, assetDigest: assetDigest)
+            let verified = try authorization(
+                fixture: value,
+                grantOverride: signed.value,
+                manifestOverride: manifest,
+                expectedAssetDigest: assetDigest,
+                issuerPublicKey: signed.publicKey
+            )
+
+            let plan = KDNALoadPlanCore.planLoad(
+                assetData: assetBytes,
+                environment: KDNALoadEnvironment(externalAuthorization: verified)
+            )
+            XCTAssertFalse(plan.can_load_now, name)
+            XCTAssertFalse(plan.checks.overall_valid, name)
+
+            let reader = KDNAAssetReader()
+            XCTAssertFalse(
+                reader.verifySync(try reader.open(data: assetBytes, path: name)).ok,
+                name
+            )
+            XCTAssertThrowsError(try KDNARuntime.load(
+                assetData: assetBytes,
+                credential: KDNACredential(externalAuthorization: verified)
+            )) { error in
+                guard case KDNALoadError.notAuthorized = error else {
+                    return XCTFail("\(name): expected early notAuthorized, got \(error)")
+                }
+            }
         }
     }
 }

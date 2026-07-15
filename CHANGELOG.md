@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Pin the canonical Node authority to Core 0.19.0 and reject missing,
+  malformed, unrelated, or envelope-mismatched encryption declarations before
+  authorization in Verify, LoadPlan, and Runtime loading.
+- Reject the unsupported password-scrypt profile during Swift LoadPlan instead
+  of reporting an asset ready and failing later during decryption.
 - Replace generation-specific Capsule APIs with the sole current
   `KDNARuntimeCapsule` contract and strict `kdna.runtime-capsule` wire model.
 - Match the canonical JavaScript Runtime fixtures byte-for-byte for A/C/E/P,

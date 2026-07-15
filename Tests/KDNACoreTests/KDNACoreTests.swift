@@ -93,7 +93,7 @@ final class KDNACoreTests: XCTestCase {
             "created_at": "2026-07-15T00:00:00Z",
             "updated_at": "2026-07-15T00:00:00Z",
             "compatibility": [
-                "min_loader_version": "0.18.1",
+                "min_loader_version": "0.19.0",
                 "profile": "kdna.payload.judgment",
                 "profile_version": "0.1.0",
             ],
@@ -139,14 +139,20 @@ final class KDNACoreTests: XCTestCase {
     func testAssetReaderAcceptsRuntimeContainer() throws {
         let manifestData = Data("""
         {
-          "kdna_version": "1.0",
-          "name": "@test/runtime",
+          "format_version": "0.1.0",
           "asset_id": "kdna:test:runtime",
           "asset_uid": "urn:uuid:00000000-0000-4000-8000-000000000001",
           "asset_type": "domain",
           "title": "Runtime",
           "version": "1.0.0",
           "judgment_version": "1.0.0",
+          "created_at": "2026-07-16T00:00:00Z",
+          "updated_at": "2026-07-16T00:00:00Z",
+          "compatibility": {
+            "min_loader_version": "0.19.0",
+            "profile": "kdna.payload.judgment",
+            "profile_version": "0.1.0"
+          },
           "access": "public",
           "payload": {
             "path": "payload.kdnab",
@@ -157,7 +163,11 @@ final class KDNACoreTests: XCTestCase {
         """.utf8)
         let payloadData = try KDNACBOR.encode([
             "profile": "kdna.payload.judgment",
-            "core": ["axioms": []] as [String: Any],
+            "profile_version": "0.1.0",
+            "core": [
+                "highest_question": "Can the Swift reader accept a current Runtime container?",
+                "axioms": [] as [Any],
+            ] as [String: Any],
         ] as [String: Any])
         let checksumsData = Data(#"{"algorithm":"sha256"}"#.utf8)
         let zipData = makeZip(entries: [
@@ -579,7 +589,7 @@ final class KDNACoreTests: XCTestCase {
           "created_at": "2026-07-15T00:00:00Z",
           "updated_at": "2026-07-15T00:00:00Z",
           "compatibility": {
-            "min_loader_version": "0.18.1",
+            "min_loader_version": "0.19.0",
             "profile": "kdna.payload.judgment",
             "profile_version": "0.1.0"
           },
@@ -1430,7 +1440,7 @@ final class KDNACoreTests: XCTestCase {
           "meta": { "version": "0.9.0", "domain": "compact-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "highest_question": "HQ?",
           "worldview": ["W1"],
-          "value_order": ["V1"],
+          "value_order": ["Safety first"],
           "stances": [{"stance":"S1"}],
           "axioms": [{"id":"a","one_sentence":"x","full_statement":"y","why":"z"}],
           "ontology": [], "frameworks": []
@@ -1461,7 +1471,7 @@ final class KDNACoreTests: XCTestCase {
         )
         XCTAssertTrue(msg.contains("Q: HQ?"))
         XCTAssertTrue(msg.contains("Worldview: W1"))
-        XCTAssertTrue(msg.contains("Values: V1"))
+        XCTAssertTrue(msg.contains("Values: Safety first"))
         XCTAssertTrue(msg.contains("Risk: R1"))
     }
 
@@ -2020,18 +2030,121 @@ final class KDNACoreTests: XCTestCase {
         }
     }
 
-    func testLoadWithCredentialRejectsFixtureThatClaimsEncryptionButContainsPlaintext() throws {
-        let fixtureURL = try packedAuthorizationFixture("password-missing")
+    func testLoadWithCredentialDecryptsCurrentPasswordFixture() throws {
+        let fixtureURL = try packedAuthorizationFixture("password-valid")
         defer { try? FileManager.default.removeItem(at: fixtureURL) }
-        XCTAssertThrowsError(try KDNARuntime.loadWithCredential(
+
+        let capsule = try KDNARuntime.load(
             assetURL: fixtureURL,
-            credential: KDNACredential(password: "fixture-password")
-        )) { error in
-            guard case KDNALoadError.invalidPayload(let message) = error else {
-                return XCTFail("expected invalidPayload, got \(error)")
+            credential: KDNACredential(
+                password: "KDNA-AUTHORIZATION-CONFORMANCE-2026"
+            )
+        )
+        XCTAssertEqual(capsule.asset.asset_id, "kdna:conformance:authorization:password-valid")
+        XCTAssertEqual(capsule.type, "kdna.runtime-capsule")
+    }
+
+    func testPasswordCredentialCannotBypassMalformedEncryptionContract() throws {
+        let password = "KDNA-AUTHORIZATION-CONFORMANCE-2026"
+        let passwordEnvelope = try Data(contentsOf: authorizationConformanceURL("fixtures")
+            .appendingPathComponent("password-valid/payload.kdnab"))
+        let plaintext = try Data(contentsOf: authorizationConformanceURL("fixtures")
+            .appendingPathComponent("public-valid/payload.kdnab"))
+        var wrongCoordinateObject = try KDNACBOR.decodeObject(passwordEnvelope)
+        wrongCoordinateObject["profile_version"] = "9.9.9"
+        let wrongCoordinateEnvelope = try KDNACBOR.encode(wrongCoordinateObject)
+        let cases: [(
+            String,
+            (inout [String: Any]) -> Void,
+            Data?
+        )] = [
+            ("missing encryption", { $0.removeValue(forKey: "encryption") }, nil),
+            ("unrelated entry", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["encrypted_entries"] = ["other.bin"]
+                manifest["encryption"] = encryption
+            }, nil),
+            ("additional entry", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["encrypted_entries"] = ["payload.kdnab", "other.bin"]
+                manifest["encryption"] = encryption
+            }, nil),
+            ("object entry list", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["encrypted_entries"] = ["entry": "payload.kdnab"]
+                manifest["encryption"] = encryption
+            }, nil),
+            ("numeric entry list", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["encrypted_entries"] = 7
+                manifest["encryption"] = encryption
+            }, nil),
+            ("false encrypted flag", { manifest in
+                var payload = manifest["payload"] as! [String: Any]
+                payload["encrypted"] = false
+                manifest["payload"] = payload
+            }, nil),
+            ("profile mismatch", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["profile"] = KDNA_LICENSED_ENTRY_PROFILE
+                manifest["encryption"] = encryption
+            }, nil),
+            ("envelope coordinate mismatch", { _ in }, wrongCoordinateEnvelope),
+            ("matching unsupported coordinates", { manifest in
+                var encryption = manifest["encryption"] as! [String: Any]
+                encryption["profile_version"] = "9.9.9"
+                manifest["encryption"] = encryption
+            }, wrongCoordinateEnvelope),
+            ("declared encryption with plaintext payload", { _ in }, plaintext),
+            ("envelope without declarations", { manifest in
+                var payload = manifest["payload"] as! [String: Any]
+                payload["encrypted"] = false
+                manifest["payload"] = payload
+                manifest.removeValue(forKey: "encryption")
+            }, nil),
+        ]
+
+        for (name, mutateManifest, payloadOverride) in cases {
+            let bytes = try repackedAuthorizationFixtureData(
+                "password-valid",
+                payloadOverride: payloadOverride,
+                mutateManifest: mutateManifest
+            )
+            let plan = KDNALoadPlanCore.planLoad(
+                assetData: bytes,
+                environment: KDNALoadEnvironment(hasPassword: true)
+            )
+            XCTAssertFalse(plan.can_load_now, name)
+            XCTAssertFalse(plan.checks.overall_valid, name)
+
+            let reader = KDNAAssetReader()
+            let asset = try reader.open(data: bytes, path: name)
+            let verification = reader.verifySync(asset)
+            XCTAssertFalse(verification.ok, name)
+
+            XCTAssertThrowsError(try KDNARuntime.load(
+                assetData: bytes,
+                credential: KDNACredential(password: password)
+            )) { error in
+                guard case KDNALoadError.notAuthorized = error else {
+                    return XCTFail("\(name): expected early notAuthorized, got \(error)")
+                }
             }
-            XCTAssertTrue(message.contains("could not be decrypted"))
         }
+    }
+
+    func testPasswordScryptProfileFailsDuringPlan() throws {
+        let bytes = try repackedAuthorizationFixtureData("password-valid") { manifest in
+            var encryption = manifest["encryption"] as! [String: Any]
+            encryption["profile"] = "kdna.encryption.password.scrypt"
+            manifest["encryption"] = encryption
+        }
+        let plan = KDNALoadPlanCore.planLoad(
+            assetData: bytes,
+            environment: KDNALoadEnvironment(hasPassword: true)
+        )
+        XCTAssertFalse(plan.can_load_now)
+        XCTAssertTrue(plan.issues.contains { $0.code == "KDNA_CRYPTO_PROFILE_UNSUPPORTED" })
     }
     
     func testConformanceReportsExcluded() throws {
@@ -2096,7 +2209,7 @@ final class KDNACoreTests: XCTestCase {
             created_at: "2026-07-15T00:00:00Z",
             updated_at: "2026-07-15T00:00:00Z",
             compatibility: KDNACompatibility(
-                min_loader_version: "0.18.1",
+                min_loader_version: "0.19.0",
                 profile: "kdna.payload.judgment",
                 profile_version: "0.1.0"
             ),
@@ -2263,7 +2376,7 @@ final class KDNACoreTests: XCTestCase {
         let fixture = try fixtureURL("test_licensed_entry.kdna")
         XCTAssertEqual(
             sha256Hex(try Data(contentsOf: fixture)),
-            "d785725fc2b53cad5c3627ddc91ae737ab58502224e64dca8896ac818c4e9790"
+            "662ec25e0481eac3bf22be875dd2b2e46b70d0152f056b42c5d522bdbf54a4b8"
         )
         let reader = KDNAAssetReader()
         let asset = try reader.open(url: fixture)
@@ -2514,6 +2627,44 @@ final class KDNACoreTests: XCTestCase {
         }
         try makeZip(entries: entries).write(to: output)
         return output
+    }
+
+    private func repackedAuthorizationFixtureData(
+        _ fixture: String,
+        payloadOverride: Data? = nil,
+        mutateManifest: (inout [String: Any]) -> Void = { _ in }
+    ) throws -> Data {
+        let source = try authorizationConformanceURL("fixtures").appendingPathComponent(fixture)
+        var manifest = try XCTUnwrap(
+            try JSONSerialization.jsonObject(
+                with: Data(contentsOf: source.appendingPathComponent("kdna.json"))
+            ) as? [String: Any]
+        )
+        mutateManifest(&manifest)
+        let manifestData = try JSONSerialization.data(
+            withJSONObject: manifest,
+            options: [.sortedKeys, .withoutEscapingSlashes]
+        )
+        let payloadData = try payloadOverride
+            ?? Data(contentsOf: source.appendingPathComponent("payload.kdnab"))
+        let checksums = try JSONSerialization.data(withJSONObject: [
+            "algorithm": "sha256",
+            "digest_profile": KDNAChecksumDigests.runtimeEntrySetProfile,
+            "digest_profile_version": KDNAChecksumDigests.runtimeEntrySetProfileVersion,
+            "covered_entries": KDNAChecksumDigests.runtimeCoveredEntries,
+            "manifest_digest": "sha256:\(sha256Hex(manifestData))",
+            "payload_digest": "sha256:\(sha256Hex(payloadData))",
+            "entry_set_digest": KDNAChecksumDigests.computeRuntimeEntrySetDigest(
+                manifest: manifestData,
+                payload: payloadData
+            ),
+        ], options: [.sortedKeys, .withoutEscapingSlashes])
+        return makeZip(entries: [
+            ("mimetype", Data(KDNALoadPlanCore.mimeType.utf8)),
+            ("checksums.json", checksums),
+            ("kdna.json", manifestData),
+            ("payload.kdnab", payloadData),
+        ])
     }
 
     private func fixtureURL(_ name: String) throws -> URL {

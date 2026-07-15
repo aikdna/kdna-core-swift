@@ -36,7 +36,7 @@ final class RuntimeContractTests: XCTestCase {
     func testCurrentCrossLanguageCoverageMatrixIsPinnedToNodeAuthority() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "ca6ede2b4536215b3d42fe30404afa7d66cf4ddd"
+            "a245b291a51ed19de30fd1ced8c803e396ca405c"
         )
 
         let capsule = try KDNARuntime.load(
@@ -84,7 +84,7 @@ final class RuntimeContractTests: XCTestCase {
         let fixtureBytes = try Data(contentsOf: licensedFixture)
         XCTAssertEqual(
             KDNACrypto.sha256Hex(fixtureBytes),
-            "d785725fc2b53cad5c3627ddc91ae737ab58502224e64dca8896ac818c4e9790"
+            "662ec25e0481eac3bf22be875dd2b2e46b70d0152f056b42c5d522bdbf54a4b8"
         )
         let reader = KDNAAssetReader()
         let asset = try reader.open(data: fixtureBytes, path: licensedFixture.path)

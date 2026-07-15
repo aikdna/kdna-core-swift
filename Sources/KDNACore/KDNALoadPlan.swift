@@ -345,7 +345,7 @@ public enum KDNALoadPlanCore {
             return planLicensed(plan: plan, layout: layout, environment: environment)
         }
 
-        if hasEncryptedPayload(manifest: manifest) {
+        if checks.encryptedPayload {
             plan.issues.append(KDNALoadPlanIssue(
                 code: "KDNA_CRYPTO_PROFILE_UNSUPPORTED",
                 severity: "blocking",
@@ -421,7 +421,19 @@ public enum KDNALoadPlanCore {
         }
 
         let payloadData: Data
-        if hasEncryptedPayload(manifest: layout.manifest) {
+        let payloadAssessment: KDNAEncryptedPayloadAssessment
+        do {
+            payloadAssessment = try KDNAEncryptedPayloadContract.inspect(
+                manifest: layout.manifest,
+                payloadData: layout.payload
+            )
+        } catch {
+            throw KDNALoadError.invalidPayload("payload.kdnab is not a valid CBOR map")
+        }
+        guard payloadAssessment.problems.isEmpty else {
+            throw KDNALoadError.invalidPayload(payloadAssessment.problems.joined(separator: "; "))
+        }
+        if payloadAssessment.isEncryptedEnvelope {
             if let authorization = credential.externalAuthorization {
                 payloadData = try authorization.decrypt(
                     entryName: "payload.kdnab",
@@ -682,7 +694,9 @@ public enum KDNALoadPlanCore {
         )
     }
 
-    private static func validate(layout: SourceLayout) -> (result: KDNALoadPlanChecks, problems: [String]) {
+    private static func validate(
+        layout: SourceLayout
+    ) -> (result: KDNALoadPlanChecks, problems: [String], encryptedPayload: Bool) {
         var result = KDNALoadPlanChecks(
             format_valid: true,
             schema_valid: true,
@@ -698,10 +712,16 @@ public enum KDNALoadPlanCore {
             problems.append("format: mimetype is not \(mimeType)")
         }
 
-        let decodedPayload = try? KDNACBOR.decodeObject(layout.payload)
-        if decodedPayload == nil {
+        let payloadAssessment = try? KDNAEncryptedPayloadContract.inspect(
+            manifest: layout.manifest,
+            payloadData: layout.payload
+        )
+        if payloadAssessment == nil {
             result.payload_valid = false
             problems.append("payload: not valid CBOR")
+        } else if let payloadAssessment, !payloadAssessment.problems.isEmpty {
+            result.payload_valid = false
+            problems += payloadAssessment.problems
         }
 
         let manifestIssues = KDNACanonicalSchemas.validateManifest(layout.manifest)
@@ -714,8 +734,8 @@ public enum KDNALoadPlanCore {
             result.load_contract_valid = false
         }
 
-        if let decodedPayload, !hasEncryptedPayload(manifest: layout.manifest) {
-            let payloadIssues = KDNACanonicalSchemas.validatePayload(decodedPayload)
+        if let payloadAssessment, !payloadAssessment.isEncryptedEnvelope {
+            let payloadIssues = KDNACanonicalSchemas.validatePayload(payloadAssessment.payload)
             if !payloadIssues.isEmpty {
                 result.payload_valid = false
                 problems += payloadIssues.map { "payload schema: \($0)" }
@@ -789,7 +809,7 @@ public enum KDNALoadPlanCore {
             result.payload_valid &&
             result.checksums_valid &&
             result.load_contract_valid
-        return (result, problems)
+        return (result, problems, payloadAssessment?.isEncryptedEnvelope == true)
     }
 
     private static func verifyDigest(
@@ -857,19 +877,6 @@ public enum KDNALoadPlanCore {
             return "password"
         }
         return nil
-    }
-
-    private static func hasEncryptedPayload(manifest: [String: Any]) -> Bool {
-        if let payload = manifest["payload"] as? [String: Any],
-           payload["encrypted"] as? Bool == true {
-            return true
-        }
-        if let encryption = manifest["encryption"] as? [String: Any],
-           let entries = encryption["encrypted_entries"] as? [Any],
-           !entries.isEmpty {
-            return true
-        }
-        return false
     }
 
     private static func planLicensed(
@@ -1050,6 +1057,9 @@ public enum KDNALoadPlanCore {
     private static func validationProblemCode(_ problem: String) -> String {
         if problem.localizedCaseInsensitiveContains("checksums:") { return "KDNA_INTEGRITY_DIGEST_FAILED" }
         if problem.localizedCaseInsensitiveContains("signature") { return "KDNA_INTEGRITY_SIGNATURE_FAILED" }
+        if problem.localizedCaseInsensitiveContains("unsupported encryption profile") {
+            return "KDNA_CRYPTO_PROFILE_UNSUPPORTED"
+        }
         return "KDNA_FORMAT_INVALID"
     }
 

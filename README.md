@@ -114,10 +114,11 @@ range; values outside that range fail closed before Swift integer conversion.
 
 LoadPlan, Runtime Capsule, digest evidence, ConsumptionPlan, Agent Host, and
 JudgmentTrace schemas are byte-for-byte resources pinned to
-`aikdna/kdna@ca6ede2b4536215b3d42fe30404afa7d66cf4ddd`. SHA-256 resource locks
+`aikdna/kdna@a245b291a51ed19de30fd1ced8c803e396ca405c`. SHA-256 resource locks
 make missing or drifted schemas fail closed. Date-time and URI formats follow
-the canonical Node validation boundaries. Encrypted payloads are schema
-validated after authorized in-memory decryption and before Runtime delivery.
+the canonical Node validation boundaries. Manifest encryption declarations and
+the actual CBOR envelope must agree before authorization; encrypted payloads are
+schema validated after authorized in-memory decryption and before Runtime delivery.
 
 ### Digest vocabulary
 

@@ -18,6 +18,18 @@ AUTHORITY_SHA256 = "124e7d38f9148fdba1b352f1d09133072b11ddbf0fef9846313d4bf221a4
 AUTHORITY_COUNT = 62
 ACTION = re.compile(r"^\s*(?:-\s*)?uses:\s*[^@\s]+@([^\s#]+)", re.MULTILINE)
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
+GENERATION_LABEL = re.compile(
+    rb"(?<![A-Za-z0-9_])[Vv][0-9]+(?:\.[0-9]+){0,2}(?![A-Za-z0-9_])"
+)
+LOWER_V = b"v"
+GENERATION_SOURCE_ALLOWLIST = {
+    ("Package.swift", b".macOS(." + LOWER_V + b"13),"),
+    ("Package.swift", b".iOS(." + LOWER_V + b"16)"),
+    (
+        "Sources/KDNACore/KDNAProtectedCrypto.swift",
+        b"version: ." + LOWER_V + b"13",
+    ),
+}
 
 # These rules cover Swift-owned fixture labels and public dual-reader types in
 # addition to the exact authority inherited from the canonical Node cutover.
@@ -123,9 +135,26 @@ def findings(data: bytes, retired: tuple[bytes, ...]) -> list[str]:
     return sorted(set(result))
 
 
+def owned_generation_labels(path: str, data: bytes) -> list[str]:
+    result: list[str] = []
+    for line_number, line in enumerate(data.splitlines(), 1):
+        stripped = line.strip()
+        for match in GENERATION_LABEL.finditer(line):
+            if (path, stripped) in GENERATION_SOURCE_ALLOWLIST:
+                continue
+            result.append(
+                f"KDNA-owned generation label at line {line_number}: "
+                f"{match.group().decode('ascii')}"
+            )
+    return result
+
+
 def scan(label: str, path: str, data: bytes, retired: tuple[bytes, ...], failures: list[str]) -> None:
     for finding in findings(data, retired):
         failures.append(f"{label}:{path}: {finding}")
+    if label in {"repository-path", "repository-content"}:
+        for finding in owned_generation_labels(path, data):
+            failures.append(f"{label}:{path}: {finding}")
 
 
 def main() -> int:
