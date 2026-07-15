@@ -18,11 +18,34 @@ final class SchemaValidationTests: XCTestCase {
         // there while local package tests still verify every embedded SHA lock.
         guard let conformanceRoot = ProcessInfo.processInfo.environment["KDNA_CONFORMANCE_ROOT"],
               !conformanceRoot.isEmpty else { return }
-        let root = URL(fileURLWithPath: conformanceRoot).appendingPathComponent("schema")
+        let nodeRepositoryRoot = URL(
+            fileURLWithPath: conformanceRoot,
+            isDirectory: true
+        ).standardizedFileURL
+        let nodeRootValues = try nodeRepositoryRoot.resourceValues(
+            forKeys: [.isDirectoryKey, .isSymbolicLinkKey]
+        )
+        XCTAssertEqual(nodeRootValues.isDirectory, true)
+        XCTAssertEqual(nodeRootValues.isSymbolicLink, false)
+        XCTAssertEqual(
+            nodeRepositoryRoot.path,
+            nodeRepositoryRoot.resolvingSymlinksInPath().standardizedFileURL.path,
+            "KDNA_CONFORMANCE_ROOT must be a direct Node repository checkout, not a symlink."
+        )
+        let coreSchemaRoot = nodeRepositoryRoot
+            .appendingPathComponent("packages", isDirectory: true)
+            .appendingPathComponent("kdna-core", isDirectory: true)
+            .appendingPathComponent("schema", isDirectory: true)
         for name in KDNACanonicalSchemas.expectedDigests.keys.sorted() {
+            let canonicalURL = coreSchemaRoot.appendingPathComponent(name, isDirectory: false)
+            let values = try canonicalURL.resourceValues(
+                forKeys: [.isRegularFileKey, .isSymbolicLinkKey]
+            )
+            XCTAssertEqual(values.isRegularFile, true)
+            XCTAssertEqual(values.isSymbolicLink, false)
             XCTAssertEqual(
                 try KDNACanonicalSchemas.resourceData(named: name),
-                try Data(contentsOf: root.appendingPathComponent(name)),
+                try Data(contentsOf: canonicalURL),
                 "Bundled \(name) drifted from canonical Node schema."
             )
         }

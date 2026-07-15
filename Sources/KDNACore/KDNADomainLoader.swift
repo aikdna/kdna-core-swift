@@ -481,19 +481,6 @@ public class KDNADomainLoader {
             }
         }
 
-        // Inject old field name warnings if any
-        let warnings = detectOldFieldNames(domain, domainName: domain.core.meta.domain)
-        if !warnings.isEmpty {
-            var warningParts: [String] = []
-            warningParts.append("<!-- KDNA FIELD NAME WARNINGS:")
-            for w in warnings { warningParts.append("  \(w)") }
-            warningParts.append("  These fields will be SILENTLY IGNORED by the loader.")
-            warningParts.append("-->")
-            warningParts.append("")
-            let prefix = warningParts.joined(separator: "\n")
-            return prefix + "\n" + parts.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-
         return parts.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -534,49 +521,6 @@ public class KDNADomainLoader {
             fileCount: fileCount,
             schemaOK: schemaOK
         )
-    }
-
-    // MARK: - Old Field Name Detection
-
-    /// Map of old/informal field names → correct v0.7 spec field names.
-    public static let fieldAliases: [String: String] = [
-        "statement": "one_sentence or full_statement",
-        "description": "one_sentence",
-        "summary": "one_sentence",
-        "claim": "wrong",
-        "misreading": "wrong",
-        "reality": "correct",
-        "definition": "essence or one_sentence (on ontology)",
-        "brief": "title or context",
-        "bad_pattern": "what_happened",
-        "master_pattern": "structural_pattern",
-        "conclusion": "one_sentence",
-        "capability_layers": "stages",
-        "name": "id (on ontology entries — use id instead of name)",
-        "input": "from",
-        "output": "to",
-        "judgment": "via",
-    ]
-
-    /// Recursively scan an object tree for known old field names and return warnings.
-    public static func detectOldFieldNames(_ obj: Any, path: String = "", domainName: String = "domain") -> [String] {
-        var warnings: [String] = []
-        guard let dict = obj as? [String: Any] else {
-            if let array = obj as? [Any] {
-                for (i, item) in array.enumerated() {
-                    warnings.append(contentsOf: detectOldFieldNames(item, path: "\(path)[\(i)]", domainName: domainName))
-                }
-            }
-            return warnings
-        }
-        for (key, value) in dict {
-            let fullPath = path.isEmpty ? key : "\(path).\(key)"
-            if let alias = fieldAliases[key] {
-                warnings.append("[KDNA Loader] \(domainName).\(fullPath): field '\(key)' is not in v0.7 spec. Use '\(alias)' instead.")
-            }
-            warnings.append(contentsOf: detectOldFieldNames(value, path: fullPath, domainName: domainName))
-        }
-        return warnings
     }
 
     // MARK: - Manifest Loading

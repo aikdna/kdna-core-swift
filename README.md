@@ -60,8 +60,7 @@ if plan.can_load_now {
 let result = reader.verifySync(asset)
 print("Content digest:", result.contentDigest ?? "")
 
-// Developer compatibility APIs also exist for fixtures. Public runtime use
-// should start from a packaged .kdna file and the LoadPlan path above.
+// Developer fixture APIs are separate from the packaged Runtime path above.
 ```
 
 ### Current Runtime contract
@@ -137,7 +136,7 @@ computation so malformed JSON fails closed.
 - **Plan runtime loading** through LoadPlan before emitting judgment context
 - **Emit authorized Runtime Capsules** with the same profile-specific context
   shapes as the JavaScript Core
-- **Validate** developer fixtures for compatibility testing
+- **Validate** developer fixtures for conformance testing
 - **Format** loaded judgment context for native application integration
 - **Route / compose / match** through beta Swift APIs used by native experiments
 
@@ -169,7 +168,7 @@ computation so malformed JSON fails closed.
 | A/C/E/P and Plan/Host/Trace parity | Beta; shared JavaScript contract fixtures |
 | RFC-0019 account/device external grant verification | Beta; shared JS golden vector |
 | `KDNAJudgmentProjection` rendering | Beta |
-| Developer fixture loading | Developer compatibility |
+| Developer fixture loading | Conformance-only |
 | Route / compose / match APIs | Experimental |
 | Complete JS parity | Not claimed; requires fixed shared conformance evidence |
 
@@ -205,9 +204,9 @@ the in-memory authorization object and is cleared on deinitialization; account
 assets never fall back to password loading.
 
 `load` returns a `KDNARuntimeCapsule`, not the raw payload. Its context follows
-the selected `index`, `compact`, `scenario`, or `full` load profile. The older
-`loadWithCredential` projection API remains available to native UI code, but
-Agent consumption should use the Capsule path.
+the selected `index`, `compact`, `scenario`, or `full` load profile.
+`loadWithCredential` is the native UI projection API; Agent consumption uses
+the Capsule path.
 
 Swift Core must not define access modes, entitlement profiles, issue codes, or
 fail-closed policy independently from `aikdna/kdna`.
@@ -227,17 +226,18 @@ fail-closed policy independently from `aikdna/kdna`.
 This library is the Swift runtime bridge for products that need to inspect,
 validate, load, or format KDNA-compatible assets locally.
 
-## Consumption traces
+## JudgmentTrace
 
-Applications can present the result of a KDNA consumption decision through the
-shared trace model and projector. A trace explains which asset was selected,
-which advisors were accepted or rejected, the active budget profile, and the
-decision provenance. It is an application-facing record, not a second asset
-format and not a content endorsement.
+Applications record Runtime delivery through `KDNAJudgmentTrace`, the strict
+schema-backed trace shared with the Node authority. Validation binds the trace
+to the exact ConsumptionPlan, Capsule, Agent Host request and receipt,
+negotiated capabilities, terminal status, and observed budget evidence. It is
+an execution record, not a second asset format or a claim that the model
+semantically followed the delivered judgment.
 
 Use the CLI and `@aikdna/kdna-eval` as the reference for route, compose, and
-replay policy. Native clients should consume compatible traces rather than
-inventing independent trust or promotion rules.
+replay policy. Native clients consume the shared trace contract rather than
+defining independent trust or promotion rules.
 
 ## License
 

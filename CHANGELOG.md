@@ -25,6 +25,16 @@
   digest computation for malformed JSON.
 - Keep the public Runtime and LoadPlan value graph `Sendable` under Swift 6
   complete concurrency checking.
+- Correlate every Agent Host request and JudgmentTrace with the exact Plan
+  projection contract, capability basis, profile, protocol, and Capsule
+  versions used for negotiation.
+- Require the canonical Node repository explicitly for cross-implementation
+  conformance; local path discovery and symlinked fixture roots fail closed.
+- Remove the superseded Trace/projector model, permissive digest wrappers,
+  source-field aliases, and placeholder vectors in favor of schema-backed
+  JudgmentTrace and executable current Node fixtures.
+- Audit raw repository paths, source bytes, package metadata, and workflow pins
+  against the canonical post-cutover token authority, with hostile gate tests.
 
 ## 0.4.0 (2026-07-13)
 

@@ -40,7 +40,7 @@ public class KDNADomainValidator {
             warnings.append("KDNA_Patterns.json: missing or empty 'self_check'")
         }
 
-        // Phase 1a — Check governance fields on axioms (recommended, not blocking old domains)
+        // Judgment governance — Check governance fields on axioms (recommended, not blocking old domains)
         if let axioms = core.axioms {
             let vaguePhrases = [
                 "be helpful", "be professional", "be accurate", "best practices",
@@ -54,26 +54,26 @@ public class KDNADomainValidator {
                     }
                 }
                 if axiom.applies_when == nil || axiom.applies_when?.isEmpty == true {
-                    warnings.append("KDNA_Core.json.axioms[\(i)]: missing 'applies_when' (Phase 1a recommended)")
+                    warnings.append("KDNA_Core.json.axioms[\(i)]: missing 'applies_when' (Judgment governance recommended)")
                 }
                 if axiom.does_not_apply_when == nil || axiom.does_not_apply_when?.isEmpty == true {
-                    warnings.append("KDNA_Core.json.axioms[\(i)]: missing 'does_not_apply_when' (Phase 1a recommended)")
+                    warnings.append("KDNA_Core.json.axioms[\(i)]: missing 'does_not_apply_when' (Judgment governance recommended)")
                 }
                 if axiom.failure_risk == nil || axiom.failure_risk?.isEmpty == true {
-                    warnings.append("KDNA_Core.json.axioms[\(i)]: missing 'failure_risk' (Phase 1a recommended)")
+                    warnings.append("KDNA_Core.json.axioms[\(i)]: missing 'failure_risk' (Judgment governance recommended)")
                 }
                 if axiom.confidence == nil || axiom.confidence?.isEmpty == true {
-                    warnings.append("KDNA_Core.json.axioms[\(i)]: missing 'confidence' (Phase 1a recommended)")
+                    warnings.append("KDNA_Core.json.axioms[\(i)]: missing 'confidence' (Judgment governance recommended)")
                 }
             }
         }
 
-        // Phase 1a — Judgment Model fields (recommended)
+        // Judgment governance — Judgment Model fields (recommended)
         if core.highest_question == nil || core.highest_question?.isEmpty == true {
-            warnings.append("KDNA_Core.json: missing 'highest_question' (Phase 1a recommended)")
+            warnings.append("KDNA_Core.json: missing 'highest_question' (Judgment governance recommended)")
         }
         if core.worldview == nil || core.worldview?.isEmpty == true {
-            warnings.append("KDNA_Core.json: missing 'worldview' (Phase 1a recommended)")
+            warnings.append("KDNA_Core.json: missing 'worldview' (Judgment governance recommended)")
         }
         if let role = core.judgment_role {
             if role.acts_as.isEmpty {
@@ -86,18 +86,18 @@ public class KDNADomainValidator {
                 warnings.append("KDNA_Core.json.judgment_role: 'responsibility' is empty")
             }
         } else {
-            warnings.append("KDNA_Core.json: missing 'judgment_role' (Phase 1a recommended)")
+            warnings.append("KDNA_Core.json: missing 'judgment_role' (Judgment governance recommended)")
         }
         if core.value_order == nil || core.value_order?.isEmpty == true {
-            warnings.append("KDNA_Core.json: missing 'value_order' (Phase 1a recommended)")
+            warnings.append("KDNA_Core.json: missing 'value_order' (Judgment governance recommended)")
         }
 
-        // Phase 1a — Patterns extensions (recommended)
+        // Judgment governance — Patterns extensions (recommended)
         if patterns.aesthetic_preferences == nil || patterns.aesthetic_preferences?.isEmpty == true {
-            warnings.append("KDNA_Patterns.json: missing 'aesthetic_preferences' (Phase 1a recommended)")
+            warnings.append("KDNA_Patterns.json: missing 'aesthetic_preferences' (Judgment governance recommended)")
         }
         if patterns.boundaries == nil || patterns.boundaries?.isEmpty == true {
-            warnings.append("KDNA_Patterns.json: missing 'boundaries' (Phase 1a recommended)")
+            warnings.append("KDNA_Patterns.json: missing 'boundaries' (Judgment governance recommended)")
         }
         if let risk = patterns.risk_model {
             if risk.highest_risk_errors == nil || risk.highest_risk_errors?.isEmpty == true {
@@ -107,53 +107,53 @@ public class KDNADomainValidator {
                 warnings.append("KDNA_Patterns.json.risk_model: missing 'must_block_when'")
             }
         } else {
-            warnings.append("KDNA_Patterns.json: missing 'risk_model' (Phase 1a recommended)")
+            warnings.append("KDNA_Patterns.json: missing 'risk_model' (Judgment governance recommended)")
         }
         if patterns.counterexamples == nil || patterns.counterexamples?.isEmpty == true {
-            warnings.append("KDNA_Patterns.json: missing 'counterexamples' (Phase 1a recommended)")
+            warnings.append("KDNA_Patterns.json: missing 'counterexamples' (Judgment governance recommended)")
         }
 
-        // Phase 1b — Scenarios upgrades (recommended)
+        // Scenario governance — Scenarios upgrades (recommended)
         if let scenes = domain.scenarios?.scenes {
             for (i, scene) in scenes.enumerated() {
                 if scene.trigger_signals == nil || scene.trigger_signals?.isEmpty == true {
-                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'trigger_signals' (Phase 1b recommended)")
+                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'trigger_signals' (Scenario governance recommended)")
                 }
                 if scene.negative_signals == nil || scene.negative_signals?.isEmpty == true {
-                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'negative_signals' (Phase 1b recommended)")
+                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'negative_signals' (Scenario governance recommended)")
                 }
                 if scene.classification_rule == nil || scene.classification_rule?.isEmpty == true {
-                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'classification_rule' (Phase 1b recommended)")
+                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'classification_rule' (Scenario governance recommended)")
                 }
                 if scene.risk_level == nil || scene.risk_level?.isEmpty == true {
-                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'risk_level' (Phase 1b recommended)")
+                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'risk_level' (Scenario governance recommended)")
                 }
                 if scene.expected_judgment_shift == nil || scene.expected_judgment_shift?.isEmpty == true {
-                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'expected_judgment_shift' (Phase 1b recommended)")
+                    warnings.append("KDNA_Scenarios.json.scenes[\(i)]: missing 'expected_judgment_shift' (Scenario governance recommended)")
                 }
             }
         }
 
-        // Phase 1b — Cases upgrades (recommended)
+        // Scenario governance — Cases upgrades (recommended)
         if let cases = domain.cases?.cases {
             for (i, c) in cases.enumerated() {
                 if c.judgment_path == nil || c.judgment_path?.isEmpty == true {
-                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'judgment_path' (Phase 1b recommended)")
+                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'judgment_path' (Scenario governance recommended)")
                 }
                 if c.good_response == nil || c.good_response?.isEmpty == true {
-                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'good_response' (Phase 1b recommended)")
+                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'good_response' (Scenario governance recommended)")
                 }
                 if c.bad_response == nil || c.bad_response?.isEmpty == true {
-                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'bad_response' (Phase 1b recommended)")
+                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'bad_response' (Scenario governance recommended)")
                 }
                 if c.why_good == nil || c.why_good?.isEmpty == true {
-                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'why_good' (Phase 1b recommended)")
+                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'why_good' (Scenario governance recommended)")
                 }
                 if c.why_bad == nil || c.why_bad?.isEmpty == true {
-                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'why_bad' (Phase 1b recommended)")
+                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'why_bad' (Scenario governance recommended)")
                 }
                 if c.triggered_axioms == nil || c.triggered_axioms?.isEmpty == true {
-                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'triggered_axioms' (Phase 1b recommended)")
+                    warnings.append("KDNA_Cases.json.cases[\(i)]: missing 'triggered_axioms' (Scenario governance recommended)")
                 }
             }
         }

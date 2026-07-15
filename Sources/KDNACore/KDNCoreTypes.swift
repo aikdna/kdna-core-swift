@@ -26,7 +26,7 @@ public struct KDNCoreData: Codable {
     public let core_structure: [String]?
     public let trigger_signals: [String]?
 
-    // Phase 1a — Judgment Model fields
+    // Judgment governance fields
     public let highest_question: String?
     public let worldview: [String]?
     public let judgment_role: KDNAJudgmentRole?
@@ -47,7 +47,6 @@ public struct KDNCoreData: Codable {
         core_structure = try? container.decodeIfPresent([String].self, forKey: .core_structure)
         trigger_signals = try container.decodeIfPresent([String].self, forKey: .trigger_signals)
 
-        // Phase 1a
         highest_question = try container.decodeIfPresent(String.self, forKey: .highest_question)
         worldview = try container.decodeIfPresent([String].self, forKey: .worldview)
         judgment_role = try container.decodeIfPresent(KDNAJudgmentRole.self, forKey: .judgment_role)
@@ -55,7 +54,7 @@ public struct KDNCoreData: Codable {
     }
 }
 
-/// A stance entry that supports both legacy string format and new object format with applies_when/does_not_apply_when.
+/// A structured stance with explicit applicability boundaries.
 public struct KDNAStance: Codable {
     public let stance: String
     public let applies_when: [String]?
@@ -66,15 +65,6 @@ public struct KDNAStance: Codable {
     }
 
     public init(from decoder: Decoder) throws {
-        // Try legacy string format first
-        if let container = try? decoder.singleValueContainer(),
-           let str = try? container.decode(String.self) {
-            self.stance = str
-            self.applies_when = nil
-            self.does_not_apply_when = nil
-            return
-        }
-        // Object format
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.stance = try container.decode(String.self, forKey: .stance)
         self.applies_when = try container.decodeIfPresent([String].self, forKey: .applies_when)
@@ -103,7 +93,7 @@ public struct KDNAMeta: Codable {
     }
 }
 
-// MARK: - Phase 1a — Judgment Model Types
+// MARK: - Judgment Model Types
 
 public struct KDNAJudgmentRole: Codable {
     public let acts_as: String
@@ -123,7 +113,7 @@ public struct KDNAAxiom: Codable {
     public let full_statement: String
     public let why: String
 
-    // Phase 1a — governance fields (formerly recommended, now required for new domains)
+    // Governance fields
     public let applies_when: [String]?
     public let does_not_apply_when: [String]?
     public let failure_risk: String?
@@ -168,7 +158,7 @@ public struct KDNAFramework: Codable {
     public let steps: [String]?
 }
 
-// MARK: - Phase 1a — Patterns Extensions
+// MARK: - Pattern Governance
 
 public struct KDNAPatternsData: Codable {
     public let meta: KDNAMeta?
@@ -176,7 +166,6 @@ public struct KDNAPatternsData: Codable {
     public let misunderstandings: [KDNAMisunderstanding]?
     public let self_check: [String]?
 
-    // Phase 1a
     public let aesthetic_preferences: [KDNAAestheticPreference]?
     public let boundaries: [KDNABoundary]?
     public let risk_model: KDNARiskModel?
@@ -258,9 +247,7 @@ public struct KDNAScenariosData: Codable {
     public let scenes: [KDNAPromptScene]?
 }
 
-/// A scenario entry supporting Phase 1b upgrades:
-/// - trigger_signal (legacy single) → trigger_signals (array)
-/// - negative_signals, classification_rule, risk_level, expected_judgment_shift
+/// A scenario entry with classification and judgment-shift boundaries.
 public struct KDNAPromptScene: Codable {
     public let id: String?
     public let name: String
@@ -271,11 +258,19 @@ public struct KDNAPromptScene: Codable {
     public let expected_judgment_shift: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, trigger_signal, trigger_signals
+        case id, name, trigger_signals
         case negative_signals, classification_rule, risk_level, expected_judgment_shift
     }
 
     public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: [
+                "id", "name", "trigger_signals", "negative_signals",
+                "classification_rule", "risk_level", "expected_judgment_shift",
+            ],
+            type: "KDNA scenario"
+        )
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
@@ -284,14 +279,7 @@ public struct KDNAPromptScene: Codable {
         risk_level = try container.decodeIfPresent(String.self, forKey: .risk_level)
         expected_judgment_shift = try container.decodeIfPresent(String.self, forKey: .expected_judgment_shift)
 
-        // Backward compatibility: accept both trigger_signal (single) and trigger_signals (array)
-        if let signals = try? container.decode([String].self, forKey: .trigger_signals) {
-            trigger_signals = signals
-        } else if let single = try? container.decode(String.self, forKey: .trigger_signal) {
-            trigger_signals = [single]
-        } else {
-            trigger_signals = nil
-        }
+        trigger_signals = try container.decodeIfPresent([String].self, forKey: .trigger_signals)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -311,8 +299,7 @@ public struct KDNACasesData: Codable {
     public let cases: [KDNAPromptCase]?
 }
 
-/// A case entry with Phase 1b upgrades:
-/// - judgment_path, good_response, bad_response, why_good, why_bad, triggered_axioms
+/// A case entry with explicit judgment path and response evidence.
 public struct KDNAPromptCase: Codable {
     public let id: String?
     public let title: String
@@ -322,7 +309,6 @@ public struct KDNAPromptCase: Codable {
     public let structural_pattern: String
     public let scene_id: String?
 
-    // Phase 1b
     public let judgment_path: String?
     public let good_response: String?
     public let bad_response: String?
@@ -345,7 +331,6 @@ public struct KDNAPromptCase: Codable {
         structural_pattern = try container.decode(String.self, forKey: .structural_pattern)
         scene_id = try container.decodeIfPresent(String.self, forKey: .scene_id)
 
-        // Phase 1b
         judgment_path = try container.decodeIfPresent(String.self, forKey: .judgment_path)
         good_response = try container.decodeIfPresent(String.self, forKey: .good_response)
         bad_response = try container.decodeIfPresent(String.self, forKey: .bad_response)
@@ -457,7 +442,7 @@ public struct KDNAJudgment {
 
 /// Typed representation of the sole current `kdna.json` contract.
 ///
-/// Required fields intentionally have no legacy aliases. A document that does
+/// Required fields have no alternate spellings. A document that does
 /// not decode as this type is not eligible for typed crypto or Runtime loading.
 public struct KDNAManifest: Codable, Equatable, Sendable {
     public let format_version: String
@@ -581,49 +566,6 @@ public struct KDNAEncryption: Codable, Equatable, Sendable {
         self.profile = profile
         self.profile_version = profile_version
         self.encrypted_entries = encrypted_entries
-    }
-}
-
-// MARK: - Product Contract v1.0 Types
-
-/// Product Contract Judgment Trace — the canonical trace format shared across all KDNA products.
-public struct KDNAProductContractTrace: Codable {
-    public let trace_id: String
-    public let domain_id: String
-    public let domain_version: String?
-    public let mode: String
-    public let timestamp: String
-    public let agent: String
-    public let input_summary: String?
-    public let signals_detected: [String]
-    public let axioms_triggered: [String]
-    public let patterns_matched: [String]
-    public let misunderstandings_avoided: [String]
-    public let violations_blocked: [String]
-    public let judgment_delta: KDNAContractJudgmentDelta?
-    public let confidence: Double?
-    public let limitations: [String]
-    public let self_checks_passed: Int
-    public let self_checks_failed: Int
-
-    public init(trace_id: String = UUID().uuidString, domain_id: String, domain_version: String? = nil, mode: String, timestamp: String = ISO8601DateFormatter().string(from: Date()), agent: String = "unknown", input_summary: String? = nil, signals_detected: [String] = [], axioms_triggered: [String] = [], patterns_matched: [String] = [], misunderstandings_avoided: [String] = [], violations_blocked: [String] = [], judgment_delta: KDNAContractJudgmentDelta? = nil, confidence: Double? = nil, limitations: [String] = [], self_checks_passed: Int = 0, self_checks_failed: Int = 0) {
-        self.trace_id = trace_id; self.domain_id = domain_id; self.domain_version = domain_version
-        self.mode = mode; self.timestamp = timestamp; self.agent = agent
-        self.input_summary = input_summary; self.signals_detected = signals_detected
-        self.axioms_triggered = axioms_triggered; self.patterns_matched = patterns_matched
-        self.misunderstandings_avoided = misunderstandings_avoided; self.violations_blocked = violations_blocked
-        self.judgment_delta = judgment_delta; self.confidence = confidence
-        self.limitations = limitations; self.self_checks_passed = self_checks_passed
-        self.self_checks_failed = self_checks_failed
-    }
-}
-
-public struct KDNAContractJudgmentDelta: Codable {
-    public let without_kdna: String
-    public let with_kdna: String
-    public let difference: String
-    public init(without_kdna: String, with_kdna: String, difference: String) {
-        self.without_kdna = without_kdna; self.with_kdna = with_kdna; self.difference = difference
     }
 }
 

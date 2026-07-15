@@ -342,8 +342,17 @@ public enum KDNARuntimeContracts {
         guard requestValue["runtime_contract"]?["capsule_digest_profile"] == .string(KDNARuntimeCapsuleCore.deliveryDigestProfile),
               requestValue["runtime_contract"]?["capsule_digest_profile_version"] == .string(KDNARuntimeCapsuleCore.deliveryDigestProfileVersion),
               requestValue["capsule"]?["digests"]?["profile"] == planValue["projection_request"]?["required_digest_profile"],
-              requestValue["capsule"]?["digests"]?["profile_version"] == planValue["projection_request"]?["required_digest_profile_version"],
-              requestValue["capsule"]?["profile"] == planValue["projection_request"]?["profile"] else {
+              requestValue["capsule"]?["digests"]?["profile_version"] == planValue["projection_request"]?["required_digest_profile_version"] else {
+            throw protocolError("KDNA_HOST_PROJECTION_CONTRACT_MISMATCH", "Projection contract correlation failed.")
+        }
+        let expectedProjectionContract = KDNAJSONValue.object([
+            "profile": planValue["projection_request"]?["profile"] ?? .null,
+            "required_digest_profile": planValue["projection_request"]?["required_digest_profile"] ?? .null,
+            "required_digest_profile_version": planValue["projection_request"]?["required_digest_profile_version"] ?? .null,
+            "require_packaged_asset": planValue["projection_request"]?["require_packaged_asset"] ?? .null,
+        ])
+        guard requestValue["projection_contract"] == expectedProjectionContract,
+              requestValue["capsule"]?["profile"] == requestValue["projection_contract"]?["profile"] else {
             throw protocolError("KDNA_HOST_PROJECTION_CONTRACT_MISMATCH", "Projection contract correlation failed.")
         }
         guard requestValue["result_contract"] == planValue["result_request"] else {
@@ -483,6 +492,26 @@ public enum KDNARuntimeContracts {
         request: KDNAAgentHostRequest,
         receipt: KDNAAgentHostReceipt
     ) throws {
+        try validateConsumptionPlan(plan, trustedPlanDigest: trustedPlanDigest)
+        let value = trace.jsonValue
+        guard let overallStatus = value["overall_status"]?.stringValue,
+              ["execution_completed", "execution_failed", "cancelled", "timed_out"]
+                .contains(overallStatus) else {
+            throw protocolError("KDNA_TRACE_TERMINAL_STATE_MISMATCH", "Trace terminal state does not match Host evidence.")
+        }
+        guard value["plan_ref"]?["plan_id"] == plan.jsonValue["plan_id"],
+              value["plan_ref"]?["plan_digest_profile"] == plan.jsonValue["integrity"]?["profile"],
+              value["plan_ref"]?["plan_digest_profile_version"] == plan.jsonValue["integrity"]?["profile_version"],
+              value["plan_ref"]?["plan_digest"] == plan.jsonValue["integrity"]?["plan_digest"],
+              value["plan_ref"]?["comparison"] == .string("matched") else {
+            throw protocolError("KDNA_TRACE_PLAN_REF_MISMATCH", "Trace plan correlation failed.")
+        }
+        try validateTraceRuntimeAuthority(
+            value,
+            plan: plan,
+            capabilities: capabilities,
+            coreCapsuleVersions: coreCapsuleVersions
+        )
         try validateAgentHostRequest(
             request,
             plan: plan,
@@ -491,17 +520,6 @@ public enum KDNARuntimeContracts {
             coreCapsuleVersions: coreCapsuleVersions
         )
         try validateAgentHostReceipt(receipt, request: request)
-        let value = trace.jsonValue
-        guard let overallStatus = value["overall_status"]?.stringValue,
-              ["execution_completed", "execution_failed", "cancelled", "timed_out"]
-                .contains(overallStatus) else {
-            throw protocolError("KDNA_TRACE_TERMINAL_STATE_MISMATCH", "Trace terminal state does not match Host evidence.")
-        }
-        guard value["plan_ref"]?["plan_id"] == plan.jsonValue["plan_id"],
-              value["plan_ref"]?["plan_digest"] == plan.jsonValue["integrity"]?["plan_digest"],
-              value["plan_ref"]?["comparison"] == .string("matched") else {
-            throw protocolError("KDNA_TRACE_PLAN_REF_MISMATCH", "Trace plan correlation failed.")
-        }
         let negotiation = negotiateRuntimePair(
             plan: plan,
             trustedPlanDigest: trustedPlanDigest,
@@ -509,8 +527,10 @@ public enum KDNARuntimeContracts {
             coreCapsuleVersions: coreCapsuleVersions
         )
         guard negotiation.state == "selected",
-              value["runtime_contract"]?["selected_capsule_version"] == .string(contractVersion),
-              value["runtime_contract"]?["selected_host_protocol"] == .string(hostProtocol),
+              let selectedCapsuleVersion = negotiation.capsule_version,
+              let selectedHostProtocol = negotiation.host_protocol,
+              value["runtime_contract"]?["selected_capsule_version"] == .string(selectedCapsuleVersion),
+              value["runtime_contract"]?["selected_host_protocol"] == .string(selectedHostProtocol),
               value["runtime_contract"]?["negotiation_state"] == .string("selected"),
               value["runtime_contract"]?["issue_code"] == .null else {
             throw protocolError("KDNA_TRACE_NEGOTIATION_EVIDENCE_MISMATCH", "Trace negotiation evidence failed.")
@@ -610,10 +630,18 @@ public enum KDNARuntimeContracts {
         let value = trace.jsonValue
         guard value["overall_status"] == .string("blocked"),
               value["plan_ref"]?["plan_id"] == plan.jsonValue["plan_id"],
+              value["plan_ref"]?["plan_digest_profile"] == plan.jsonValue["integrity"]?["profile"],
+              value["plan_ref"]?["plan_digest_profile_version"] == plan.jsonValue["integrity"]?["profile_version"],
               value["plan_ref"]?["plan_digest"] == plan.jsonValue["integrity"]?["plan_digest"],
               value["plan_ref"]?["comparison"] == .string("matched") else {
             throw protocolError("KDNA_TRACE_PLAN_REF_MISMATCH", "Blocked trace plan correlation failed.")
         }
+        try validateTraceRuntimeAuthority(
+            value,
+            plan: plan,
+            capabilities: capabilities,
+            coreCapsuleVersions: coreCapsuleVersions
+        )
         let negotiation = negotiateRuntimePair(
             plan: plan,
             trustedPlanDigest: trustedPlanDigest,
@@ -630,6 +658,8 @@ public enum KDNARuntimeContracts {
             }
         } else {
             guard runtime?["negotiation_state"] == .string("blocked"),
+                  runtime?["selected_capsule_version"] == .null,
+                  runtime?["selected_host_protocol"] == .null,
                   runtime?["issue_code"] == negotiation.issue_code.map(KDNAJSONValue.string) else {
                 throw protocolError("KDNA_TRACE_NEGOTIATION_EVIDENCE_MISMATCH", "Blocked trace issue differs from negotiation.")
             }
@@ -665,6 +695,24 @@ public enum KDNARuntimeContracts {
         )
         guard value["budget"] == expectedBudget else {
             throw protocolError("KDNA_TRACE_BUDGET_MISMATCH", "Blocked trace budget evidence is not exact.")
+        }
+    }
+
+    private static func validateTraceRuntimeAuthority(
+        _ trace: KDNAJSONValue,
+        plan: KDNAConsumptionPlan,
+        capabilities: KDNAAgentHostCapabilities,
+        coreCapsuleVersions: [String]
+    ) throws {
+        let runtime = trace["runtime_contract"]
+        guard runtime?["plan_capsule_versions"] == plan.jsonValue["projection_request"]?["accepted_capsule_versions"],
+              runtime?["plan_host_protocols"] == plan.jsonValue["host_request"]?["accepted_protocols"],
+              runtime?["core_capsule_versions"] == .array(coreCapsuleVersions.map { .string($0) }),
+              runtime?["host_capabilities"] == capabilities.jsonValue else {
+            throw protocolError(
+                "KDNA_TRACE_NEGOTIATION_EVIDENCE_MISMATCH",
+                "Trace Runtime authority differs from the independently supplied Plan, Core, or Host capabilities."
+            )
         }
     }
 

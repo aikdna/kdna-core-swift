@@ -52,22 +52,22 @@ Open `Package.swift` in Xcode. The `KDNACore` library and
 | `swift test` | Run all XCTest cases |
 | `swift test --filter KDNACoreTests.testName` | Run a single test |
 | `swift package describe` | Inspect package metadata |
-| `swift package generate-xcodeproj` | (legacy; Xcode auto-detects `Package.swift` now) |
 
 ## Cross-Implementation Parity
 
 This package **must** stay behaviorally equivalent to `@aikdna/kdna-core`
 in the following areas:
 
-- LoadPlan v1 states and transitions
+- Current LoadPlan states and transitions
 - Canonical container format
-- Crypto profile: `kdna-password-protected-v1` (Argon2id + AES-KW + AES-GCM)
+- Current password, licensed-entry, and external-grant crypto profiles
 - Manifest schema validation
 
-Before opening a PR, run the cross-language golden vectors in the
-JavaScript repo (`packages/kdna-core/test-vectors/golden-vectors.js`)
-and confirm identical outputs. If a divergence is intentional, document
-it in the PR description with rationale.
+Before opening a PR, run the Swift suite with `KDNA_CONFORMANCE_ROOT` pointed
+at the exact Node authority checkout used by CI. The suite consumes the
+canonical Runtime, authorization, digest, and cryptographic fixtures directly.
+If a divergence is intentional, document it in the PR description with
+rationale.
 
 ## Contribution Types
 
@@ -99,8 +99,7 @@ All contributions must:
 - Maintain parity with the JavaScript reference where applicable
 - Follow Swift API Design Guidelines
 - Use Swift Concurrency (`async`/`await`) for new I/O code
-- Not depend on third-party packages without discussion (this package
-  currently has zero runtime dependencies)
+- Not add third-party packages without discussion
 
 ## License
 

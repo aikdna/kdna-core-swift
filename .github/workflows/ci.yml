@@ -15,7 +15,9 @@ jobs:
       - name: Audit public surface
         run: python3 scripts/check_public_surface.py
       - name: Audit Runtime cutover and workflow pins
-        run: python3 scripts/check_runtime_cutover.py
+        run: |
+          python3 scripts/check_runtime_cutover.py
+          python3 scripts/test_runtime_cutover_hostile.py
       - name: Checkout fixed kdna conformance fixtures
         run: |
           cd ..

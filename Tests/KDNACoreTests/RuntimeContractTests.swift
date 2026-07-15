@@ -33,6 +33,80 @@ final class RuntimeContractTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(KDNARuntimeCapsule.self, from: encoded), capsule)
     }
 
+    func testCurrentCrossLanguageCoverageMatrixIsPinnedToNodeAuthority() throws {
+        XCTAssertEqual(
+            KDNACanonicalSchemas.canonicalCommit,
+            "4ede2aa539b94edd45aac973a0b4937c734c544a"
+        )
+
+        let capsule = try KDNARuntime.load(
+            assetData: packagedBytes(),
+            expected: KDNAExpectedDigests(asset: KDNAExpectedDigest(
+                value: "sha256:df18a4b15c930940061c58744c0bcac040a0a54c596db358da02c0a31082a23e",
+                source: "install_receipt"
+            )),
+            loadedAt: loadedAt
+        )
+        XCTAssertEqual(
+            capsule.digests.asset.value,
+            "sha256:df18a4b15c930940061c58744c0bcac040a0a54c596db358da02c0a31082a23e",
+            "A must retain exact packaged-byte parity."
+        )
+        XCTAssertEqual(
+            capsule.digests.content.value,
+            "sha256:72595802e214dff1a5b5a1153dd7e343190668d5da5ba32bcff2857774cc9428",
+            "C must retain cross-language canonical content-tree parity."
+        )
+        XCTAssertEqual(
+            capsule.digests.runtime_entry_set.value,
+            "sha256:52b8ceb0dfe2081dc955487de31bc693e14f3a51ed5a79ece7a4e1ac26249de7",
+            "E must retain canonical Runtime entry-set parity."
+        )
+        XCTAssertEqual(
+            try KDNARuntimeCapsuleCore.computeDeliveryDigest(capsule),
+            "sha256:3ff3f7986c437460fc6a09de9d864d7d2d3d551571a3a95b2dac21b4a63ee4fa",
+            "P must retain cross-language RFC 8785/JCS parity."
+        )
+
+        let nodeRoot = try XCTUnwrap(
+            ProcessInfo.processInfo.environment["KDNA_CONFORMANCE_ROOT"]
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+        XCTAssertFalse(nodeRoot.isEmpty)
+        let repository = URL(fileURLWithPath: nodeRoot, isDirectory: true).standardizedFileURL
+        XCTAssertEqual(
+            repository.path,
+            repository.resolvingSymlinksInPath().standardizedFileURL.path,
+            "Cross-language authority must be a direct checkout."
+        )
+        let licensedFixture = repository
+            .appendingPathComponent("fixtures", isDirectory: true)
+            .appendingPathComponent("test_licensed_entry.kdna", isDirectory: false)
+        let fixtureBytes = try Data(contentsOf: licensedFixture)
+        XCTAssertEqual(
+            KDNACrypto.sha256Hex(fixtureBytes),
+            "d785725fc2b53cad5c3627ddc91ae737ab58502224e64dca8896ac818c4e9790"
+        )
+        let reader = KDNAAssetReader()
+        let asset = try reader.open(data: fixtureBytes, path: licensedFixture.path)
+        let manifest = try reader.decodeManifest(asset: asset)
+        XCTAssertEqual(manifest.encryption?.profile, KDNA_LICENSED_ENTRY_PROFILE)
+        XCTAssertEqual(manifest.encryption?.profile_version, KDNA_ENCRYPTION_PROFILE_VERSION)
+        let plaintext = try KDNALicensedEntryDecryptor(
+            licenseKey: "KDNA-TEST-LICENSE-VECTOR-2026"
+        ).decrypt(
+            entryName: "payload.kdnab",
+            envelopeData: reader.readEntry(asset: asset, name: "payload.kdnab"),
+            manifest: manifest
+        )
+        let canonicalPayload = try Data(contentsOf: repository
+            .appendingPathComponent("examples/minimal/payload.kdnab"))
+        XCTAssertEqual(
+            try KDNACBOR.decodeObject(plaintext) as NSDictionary,
+            try KDNACBOR.decodeObject(canonicalPayload) as NSDictionary,
+            "Current Node encrypted fixture must really decrypt to the canonical payload."
+        )
+    }
+
     func testCurrentPlanHostReceiptAndTraceMatchNodeGolden() throws {
         let fixture = try golden()
         let plan = try decode(KDNAConsumptionPlan.self, object(fixture, "plan"))
@@ -198,6 +272,87 @@ final class RuntimeContractTests: XCTestCase {
                 plan: plan,
                 trustedPlanDigest: plan.planDigest,
                 capabilities: capabilities
+            )
+        }
+    }
+
+    func testRequestProjectionContractMustExactlyMatchPlanAndCapsule() throws {
+        let fixture = try golden()
+        let plan = try decode(KDNAConsumptionPlan.self, object(fixture, "plan"))
+        let capabilities = try decode(KDNAAgentHostCapabilities.self, object(fixture, "capabilities"))
+        let source = try object(fixture, "request")
+
+        var wrongRequestProfile = source
+        var projection = try XCTUnwrap(wrongRequestProfile["projection_contract"] as? [String: Any])
+        projection["profile"] = "full"
+        wrongRequestProfile["projection_contract"] = projection
+        let requestProfileDrift = try decode(KDNAAgentHostRequest.self, wrongRequestProfile)
+        XCTAssertThrowsCode("KDNA_HOST_PROJECTION_CONTRACT_MISMATCH") {
+            try KDNARuntimeContracts.validateAgentHostRequest(
+                requestProfileDrift,
+                plan: plan,
+                trustedPlanDigest: plan.planDigest,
+                capabilities: capabilities
+            )
+        }
+
+        var wrongCapsuleProfile = source
+        var capsule = try XCTUnwrap(wrongCapsuleProfile["capsule"] as? [String: Any])
+        capsule["profile"] = "full"
+        wrongCapsuleProfile["capsule"] = capsule
+        let capsuleProfileDrift = try decode(KDNAAgentHostRequest.self, wrongCapsuleProfile)
+        XCTAssertThrowsCode("KDNA_HOST_PROJECTION_CONTRACT_MISMATCH") {
+            try KDNARuntimeContracts.validateAgentHostRequest(
+                capsuleProfileDrift,
+                plan: plan,
+                trustedPlanDigest: plan.planDigest,
+                capabilities: capabilities
+            )
+        }
+    }
+
+    func testTraceRuntimeAuthorityRejectsCapabilityProfileAndVersionDrift() throws {
+        let fixture = try golden()
+        let plan = try decode(KDNAConsumptionPlan.self, object(fixture, "plan"))
+        let capabilities = try decode(KDNAAgentHostCapabilities.self, object(fixture, "capabilities"))
+        let request = try decode(KDNAAgentHostRequest.self, object(fixture, "request"))
+        let receipt = try decode(KDNAAgentHostReceipt.self, object(fixture, "receipt"))
+        let source = try object(fixture, "trace")
+
+        for mutation in ["basis", "profile"] {
+            var traceObject = source
+            var runtime = try XCTUnwrap(traceObject["runtime_contract"] as? [String: Any])
+            var embeddedCapabilities = try XCTUnwrap(runtime["host_capabilities"] as? [String: Any])
+            if mutation == "basis" {
+                embeddedCapabilities["capability_basis"] = "legacy_assumption"
+            } else {
+                embeddedCapabilities["capsule_digest_profiles"] = []
+            }
+            runtime["host_capabilities"] = embeddedCapabilities
+            traceObject["runtime_contract"] = runtime
+            let driftedTrace = try decode(KDNAJudgmentTrace.self, traceObject)
+            XCTAssertThrowsCode("KDNA_TRACE_NEGOTIATION_EVIDENCE_MISMATCH") {
+                try KDNARuntimeContracts.validateJudgmentTrace(
+                    driftedTrace,
+                    plan: plan,
+                    trustedPlanDigest: plan.planDigest,
+                    capabilities: capabilities,
+                    request: request,
+                    receipt: receipt
+                )
+            }
+        }
+
+        let trace = try decode(KDNAJudgmentTrace.self, source)
+        XCTAssertThrowsCode("KDNA_TRACE_NEGOTIATION_EVIDENCE_MISMATCH") {
+            try KDNARuntimeContracts.validateJudgmentTrace(
+                trace,
+                plan: plan,
+                trustedPlanDigest: plan.planDigest,
+                capabilities: capabilities,
+                coreCapsuleVersions: [],
+                request: request,
+                receipt: receipt
             )
         }
     }

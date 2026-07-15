@@ -188,7 +188,7 @@ final class KDNACoreTests: XCTestCase {
             "purpose": "Test domain",
             "load_condition": "always"
           },
-          "stances": ["Never use vague adjectives", "Always start with the reader's problem"],
+          "stances": [{"stance":"Never use vague adjectives"}, {"stance":"Always start with the reader's problem"}],
           "axioms": [
             {
               "id": "axiom_1",
@@ -267,7 +267,7 @@ final class KDNACoreTests: XCTestCase {
             "purpose": "Security domain",
             "load_condition": "always"
           },
-          "stances": ["Always reject unverified input", "Never trust client-side validation"],
+          "stances": [{"stance":"Always reject unverified input"}, {"stance":"Never trust client-side validation"}],
           "axioms": [
             {
               "id": "axiom_sec",
@@ -491,7 +491,7 @@ final class KDNACoreTests: XCTestCase {
         let oppositeCoreJSON = """
         {
           "meta": { "version": "1.0", "domain": "test-opposite", "created": "2024-01-01", "purpose": "Test", "load_condition": "always" },
-          "stances": ["Never start with the reader's problem"],
+          "stances": [{"stance":"Never start with the reader's problem"}],
           "axioms": [], "ontology": [], "frameworks": []
         }
         """.data(using: .utf8)!
@@ -527,7 +527,7 @@ final class KDNACoreTests: XCTestCase {
         let badCoreJSON = """
         {
           "meta": { "version": "1.0", "domain": "bad", "created": "2024-01-01", "purpose": "Test", "load_condition": "always" },
-          "stances": ["S1"], "ontology": [{"id":"c","one_sentence":"x","essence":"e","boundary":"b","trigger_signal":"t"}],
+          "stances": [{"stance":"S1"}], "ontology": [{"id":"c","one_sentence":"x","essence":"e","boundary":"b","trigger_signal":"t"}],
           "frameworks": [{"id":"f","name":"F","when_to_use":"W","steps":["s"]}]
         }
         """.data(using: .utf8)!
@@ -593,19 +593,6 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertNotNil(manifest)
         XCTAssertEqual(manifest?.asset_id, "kdna:test:domain")
         XCTAssertEqual(manifest?.compatibility.profile_version, "0.1.0")
-    }
-
-    func testOldFieldNameDetection() {
-        let obj: [String: Any] = [
-            "statement": "old field",
-            "nested": [
-                "description": "another old field"
-            ]
-        ]
-        let warnings = KDNADomainLoader.detectOldFieldNames(obj, domainName: "test")
-        XCTAssertFalse(warnings.isEmpty)
-        XCTAssertTrue(warnings.contains { $0.contains("statement") })
-        XCTAssertTrue(warnings.contains { $0.contains("description") })
     }
 
     // MARK: - Build System Message
@@ -1050,7 +1037,7 @@ final class KDNACoreTests: XCTestCase {
         let coreNoSignals = """
         {
           "meta": { "version": "1.0", "domain": "no-signals", "created": "2024-01-01", "purpose": "Test", "load_condition": "always" },
-          "stances": ["S1"], "axioms": [], "ontology": [], "frameworks": []
+          "stances": [{"stance":"S1"}], "axioms": [], "ontology": [], "frameworks": []
         }
         """.data(using: .utf8)!
         let patternsMinimal = """
@@ -1074,7 +1061,7 @@ final class KDNACoreTests: XCTestCase {
         let noConflictCoreJSON = """
         {
           "meta": { "version": "1.0", "domain": "test-noconflict", "created": "2024-01-01", "purpose": "Test", "load_condition": "always" },
-          "stances": ["Be clear and concise"],
+          "stances": [{"stance":"Be clear and concise"}],
           "axioms": [], "ontology": [], "frameworks": []
         }
         """.data(using: .utf8)!
@@ -1097,7 +1084,7 @@ final class KDNACoreTests: XCTestCase {
         let badCoreJSON = """
         {
           "meta": { "version": "1.0", "domain": "bad", "created": "2024-01-01", "purpose": "Test", "load_condition": "always" },
-          "stances": ["S1"], "axioms": [{"id":"a","one_sentence":"x","full_statement":"y","why":"z"}],
+          "stances": [{"stance":"S1"}], "axioms": [{"id":"a","one_sentence":"x","full_statement":"y","why":"z"}],
           "frameworks": [{"id":"f","name":"F","when_to_use":"W","steps":["s"]}]
         }
         """.data(using: .utf8)!
@@ -1115,7 +1102,7 @@ final class KDNACoreTests: XCTestCase {
         let vagueCoreJSON = """
         {
           "meta": { "version": "1.0", "domain": "vague", "created": "2024-01-01", "purpose": "Test", "load_condition": "always" },
-          "stances": ["S1"],
+          "stances": [{"stance":"S1"}],
           "axioms": [
             { "id": "a1", "one_sentence": "We should be helpful and achieve excellence.", "full_statement": "Best practices require user-centric innovation.", "why": "Because." }
           ],
@@ -1284,17 +1271,17 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertTrue(domains.isEmpty)
     }
 
-    // MARK: - Phase 1a Schema Upgrades
+    // MARK: - Judgment governance Schema Upgrades
 
-    func testPhase1aNewFieldsParsing() {
-        let phase1CoreJSON = """
+    func testJudgmentGovernanceNewFieldsParsing() {
+        let governanceCoreJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1-test", "created": "2026-05-22", "purpose": "Test Phase 1a", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "governance-test", "created": "2026-05-22", "purpose": "Test Judgment governance", "load_condition": "always" },
           "highest_question": "What is the structural problem, not the language problem?",
           "worldview": ["Readers are busy and skeptical", "Smooth prose can hide empty thinking"],
           "judgment_role": { "acts_as": "structural diagnostician", "does_not_act_as": "language editor or cheerleader", "responsibility": "Identify the root cause before suggesting fixes" },
           "value_order": ["structural clarity > language polish", "specific evidence > abstract explanation"],
-          "stances": ["S1"],
+          "stances": [{"stance":"S1"}],
           "axioms": [
             {
               "id": "ax_1",
@@ -1312,9 +1299,9 @@ final class KDNACoreTests: XCTestCase {
           "frameworks": [{"id":"f","name":"F","when_to_use":"W","steps":["s"]}]
         }
         """.data(using: .utf8)!
-        let phase1PatternsJSON = """
+        let governancePatternsJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1-test", "created": "2026-05-22", "purpose": "Test Phase 1a", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "governance-test", "created": "2026-05-22", "purpose": "Test Judgment governance", "load_condition": "always" },
           "terminology": { "banned_terms": [], "standard_terms": [] },
           "misunderstandings": [],
           "self_check": ["Check 1"],
@@ -1336,9 +1323,9 @@ final class KDNACoreTests: XCTestCase {
         }
         """.data(using: .utf8)!
 
-        guard let coreData = try? JSONDecoder().decode(KDNCoreData.self, from: phase1CoreJSON),
-              let patternsData = try? JSONDecoder().decode(KDNAPatternsData.self, from: phase1PatternsJSON) else {
-            XCTFail("Phase 1a decode failed")
+        guard let coreData = try? JSONDecoder().decode(KDNCoreData.self, from: governanceCoreJSON),
+              let patternsData = try? JSONDecoder().decode(KDNAPatternsData.self, from: governancePatternsJSON) else {
+            XCTFail("Judgment governance decode failed")
             return
         }
 
@@ -1359,23 +1346,23 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertEqual(patternsData.counterexamples?.count, 1)
     }
 
-    func testPhase1aNewFieldsFormatContext() {
-        let phase1CoreJSON = """
+    func testJudgmentGovernanceNewFieldsFormatContext() {
+        let governanceCoreJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "governance-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "highest_question": "What is the structural problem?",
           "worldview": ["Readers are busy"],
           "judgment_role": { "acts_as": "diagnostician", "does_not_act_as": "editor", "responsibility": "Find root cause" },
           "value_order": ["clarity > polish"],
-          "stances": ["S1"],
+          "stances": [{"stance":"S1"}],
           "axioms": [{"id":"a","one_sentence":"x","full_statement":"y","why":"z"}],
           "ontology": [{"id":"c","one_sentence":"x","essence":"e","boundary":"b","trigger_signal":"t"}],
           "frameworks": [{"id":"f","name":"F","when_to_use":"W","steps":["s"]}]
         }
         """.data(using: .utf8)!
-        let phase1PatternsJSON = """
+        let governancePatternsJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "governance-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "terminology": { "banned_terms": [], "standard_terms": [] },
           "misunderstandings": [],
           "self_check": [],
@@ -1386,8 +1373,8 @@ final class KDNACoreTests: XCTestCase {
         }
         """.data(using: .utf8)!
 
-        guard let coreData = try? JSONDecoder().decode(KDNCoreData.self, from: phase1CoreJSON),
-              let patternsData = try? JSONDecoder().decode(KDNAPatternsData.self, from: phase1PatternsJSON) else {
+        guard let coreData = try? JSONDecoder().decode(KDNCoreData.self, from: governanceCoreJSON),
+              let patternsData = try? JSONDecoder().decode(KDNAPatternsData.self, from: governancePatternsJSON) else {
             XCTFail("Decode failed")
             return
         }
@@ -1408,8 +1395,8 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertTrue(context.contains("Counterexamples"))
     }
 
-    func testPhase1aLintMissingGovernanceFields() {
-        // Old-style domain without Phase 1a fields should produce warnings but no errors
+    func testJudgmentGovernanceLintMissingGovernanceFields() {
+        // Domain without optional governance fields should produce warnings but no errors
         let domain = writingDomain()
         let (_, warnings) = KDNADomainValidator.lintDomain(domain)
         XCTAssertTrue(warnings.contains { $0.contains("applies_when") })
@@ -1423,7 +1410,7 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertTrue(warnings.contains { $0.contains("counterexamples") })
     }
 
-    func testPhase1aBuildSystemMessageStrictJudgment() {
+    func testJudgmentGovernanceBuildSystemMessageStrictJudgment() {
         let domain = writingDomain()
         let pipeline = KDNJudgmentPipeline()
         let msg = pipeline.buildSystemMessage(
@@ -1437,19 +1424,19 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertTrue(msg.contains("EVALUATE risk"))
     }
 
-    func testPhase1aCompactDomainIncludesNewFields() {
-        let phase1CoreJSON = """
+    func testJudgmentGovernanceCompactDomainIncludesNewFields() {
+        let governanceCoreJSON = """
         {
           "meta": { "version": "0.9.0", "domain": "compact-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "highest_question": "HQ?",
           "worldview": ["W1"],
           "value_order": ["V1"],
-          "stances": ["S1"],
+          "stances": [{"stance":"S1"}],
           "axioms": [{"id":"a","one_sentence":"x","full_statement":"y","why":"z"}],
           "ontology": [], "frameworks": []
         }
         """.data(using: .utf8)!
-        let phase1PatternsJSON = """
+        let governancePatternsJSON = """
         {
           "meta": { "version": "0.9.0", "domain": "compact-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "terminology": { "banned_terms": [], "standard_terms": [] },
@@ -1459,8 +1446,8 @@ final class KDNACoreTests: XCTestCase {
         }
         """.data(using: .utf8)!
 
-        guard let coreData = try? JSONDecoder().decode(KDNCoreData.self, from: phase1CoreJSON),
-              let patternsData = try? JSONDecoder().decode(KDNAPatternsData.self, from: phase1PatternsJSON) else {
+        guard let coreData = try? JSONDecoder().decode(KDNCoreData.self, from: governanceCoreJSON),
+              let patternsData = try? JSONDecoder().decode(KDNAPatternsData.self, from: governancePatternsJSON) else {
             XCTFail("Decode failed")
             return
         }
@@ -1478,8 +1465,8 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertTrue(msg.contains("Risk: R1"))
     }
 
-    func testPhase1aBackwardCompatibilityOldDomain() {
-        // Ensure old domains without Phase 1a fields still load and format correctly
+    func testOptionalJudgmentGovernanceFields() {
+        // Ensure domains without optional governance fields still load and format correctly
         let domain = writingDomain()
         XCTAssertNil(domain.core.highest_question)
         XCTAssertNil(domain.core.worldview)
@@ -1493,17 +1480,17 @@ final class KDNACoreTests: XCTestCase {
         let context = KDNADomainLoader.formatContext(domain)
         XCTAssertFalse(context.contains("Highest Question"))
         XCTAssertFalse(context.contains("Worldview"))
-        // Should still contain old fields
+        // Required base fields remain present
         XCTAssertTrue(context.contains("Stances"))
         XCTAssertTrue(context.contains("Axioms"))
     }
 
-    // MARK: - Phase 1b Schema Upgrades
+    // MARK: - Scenario governance Schema Upgrades
 
-    func testPhase1bScenarioNewFieldsParsing() {
+    func testScenarioGovernanceScenarioNewFieldsParsing() {
         let scenariosJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1b-test", "created": "2026-05-22", "purpose": "Test Phase 1b", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "scenario-governance-test", "created": "2026-05-22", "purpose": "Test Scenario governance", "load_condition": "always" },
           "scenes": [
             {
               "id": "scene_1",
@@ -1519,7 +1506,7 @@ final class KDNACoreTests: XCTestCase {
         """.data(using: .utf8)!
 
         guard let scenariosData = try? JSONDecoder().decode(KDNAScenariosData.self, from: scenariosJSON) else {
-            XCTFail("Phase 1b scenario decode failed")
+            XCTFail("Scenario governance scenario decode failed")
             return
         }
 
@@ -1531,7 +1518,7 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertEqual(scene?.expected_judgment_shift, "From A to B")
     }
 
-    func testPhase1bScenarioBackwardCompatSingleTriggerSignal() {
+    func testScenarioRejectsRemovedSingleTriggerSignal() {
         let scenariosJSON = """
         {
           "meta": { "version": "0.4", "domain": "old-scenario", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
@@ -1545,20 +1532,13 @@ final class KDNACoreTests: XCTestCase {
         }
         """.data(using: .utf8)!
 
-        guard let scenariosData = try? JSONDecoder().decode(KDNAScenariosData.self, from: scenariosJSON) else {
-            XCTFail("Old scenario decode failed")
-            return
-        }
-
-        let scene = scenariosData.scenes?.first
-        XCTAssertEqual(scene?.trigger_signals?.count, 1)
-        XCTAssertEqual(scene?.trigger_signals?.first, "old single signal")
+        XCTAssertThrowsError(try JSONDecoder().decode(KDNAScenariosData.self, from: scenariosJSON))
     }
 
-    func testPhase1bCaseNewFieldsParsing() {
+    func testScenarioGovernanceCaseNewFieldsParsing() {
         let casesJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1b-test", "created": "2026-05-22", "purpose": "Test Phase 1b", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "scenario-governance-test", "created": "2026-05-22", "purpose": "Test Scenario governance", "load_condition": "always" },
           "cases": [
             {
               "id": "case_1",
@@ -1579,7 +1559,7 @@ final class KDNACoreTests: XCTestCase {
         """.data(using: .utf8)!
 
         guard let casesData = try? JSONDecoder().decode(KDNACasesData.self, from: casesJSON) else {
-            XCTFail("Phase 1b case decode failed")
+            XCTFail("Scenario governance case decode failed")
             return
         }
 
@@ -1592,10 +1572,10 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertEqual(c?.triggered_axioms?.count, 2)
     }
 
-    func testPhase1bFormatContextScenariosAndCases() {
+    func testScenarioGovernanceFormatContextScenariosAndCases() {
         let scenariosJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1b-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "scenario-governance-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "scenes": [
             {
               "id": "scene_1",
@@ -1611,7 +1591,7 @@ final class KDNACoreTests: XCTestCase {
         """.data(using: .utf8)!
         let casesJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1b-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "scenario-governance-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "cases": [
             {
               "id": "case_1",
@@ -1662,10 +1642,10 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertTrue(context.contains("Triggered axioms:"))
     }
 
-    func testPhase1bPreFilterTriggerSignalsArray() {
+    func testScenarioGovernancePreFilterTriggerSignalsArray() {
         let scenariosJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1b-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "scenario-governance-test", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "scenes": [
             {
               "id": "scene_1",
@@ -1698,10 +1678,10 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertFalse(result3.signals.contains { $0.contains("Signal Match") })
     }
 
-    func testPhase1bLintMissingScenarioCaseFields() {
+    func testScenarioGovernanceLintMissingScenarioCaseFields() {
         let scenariosJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1b-lint", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "scenario-governance-lint", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "scenes": [
             { "id": "scene_1", "name": "Incomplete Scene", "trigger_signals": ["signal"] }
           ]
@@ -1709,7 +1689,7 @@ final class KDNACoreTests: XCTestCase {
         """.data(using: .utf8)!
         let casesJSON = """
         {
-          "meta": { "version": "0.9.0", "domain": "phase1b-lint", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
+          "meta": { "version": "0.9.0", "domain": "scenario-governance-lint", "created": "2026-05-22", "purpose": "Test", "load_condition": "always" },
           "cases": [
             { "id": "case_1", "title": "Incomplete Case", "context": "C", "what_happened": "W", "what_was_learned": "L", "structural_pattern": "P" }
           ]
@@ -1867,7 +1847,6 @@ final class KDNACoreTests: XCTestCase {
         )
     }
 
-    @available(*, deprecated, message: "Exercises the deprecated non-throwing compatibility wrapper")
     func testInvalidJSONFailsVerificationInsteadOfProducingDigest() throws {
         let asset = try KDNAAssetReader().open(data: makeZip(entries: [
             ("mimetype", Data(KDNAAssetReader.kdnaMediaType.utf8)),
@@ -1879,8 +1858,6 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertFalse(result.ok)
         XCTAssertNil(result.contentDigest)
         XCTAssertTrue(result.errors.contains { $0.contains("kdna.json: invalid JSON") })
-        XCTAssertEqual(KDNAContentDigest.compute(asset: asset), "invalid:content-digest-input")
-
         let invalidUTF8 = try KDNAAssetReader().open(data: makeZip(entries: [
             ("mimetype", Data(KDNAAssetReader.kdnaMediaType.utf8)),
             ("kdna.json", Data([0x7B, 0x22, 0x61, 0x22, 0x3A, 0x22, 0xFF, 0x22, 0x7D])),
@@ -1891,7 +1868,7 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testConformanceBasicFixtureDigestIsDeterministic() throws {
-        let fixturePath = fixtureURL("test_conformance.kdna")
+        let fixturePath = try fixtureURL("test_conformance.kdna")
         let reader = KDNAAssetReader()
         let asset = try reader.open(url: fixturePath)
         
@@ -1905,7 +1882,7 @@ final class KDNACoreTests: XCTestCase {
     }
     
     func testConformanceAuthoringContentDigestStripped() throws {
-        let fixturePath = fixtureURL("test_conformance-with-authoring-digest.kdna")
+        let fixturePath = try fixtureURL("test_conformance-with-authoring-digest.kdna")
         let reader = KDNAAssetReader()
         let asset = try reader.open(url: fixturePath)
         
@@ -1919,14 +1896,14 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testAuthorizationLoadPlanConformanceGoldens() throws {
-        let casesURL = authorizationConformanceURL("cases.json")
+        let casesURL = try authorizationConformanceURL("cases.json")
         let casesData = try Data(contentsOf: casesURL)
         let caseIndex = try JSONDecoder().decode(AuthorizationCaseIndex.self, from: casesData)
 
         for testCase in caseIndex.cases {
             let assetURL = try packedAuthorizationFixture(testCase.fixture)
             defer { try? FileManager.default.removeItem(at: assetURL) }
-            let goldenURL = authorizationConformanceURL(testCase.golden)
+            let goldenURL = try authorizationConformanceURL(testCase.golden)
             let golden = try JSONDecoder().decode(KDNALoadPlan.self, from: Data(contentsOf: goldenURL))
 
             let environment = KDNALoadEnvironment(
@@ -1935,13 +1912,13 @@ final class KDNACoreTests: XCTestCase {
             )
             let actual = KDNARuntime.planLoad(assetURL: assetURL, environment: environment)
             let normalized = normalizedLoadPlan(actual, fixture: testCase.fixture)
-            XCTAssertEqual(loadPlanForGoldenComparison(normalized, golden: golden), golden, testCase.id)
+            XCTAssertEqual(normalized, golden, testCase.id)
         }
     }
 
     func testPlanLoadAcceptsPackedRuntimeAsset() throws {
         let fixture = "public-valid"
-        let fixtureURL = authorizationConformanceURL("fixtures").appendingPathComponent(fixture)
+        let fixtureURL = try authorizationConformanceURL("fixtures").appendingPathComponent(fixture)
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("kdna-core-swift-planload-\(UUID().uuidString).kdna")
         defer { try? FileManager.default.removeItem(at: tempURL) }
@@ -2012,7 +1989,7 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testLoadWithCredentialAcceptsPackedRuntimeAsset() throws {
-        let fixtureURL = authorizationConformanceURL("fixtures").appendingPathComponent("public-valid")
+        let fixtureURL = try authorizationConformanceURL("fixtures").appendingPathComponent("public-valid")
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("kdna-core-swift-projection-\(UUID().uuidString).kdna")
         defer { try? FileManager.default.removeItem(at: tempURL) }
@@ -2058,7 +2035,7 @@ final class KDNACoreTests: XCTestCase {
     }
     
     func testConformanceReportsExcluded() throws {
-        let fixturePath = fixtureURL("test_conformance.kdna")
+        let fixturePath = try fixtureURL("test_conformance.kdna")
         let reader = KDNAAssetReader()
         let asset = try reader.open(url: fixturePath)
         let rt = reader.verifySync(asset).contentDigest
@@ -2283,7 +2260,7 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testCurrentLicensedNodeFixtureDecryptsByteForByte() throws {
-        let fixture = fixtureURL("test_licensed_entry.kdna")
+        let fixture = try fixtureURL("test_licensed_entry.kdna")
         XCTAssertEqual(
             sha256Hex(try Data(contentsOf: fixture)),
             "d785725fc2b53cad5c3627ddc91ae737ab58502224e64dca8896ac818c4e9790"
@@ -2313,7 +2290,7 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testVerifySyncRequiresCurrentLicensedDecryption() throws {
-        let fixture = fixtureURL("test_licensed_entry.kdna")
+        let fixture = try fixtureURL("test_licensed_entry.kdna")
         let reader = KDNAAssetReader()
         let asset = try reader.open(url: fixture)
 
@@ -2523,46 +2500,13 @@ final class KDNACoreTests: XCTestCase {
         )
     }
 
-    private func loadPlanForGoldenComparison(_ actual: KDNALoadPlan, golden: KDNALoadPlan) -> KDNALoadPlan {
-        var comparable = actual
-
-        // CI intentionally pins a fixed conformance checkout. Older goldens used
-        // pre-v1 state/action names for these entitlement outcomes; the runtime
-        // now emits the current names. Keep the test compatible with both until
-        // the pinned conformance commit can be advanced by a workflow-authorized
-        // change.
-        if golden.state == "expired",
-           golden.required_action == "sync",
-           actual.state == "expired_grace",
-           actual.required_action == "renew_entitlement" {
-            comparable.state = golden.state
-            comparable.required_action = golden.required_action
-        }
-
-        if golden.state == "revoked",
-           golden.required_action == "block",
-           actual.state == "denied",
-           actual.required_action == "contact_issuer" {
-            comparable.state = golden.state
-            comparable.required_action = golden.required_action
-        }
-
-        if golden.issues.count == 1,
-           actual.issues.count > 1,
-           golden.issues.first?.code == "KDNA_INTEGRITY_DIGEST_FAILED" {
-            comparable.issues = Array(actual.issues.prefix(1))
-        }
-
-        return comparable
-    }
-
-    private func authorizationConformanceURL(_ relativePath: String) -> URL {
-        let base = sharedKDNARepoURL().appendingPathComponent("conformance/authorization")
+    private func authorizationConformanceURL(_ relativePath: String) throws -> URL {
+        let base = try sharedKDNARepoURL().appendingPathComponent("conformance/authorization")
         return base.appendingPathComponent(relativePath)
     }
 
     private func packedAuthorizationFixture(_ fixture: String) throws -> URL {
-        let source = authorizationConformanceURL("fixtures").appendingPathComponent(fixture)
+        let source = try authorizationConformanceURL("fixtures").appendingPathComponent(fixture)
         let output = FileManager.default.temporaryDirectory
             .appendingPathComponent("kdna-auth-\(fixture)-\(UUID().uuidString).kdna")
         let entries = try ["mimetype", "kdna.json", "payload.kdnab", "checksums.json"].map { name in
@@ -2572,19 +2516,20 @@ final class KDNACoreTests: XCTestCase {
         return output
     }
 
-    private func fixtureURL(_ name: String) -> URL {
-        return sharedKDNARepoURL().appendingPathComponent("fixtures").appendingPathComponent(name)
+    private func fixtureURL(_ name: String) throws -> URL {
+        return try sharedKDNARepoURL().appendingPathComponent("fixtures").appendingPathComponent(name)
     }
 
-    private func sharedKDNARepoURL() -> URL {
-        if let root = ProcessInfo.processInfo.environment["KDNA_CONFORMANCE_ROOT"], !root.isEmpty {
-            return URL(fileURLWithPath: root)
-        }
-        return URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent() // KDNACoreTests/
-            .deletingLastPathComponent() // Tests/
-            .deletingLastPathComponent() // kdna-core-swift/
-            .deletingLastPathComponent() // OPEN_SOURCE/
-            .appendingPathComponent("kdna")
+    private func sharedKDNARepoURL() throws -> URL {
+        let root = try XCTUnwrap(
+            ProcessInfo.processInfo.environment["KDNA_CONFORMANCE_ROOT"],
+            "KDNA_CONFORMANCE_ROOT must identify the canonical Node repository"
+        )
+        XCTAssertFalse(root.isEmpty, "KDNA_CONFORMANCE_ROOT must not be empty")
+        let url = URL(fileURLWithPath: root).standardizedFileURL
+        let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        XCTAssertEqual(values.isDirectory, true, "KDNA_CONFORMANCE_ROOT must identify a directory")
+        XCTAssertEqual(values.isSymbolicLink, false, "KDNA_CONFORMANCE_ROOT must not be a symlink")
+        return url
     }
 }

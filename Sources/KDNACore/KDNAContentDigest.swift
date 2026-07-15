@@ -26,14 +26,6 @@ public enum KDNAContentDigestError: Error, LocalizedError {
 
 public class KDNAContentDigest {
 
-    /// Compatibility wrapper for callers that cannot yet adopt a throwing API.
-    /// Invalid JSON returns a non-digest sentinel rather than silently hashing a
-    /// representation that differs from the JavaScript Core.
-    @available(*, deprecated, message: "Use computeValidated(asset:reader:) to handle invalid JSON explicitly")
-    public static func compute(asset: KDNAAsset, reader: KDNAAssetReader = KDNAAssetReader()) -> String {
-        (try? computeValidated(asset: asset, reader: reader)) ?? "invalid:content-digest-input"
-    }
-
     /// Compute the canonical content digest for a .kdna asset.
     public static func computeValidated(
         asset: KDNAAsset,
@@ -66,12 +58,6 @@ public class KDNAContentDigest {
         let payload = parts.joined(separator: "\n")
         let digest = SHA256.hash(data: Data(payload.utf8)).compactMap { String(format: "%02x", $0) }.joined()
         return "sha256:\(digest)"
-    }
-
-    /// Compatibility wrapper for string-backed producer inputs.
-    @available(*, deprecated, message: "Use computeValidated(files:) to handle invalid JSON explicitly")
-    public static func compute(files: [String: String]) -> String {
-        (try? computeValidated(files: files)) ?? "invalid:content-digest-input"
     }
 
     /// Compute content digest from a dictionary of filename → content (for export side).
@@ -289,24 +275,4 @@ public class KDNAContentDigest {
             .joined(separator: "\n")
     }
 
-    /// Legacy asset content digest from raw entry data (for app compatibility).
-    /// Prefer `compute(asset:)` or `compute(files:)` for new code.
-    public static func assetContentDigest(entries: [String: Data]) -> String {
-        let excluded: Set<String> = [".DS_Store", "signature.json", "build-receipt.json"]
-        let parts = entries.keys
-            .filter { !excluded.contains($0) }
-            .filter { !$0.hasPrefix("reports/") }
-            .sorted(by: utf8PathLess)
-            .map { name in
-                let digestData: Data
-                if name == "kdna.json", let obj = try? JSONSerialization.jsonObject(with: entries[name] ?? Data()) as? [String: Any] {
-                    digestData = Data(stableStringify(manifestForDigest(obj)).utf8)
-                } else {
-                    digestData = entries[name] ?? Data()
-                }
-                return "\(name):\(KDNACrypto.sha256Hex(digestData))"
-            }
-            .joined(separator: "\n")
-        return "sha256:\(KDNACrypto.sha256Hex(Data(parts.utf8)))"
-    }
 }
