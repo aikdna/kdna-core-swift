@@ -77,11 +77,17 @@ public struct KDNAExternalKeyGrant: Codable, Equatable {
 public final class KDNAExternalGrantAuthorization: Equatable {
     public let grant: KDNAExternalKeyGrant
     public let entitlementStatus: String
+    /// Exact packaged-container digest verified while the signed grant was authorized.
+    public let assetDigest: String
+    /// Exact encrypted Runtime entry verified against the signed grant and envelope.
+    public let entryPath: String
     private var cek: [UInt8]
 
     private init(grant: KDNAExternalKeyGrant, entitlementStatus: String, cek: Data) {
         self.grant = grant
         self.entitlementStatus = entitlementStatus
+        self.assetDigest = grant.asset.digest
+        self.entryPath = grant.asset.entry_path
         self.cek = Array(cek)
     }
 

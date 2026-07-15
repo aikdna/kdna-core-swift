@@ -1,4 +1,5 @@
 import XCTest
+import CryptoKit
 @testable import KDNACore
 
 final class ExternalKeyGrantTests: XCTestCase {
@@ -83,6 +84,7 @@ final class ExternalKeyGrantTests: XCTestCase {
         grantOverride: [String: Any]? = nil,
         manifestOverride: [String: Any]? = nil,
         expectedAssetDigest: String? = nil,
+        issuerPublicKey: String? = nil,
         minimumStatusVersion: Int? = nil,
         minimumVerifiedTime: Date? = nil,
         now: Date = ISO8601DateFormatter().date(from: "2026-07-13T00:00:00Z")!
@@ -104,7 +106,7 @@ final class ExternalKeyGrantTests: XCTestCase {
             manifest: manifest,
             expectedAssetDigest: expectedAssetDigest
                 ?? (fixture["expected_asset_digest"] as? String ?? ""),
-            issuerPublicKeys: [signingKeyID: keys["issuer_signing_public_key"]!],
+            issuerPublicKeys: [signingKeyID: issuerPublicKey ?? keys["issuer_signing_public_key"]!],
             deviceAgreementPrivateKey: keys["device_agreement_private_key"]!,
             expectedAccountID: grant["account_id"] as? String ?? "",
             expectedDeviceID: grant["device_id"] as? String ?? "",
@@ -113,6 +115,35 @@ final class ExternalKeyGrantTests: XCTestCase {
             minimumStatusVersion: minimumStatusVersion,
             minimumVerifiedTime: minimumVerifiedTime,
             now: now
+        )
+    }
+
+    private func signedGrant(
+        fixture: [String: Any],
+        assetDigest: String? = nil,
+        entryPath: String? = nil,
+        removeAssetField: String? = nil
+    ) throws -> (value: [String: Any], publicKey: String) {
+        var grant = try XCTUnwrap(fixture["grant"] as? [String: Any])
+        var asset = try XCTUnwrap(grant["asset"] as? [String: Any])
+        if let assetDigest { asset["digest"] = assetDigest }
+        if let entryPath { asset["entry_path"] = entryPath }
+        if let removeAssetField { asset.removeValue(forKey: removeAssetField) }
+        grant["asset"] = asset
+        grant.removeValue(forKey: "signature")
+
+        let keys = try XCTUnwrap(fixture["test_keys"] as? [String: String])
+        let root = try XCTUnwrap(Data(base64URLEncoded: keys["issuer_root"] ?? ""))
+        let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: root)
+        let canonical = try JSONSerialization.data(
+            withJSONObject: grant,
+            options: [.sortedKeys, .withoutEscapingSlashes]
+        )
+        let signature = try privateKey.signature(for: canonical)
+        grant["signature"] = "ed25519:" + signature.base64URLEncodedString()
+        return (
+            grant,
+            "ed25519:" + privateKey.publicKey.rawRepresentation.base64URLEncodedString()
         )
     }
 
@@ -198,7 +229,6 @@ final class ExternalKeyGrantTests: XCTestCase {
 
     func testVerifiedAuthorizationOnlyReadiesItsBoundAssetRelease() throws {
         let value = try fixture()
-        let authorization = try authorization(fixture: value)
         let manifest = try XCTUnwrap(value["manifest"] as? [String: Any])
         let envelope = try XCTUnwrap(
             Data(base64URLEncoded: value["envelope_cbor"] as? String ?? "")
@@ -211,11 +241,22 @@ final class ExternalKeyGrantTests: XCTestCase {
             withJSONObject: manifest,
             options: [.sortedKeys, .withoutEscapingSlashes]
         )
-        try makeZip(entries: [
+        let publishedBytes = makeZip(entries: [
             ("mimetype", Data(KDNALoadPlanCore.mimeType.utf8)),
             ("kdna.json", manifestData),
             ("payload.kdnab", envelope),
-        ]).write(to: assetURL)
+        ])
+        try publishedBytes.write(to: assetURL)
+
+        let publishedDigest = "sha256:" + SHA256.hash(data: publishedBytes)
+            .map { String(format: "%02x", $0) }.joined()
+        let boundGrant = try signedGrant(fixture: value, assetDigest: publishedDigest)
+        let authorization = try authorization(
+            fixture: value,
+            grantOverride: boundGrant.value,
+            expectedAssetDigest: publishedDigest,
+            issuerPublicKey: boundGrant.publicKey
+        )
 
         XCTAssertEqual(KDNARuntime.planLoad(assetURL: assetURL).state, "needs_account")
         let ready = KDNARuntime.planLoad(
@@ -247,6 +288,44 @@ final class ExternalKeyGrantTests: XCTestCase {
         XCTAssertTrue(rejected.issues.contains {
             $0.code == "KDNA_GRANT_ASSET_MISMATCH"
         })
+
+        let changedBytesURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("external-grant-changed-\(UUID().uuidString).kdna")
+        defer { try? FileManager.default.removeItem(at: changedBytesURL) }
+        try makeZip(entries: [
+            ("mimetype", Data(KDNALoadPlanCore.mimeType.utf8)),
+            ("kdna.json", manifestData),
+            ("payload.kdnab", envelope),
+            ("different-container-byte", Data([0x01])),
+        ]).write(to: changedBytesURL)
+        let changedBytes = KDNARuntime.planLoad(
+            assetURL: changedBytesURL,
+            environment: KDNALoadEnvironment(externalAuthorization: authorization)
+        )
+        XCTAssertFalse(changedBytes.can_load_now)
+        XCTAssertEqual(changedBytes.state, "invalid")
+        XCTAssertTrue(changedBytes.issues.contains { $0.code == "KDNA_GRANT_DIGEST_MISMATCH" })
+    }
+
+    func testGrantEntryPathAndRequiredBindingFieldsFailClosed() throws {
+        let value = try fixture()
+        let wrongEntryGrant = try signedGrant(fixture: value, entryPath: "different.kdnab")
+        XCTAssertThrowsError(try authorization(
+            fixture: value,
+            grantOverride: wrongEntryGrant.value,
+            issuerPublicKey: wrongEntryGrant.publicKey
+        )) { error in
+            XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_GRANT_ASSET_MISMATCH")
+        }
+
+        let missingDigestGrant = try signedGrant(fixture: value, removeAssetField: "digest")
+        XCTAssertThrowsError(try authorization(
+            fixture: value,
+            grantOverride: missingDigestGrant.value,
+            issuerPublicKey: missingDigestGrant.publicKey
+        )) { error in
+            XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_GRANT_FORMAT_INVALID")
+        }
     }
 }
 
@@ -256,5 +335,12 @@ private extension Data {
             .replacingOccurrences(of: "_", with: "/")
         base64 += String(repeating: "=", count: (4 - base64.count % 4) % 4)
         self.init(base64Encoded: base64)
+    }
+
+    func base64URLEncodedString() -> String {
+        base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
     }
 }

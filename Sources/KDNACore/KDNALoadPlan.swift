@@ -551,7 +551,7 @@ public enum KDNALoadPlanCore {
         }
 
         if access == "licensed" {
-            return planLicensed(plan: plan, environment: environment)
+            return planLicensed(plan: plan, layout: layout, environment: environment)
         }
 
         if hasEncryptedPayload(manifest: manifest) {
@@ -861,6 +861,7 @@ public enum KDNALoadPlanCore {
         let checksums: [String: Any]?
         let rawManifest: Data
         let rawMimeType: Data
+        let containerDigest: String
     }
 
     private static func readLayout(assetURL: URL) -> SourceLayout? {
@@ -896,7 +897,9 @@ public enum KDNALoadPlanCore {
             payload: payloadData,
             checksums: checksums,
             rawManifest: manifestData,
-            rawMimeType: mimeData
+            rawMimeType: mimeData,
+            containerDigest: "sha256:" + SHA256.hash(data: assetData)
+                .map { String(format: "%02x", $0) }.joined()
         )
     }
 
@@ -1142,7 +1145,11 @@ public enum KDNALoadPlanCore {
         return false
     }
 
-    private static func planLicensed(plan initialPlan: KDNALoadPlan, environment: KDNALoadEnvironment) -> KDNALoadPlan {
+    private static func planLicensed(
+        plan initialPlan: KDNALoadPlan,
+        layout: SourceLayout,
+        environment: KDNALoadEnvironment
+    ) -> KDNALoadPlan {
         var plan = initialPlan
         let knownProfiles = Set(["password", "local_receipt", "account", "org", "purchase_receipt", "device_bound"])
 
@@ -1180,16 +1187,14 @@ public enum KDNALoadPlanCore {
 
         if plan.entitlement_profile == "account" {
             if let authorization = environment.externalAuthorization {
-                guard authorization.grant.asset.asset_id == plan.asset.asset_id,
-                      authorization.grant.asset.asset_uid == plan.asset.asset_uid,
-                      authorization.grant.asset.version == plan.asset.version else {
+                if let issue = externalAuthorizationBindingIssue(
+                    authorization,
+                    plan: plan,
+                    layout: layout
+                ) {
                     plan.state = "invalid"
                     plan.required_action = "block"
-                    plan.issues.append(KDNALoadPlanIssue(
-                        code: "KDNA_GRANT_ASSET_MISMATCH",
-                        severity: "blocking",
-                        message: "The verified grant is bound to a different asset release."
-                    ))
+                    plan.issues.append(issue)
                     return plan
                 }
                 plan.state = authorization.entitlementStatus == "offline_grace" ? "offline_grace" : "ready"
@@ -1210,16 +1215,14 @@ public enum KDNALoadPlanCore {
 
         if plan.entitlement_profile == "org" {
             if let authorization = environment.externalAuthorization {
-                guard authorization.grant.asset.asset_id == plan.asset.asset_id,
-                      authorization.grant.asset.asset_uid == plan.asset.asset_uid,
-                      authorization.grant.asset.version == plan.asset.version else {
+                if let issue = externalAuthorizationBindingIssue(
+                    authorization,
+                    plan: plan,
+                    layout: layout
+                ) {
                     plan.state = "invalid"
                     plan.required_action = "block"
-                    plan.issues.append(KDNALoadPlanIssue(
-                        code: "KDNA_GRANT_ASSET_MISMATCH",
-                        severity: "blocking",
-                        message: "The verified grant is bound to a different asset release."
-                    ))
+                    plan.issues.append(issue)
                     return plan
                 }
                 plan.state = authorization.entitlementStatus == "offline_grace" ? "offline_grace" : "ready"
@@ -1281,6 +1284,40 @@ public enum KDNALoadPlanCore {
             message: "A valid entitlement is required before this asset can be loaded."
         ))
         return plan
+    }
+
+    private static func externalAuthorizationBindingIssue(
+        _ authorization: KDNAExternalGrantAuthorization,
+        plan: KDNALoadPlan,
+        layout: SourceLayout
+    ) -> KDNALoadPlanIssue? {
+        guard authorization.grant.asset.asset_id == plan.asset.asset_id,
+              authorization.grant.asset.asset_uid == plan.asset.asset_uid,
+              authorization.grant.asset.version == plan.asset.version else {
+            return KDNALoadPlanIssue(
+                code: "KDNA_GRANT_ASSET_MISMATCH",
+                severity: "blocking",
+                message: "The verified grant is bound to a different asset release."
+            )
+        }
+        guard authorization.assetDigest == layout.containerDigest else {
+            return KDNALoadPlanIssue(
+                code: "KDNA_GRANT_DIGEST_MISMATCH",
+                severity: "blocking",
+                message: "The verified grant is bound to different packaged container bytes."
+            )
+        }
+        guard let payload = layout.manifest["payload"] as? [String: Any],
+              let payloadPath = payload["path"] as? String,
+              !payloadPath.isEmpty,
+              authorization.entryPath == payloadPath else {
+            return KDNALoadPlanIssue(
+                code: "KDNA_GRANT_ASSET_MISMATCH",
+                severity: "blocking",
+                message: "The verified grant is bound to a different Runtime entry path."
+            )
+        }
+        return nil
     }
 
     private static func validationProblemCode(_ problem: String) -> String {
