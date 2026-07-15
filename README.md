@@ -108,7 +108,9 @@ ConsumptionPlan
 Swift validates the Plan digest, task and asset identity, Capsule contract,
 A/C/E/P evidence, projected-character budget, request/receipt correlation,
 terminal status, and exact budget evidence. Host completion is recorded
-separately from semantic consumption or behavioral influence.
+separately from semantic consumption or behavioral influence. Budget limits
+and observed integer usage must remain within JavaScript's exact safe integer
+range; values outside that range fail closed before Swift integer conversion.
 
 LoadPlan, Runtime Capsule, digest evidence, ConsumptionPlan, Agent Host, and
 JudgmentTrace schemas are byte-for-byte resources pinned to

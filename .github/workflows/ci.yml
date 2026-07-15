@@ -28,6 +28,15 @@ jobs:
           git checkout --detach FETCH_HEAD
       - name: Build
         run: swift build --scratch-path /tmp/kdna-core-swift-ci-scratch -Xcc -fmodules-cache-path=/tmp/kdna-core-swift-ci-module-cache
+      - name: Build iOS 16 generic library
+        run: |
+          xcodebuild \
+            -scheme kdna-core-swift \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath /tmp/kdna-core-swift-ios-ci \
+            -clonedSourcePackagesDirPath /tmp/kdna-core-swift-ios-packages \
+            CODE_SIGNING_ALLOWED=NO \
+            build
       - name: Test
         env:
           KDNA_CONFORMANCE_ROOT: ${{ github.workspace }}/../kdna

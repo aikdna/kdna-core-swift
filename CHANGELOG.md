@@ -35,6 +35,11 @@
   JudgmentTrace and executable current Node fixtures.
 - Audit raw repository paths, source bytes, package metadata, and workflow pins
   against the canonical post-cutover token authority, with hostile gate tests.
+- Reject budget limits and observed usage outside JavaScript's exact safe
+  integer range before any Swift integer conversion; boundary tests cover Plan,
+  Host request/receipt, and embedded JudgmentTrace evidence.
+- Build the package for the generic iOS 16 device destination in CI in addition
+  to the macOS SwiftPM build and test suite.
 
 ## 0.4.0 (2026-07-13)
 

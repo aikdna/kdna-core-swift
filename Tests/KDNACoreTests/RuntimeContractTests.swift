@@ -276,6 +276,185 @@ final class RuntimeContractTests: XCTestCase {
         }
     }
 
+    func testPlanAndRequestBudgetIntegerBoundariesFailClosed() throws {
+        let fixture = try golden()
+        let fields: [(name: String, minimum: Double)] = [
+            ("max_projection_chars", 0),
+            ("max_task_chars", 0),
+            ("deadline_ms", 1),
+            ("max_tokens", 0),
+            ("max_model_calls", 0),
+        ]
+
+        for field in fields {
+            try assertSafeIntegerBoundaries(
+                label: "plan.budget.\(field.name)",
+                base: object(fixture, "plan"),
+                path: ["budget", field.name],
+                minimum: field.minimum
+            ) { object in
+                _ = try self.decode(KDNAConsumptionPlan.self, object)
+            }
+            try assertSafeIntegerBoundaries(
+                label: "request.budget.\(field.name)",
+                base: object(fixture, "request"),
+                path: ["budget", field.name],
+                minimum: field.minimum
+            ) { object in
+                _ = try self.decode(KDNAAgentHostRequest.self, object)
+            }
+        }
+
+        for field in ["max_tokens", "max_model_calls"] {
+            let nullablePlan = try replacing(
+                NSNull(),
+                at: ["budget", field],
+                in: object(fixture, "plan")
+            )
+            XCTAssertNoThrow(try decode(KDNAConsumptionPlan.self, nullablePlan))
+            let nullableRequest = try replacing(
+                NSNull(),
+                at: ["budget", field],
+                in: object(fixture, "request")
+            )
+            XCTAssertNoThrow(try decode(KDNAAgentHostRequest.self, nullableRequest))
+        }
+    }
+
+    func testReceiptObservationIntegerBoundariesFailClosed() throws {
+        let receipt = try object(try golden(), "receipt")
+        var reportedReceipt = try replacing(
+            "host_reported",
+            at: ["runtime_receipt", "usage", "basis"],
+            in: receipt
+        )
+        reportedReceipt = try replacing(
+            0.0,
+            at: ["runtime_receipt", "usage", "tokens_used"],
+            in: reportedReceipt
+        )
+        reportedReceipt = try replacing(
+            0.0,
+            at: ["runtime_receipt", "usage", "model_calls"],
+            in: reportedReceipt
+        )
+        let outcomeReceipt = try replacing(
+            ["tokens_used": 0.0, "model_calls": 0.0],
+            at: ["outcome", "usage"],
+            in: receipt
+        )
+        let targets: [(base: [String: Any], path: [String])] = [
+            (receipt, ["runtime_receipt", "usage", "elapsed_ms"]),
+            (reportedReceipt, ["runtime_receipt", "usage", "tokens_used"]),
+            (reportedReceipt, ["runtime_receipt", "usage", "model_calls"]),
+            (outcomeReceipt, ["outcome", "usage", "tokens_used"]),
+            (outcomeReceipt, ["outcome", "usage", "model_calls"]),
+        ]
+
+        for target in targets {
+            try assertSafeIntegerBoundaries(
+                label: "receipt.\(target.path.joined(separator: "."))",
+                base: target.base,
+                path: target.path,
+                minimum: 0
+            ) { object in
+                _ = try self.decode(KDNAAgentHostReceipt.self, object)
+            }
+        }
+    }
+
+    func testTraceBudgetAndEmbeddedObservationIntegerBoundariesFailClosed() throws {
+        let trace = try object(try golden(), "trace")
+        let limitFields: [(name: String, minimum: Double)] = [
+            ("max_projection_chars", 0),
+            ("max_task_chars", 0),
+            ("deadline_ms", 1),
+            ("max_tokens", 0),
+            ("max_model_calls", 0),
+        ]
+        for field in limitFields {
+            try assertSafeIntegerBoundaries(
+                label: "trace.budget.limits.\(field.name)",
+                base: trace,
+                path: ["budget", "limits", field.name],
+                minimum: field.minimum
+            ) { object in
+                _ = try self.decode(KDNAJudgmentTrace.self, object)
+            }
+        }
+
+        var reportedActualTrace = try replacing(
+            "host_reported",
+            at: ["budget", "actual", "usage_basis"],
+            in: trace
+        )
+        reportedActualTrace = try replacing(
+            0.0,
+            at: ["budget", "actual", "tokens_used"],
+            in: reportedActualTrace
+        )
+        reportedActualTrace = try replacing(
+            0.0,
+            at: ["budget", "actual", "model_calls"],
+            in: reportedActualTrace
+        )
+        let actualTargets: [(base: [String: Any], field: String)] = [
+            (trace, "projection_chars"),
+            (trace, "task_chars"),
+            (trace, "elapsed_ms"),
+            (reportedActualTrace, "tokens_used"),
+            (reportedActualTrace, "model_calls"),
+        ]
+        for target in actualTargets {
+            try assertSafeIntegerBoundaries(
+                label: "trace.budget.actual.\(target.field)",
+                base: target.base,
+                path: ["budget", "actual", target.field],
+                minimum: 0
+            ) { object in
+                _ = try self.decode(KDNAJudgmentTrace.self, object)
+            }
+        }
+
+        var reportedHostTrace = try replacing(
+            "host_reported",
+            at: ["host_receipt", "runtime_receipt", "usage", "basis"],
+            in: trace
+        )
+        reportedHostTrace = try replacing(
+            0.0,
+            at: ["host_receipt", "runtime_receipt", "usage", "tokens_used"],
+            in: reportedHostTrace
+        )
+        reportedHostTrace = try replacing(
+            0.0,
+            at: ["host_receipt", "runtime_receipt", "usage", "model_calls"],
+            in: reportedHostTrace
+        )
+        let outcomeHostTrace = try replacing(
+            ["tokens_used": 0.0, "model_calls": 0.0],
+            at: ["host_receipt", "outcome", "usage"],
+            in: trace
+        )
+        let receiptTargets: [(base: [String: Any], path: [String])] = [
+            (trace, ["host_receipt", "runtime_receipt", "usage", "elapsed_ms"]),
+            (reportedHostTrace, ["host_receipt", "runtime_receipt", "usage", "tokens_used"]),
+            (reportedHostTrace, ["host_receipt", "runtime_receipt", "usage", "model_calls"]),
+            (outcomeHostTrace, ["host_receipt", "outcome", "usage", "tokens_used"]),
+            (outcomeHostTrace, ["host_receipt", "outcome", "usage", "model_calls"]),
+        ]
+        for target in receiptTargets {
+            try assertSafeIntegerBoundaries(
+                label: "trace.\(target.path.joined(separator: "."))",
+                base: target.base,
+                path: target.path,
+                minimum: 0
+            ) { object in
+                _ = try self.decode(KDNAJudgmentTrace.self, object)
+            }
+        }
+    }
+
     func testRequestProjectionContractMustExactlyMatchPlanAndCapsule() throws {
         let fixture = try golden()
         let plan = try decode(KDNAConsumptionPlan.self, object(fixture, "plan"))
@@ -418,6 +597,57 @@ final class RuntimeContractTests: XCTestCase {
     private func decode<T: Decodable>(_ type: T.Type, _ object: [String: Any]) throws -> T {
         let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
         return try JSONDecoder().decode(type, from: data)
+    }
+
+    private func replacing(
+        _ value: Any,
+        at path: [String],
+        in object: [String: Any]
+    ) throws -> [String: Any] {
+        let key = try XCTUnwrap(path.first)
+        var result = object
+        if path.count == 1 {
+            result[key] = value
+            return result
+        }
+        let child = try XCTUnwrap(result[key] as? [String: Any])
+        result[key] = try replacing(value, at: Array(path.dropFirst()), in: child)
+        return result
+    }
+
+    private func assertSafeIntegerBoundaries(
+        label: String,
+        base: [String: Any],
+        path: [String],
+        minimum: Double,
+        decode: ([String: Any]) throws -> Void
+    ) throws {
+        let maximumExactJSONInteger = 9_007_199_254_740_991.0
+        for accepted in [minimum, maximumExactJSONInteger] {
+            let candidate = try replacing(accepted, at: path, in: base)
+            XCTAssertNoThrow(try decode(candidate), "\(label) should accept \(accepted)")
+        }
+
+        let belowMinimum = try replacing(minimum - 1, at: path, in: base)
+        XCTAssertThrowsCode("SCHEMA_INVALID") {
+            try decode(belowMinimum)
+        }
+        let fractional = try replacing(minimum + 0.5, at: path, in: base)
+        XCTAssertThrowsCode("SCHEMA_INVALID") {
+            try decode(fractional)
+        }
+        let precisionBoundary = try replacing(
+            maximumExactJSONInteger + 1,
+            at: path,
+            in: base
+        )
+        XCTAssertThrowsCode("KDNA_RUNTIME_INTEGER_UNSAFE") {
+            try decode(precisionBoundary)
+        }
+        let beyondSwiftInt = try replacing(1.0e20, at: path, in: base)
+        XCTAssertThrowsCode("KDNA_RUNTIME_INTEGER_UNSAFE") {
+            try decode(beyondSwiftInt)
+        }
     }
 
     private func XCTAssertThrowsCode(

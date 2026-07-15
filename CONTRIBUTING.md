@@ -11,8 +11,8 @@ from the Studio Swift app and other Swift-based tools.
 - **Xcode 15+** (for full development; command-line tools are sufficient for `swift build`)
 - **Git** (for submitting PRs)
 
-> Cross-platform note: this package targets macOS. Linux Swift is not
-> covered by CI. iOS may work but is not officially supported.
+> Cross-platform note: CI covers macOS tests and a generic iOS 16 device build.
+> Linux Swift is not currently covered.
 
 ## Repository Layout
 
@@ -52,6 +52,7 @@ Open `Package.swift` in Xcode. The `KDNACore` library and
 | `swift test` | Run all XCTest cases |
 | `swift test --filter KDNACoreTests.testName` | Run a single test |
 | `swift package describe` | Inspect package metadata |
+| `xcodebuild -scheme kdna-core-swift -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build` | Build the iOS 16 library surface |
 
 ## Cross-Implementation Parity
 

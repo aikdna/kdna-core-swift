@@ -108,6 +108,7 @@ public enum KDNARuntimeContracts {
         guard issues.isEmpty else {
             throw protocolError("SCHEMA_INVALID", "Runtime contract schema invalid: \(issues.joined(separator: "; "))")
         }
+        try requireSafeRuntimeIntegers(value, kind: kind)
     }
 
     public static func computeConsumptionPlanDigest(_ plan: KDNAConsumptionPlan) throws -> String {
@@ -367,8 +368,16 @@ public enum KDNARuntimeContracts {
         if enforceBudget {
             let projectionCount = try characterCount(requestValue["capsule"]!)
             let taskCount = try characterCount(requestValue["task"]!)
-            guard projectionCount <= integer(requestValue["budget"]?["max_projection_chars"]),
-                  taskCount <= integer(requestValue["budget"]?["max_task_chars"]) else {
+            let projectionLimit = try integer(
+                requestValue["budget"]?["max_projection_chars"],
+                path: "budget.max_projection_chars"
+            )
+            let taskLimit = try integer(
+                requestValue["budget"]?["max_task_chars"],
+                path: "budget.max_task_chars"
+            )
+            guard projectionCount <= projectionLimit,
+                  taskCount <= taskLimit else {
                 throw protocolError("KDNA_HOST_BUDGET_LIMIT_EXCEEDED", "Pre-Host projection or task budget exceeded.")
             }
         }
@@ -469,11 +478,26 @@ public enum KDNARuntimeContracts {
             "usage_basis": usage?["basis"] ?? .string("not_observed"),
         ])
         var comparisons: [String: KDNAJSONValue] = [
-            "projection_chars": .string(compare(projectionChars, limit: optionalInteger(limits["max_projection_chars"]))),
-            "task_chars": .string(compare(taskChars, limit: optionalInteger(limits["max_task_chars"]))),
-            "elapsed_ms": .string(compare(optionalInteger(elapsed), limit: optionalInteger(limits["deadline_ms"]))),
-            "tokens_used": .string(compare(optionalInteger(tokens), limit: optionalInteger(limits["max_tokens"]))),
-            "model_calls": .string(compare(optionalInteger(calls), limit: optionalInteger(limits["max_model_calls"]))),
+            "projection_chars": .string(compare(
+                projectionChars,
+                limit: try optionalInteger(limits["max_projection_chars"], path: "budget.max_projection_chars")
+            )),
+            "task_chars": .string(compare(
+                taskChars,
+                limit: try optionalInteger(limits["max_task_chars"], path: "budget.max_task_chars")
+            )),
+            "elapsed_ms": .string(compare(
+                try optionalInteger(elapsed, path: "runtime_receipt.usage.elapsed_ms"),
+                limit: try optionalInteger(limits["deadline_ms"], path: "budget.deadline_ms")
+            )),
+            "tokens_used": .string(compare(
+                try optionalInteger(tokens, path: "runtime_receipt.usage.tokens_used"),
+                limit: try optionalInteger(limits["max_tokens"], path: "budget.max_tokens")
+            )),
+            "model_calls": .string(compare(
+                try optionalInteger(calls, path: "runtime_receipt.usage.model_calls"),
+                limit: try optionalInteger(limits["max_model_calls"], path: "budget.max_model_calls")
+            )),
         ]
         let states = comparisons.values.compactMap(\.stringValue)
         comparisons["overall"] = .string(
@@ -760,16 +784,134 @@ public enum KDNARuntimeContracts {
     }
 
     private static func characterCount(_ value: KDNAJSONValue) throws -> Int {
-        try KDNAJCS.canonicalString(value).unicodeScalars.count
+        let count = try KDNAJCS.canonicalString(value).unicodeScalars.count
+        guard Double(count) <= maximumExactJSONInteger else {
+            throw unsafeIntegerError(path: "canonical_character_count")
+        }
+        return count
     }
 
-    private static func integer(_ value: KDNAJSONValue?) -> Int {
-        Int(value?.numberValue ?? -1)
+    private static func integer(_ value: KDNAJSONValue?, path: String) throws -> Int {
+        guard let result = try safeInteger(value, path: path, nullable: false) else {
+            throw unsafeIntegerError(path: path)
+        }
+        return result
     }
 
-    private static func optionalInteger(_ value: KDNAJSONValue?) -> Int? {
-        guard let value, value != .null, let number = value.numberValue else { return nil }
-        return Int(number)
+    private static func optionalInteger(_ value: KDNAJSONValue?, path: String) throws -> Int? {
+        try safeInteger(value, path: path, nullable: true)
+    }
+
+    // JavaScript is the canonical Runtime implementation. Keeping integers
+    // inside Number.MAX_SAFE_INTEGER preserves exact cross-language meaning
+    // and is stricter than the shared schemas without changing their bytes.
+    private static let maximumExactJSONInteger = 9_007_199_254_740_991.0
+
+    private static func safeInteger(
+        _ value: KDNAJSONValue?,
+        path: String,
+        nullable: Bool
+    ) throws -> Int? {
+        guard let value else { throw unsafeIntegerError(path: path) }
+        if value == .null {
+            guard nullable else { throw unsafeIntegerError(path: path) }
+            return nil
+        }
+        guard let number = value.numberValue,
+              number.isFinite,
+              number >= 0,
+              number.rounded(.towardZero) == number,
+              number <= maximumExactJSONInteger,
+              let exact = Int(exactly: number) else {
+            throw unsafeIntegerError(path: path)
+        }
+        return exact
+    }
+
+    private static func requireSafeRuntimeIntegers(
+        _ value: KDNAJSONValue,
+        kind: SchemaKind
+    ) throws {
+        switch kind {
+        case .plan:
+            try requireSafeBudgetIntegers(value["budget"], path: "budget")
+        case .request:
+            try requireSafeBudgetIntegers(value["budget"], path: "budget")
+        case .receipt:
+            try requireSafeReceiptIntegers(value, path: "receipt")
+        case .trace:
+            try requireSafeBudgetIntegers(value["budget"]?["limits"], path: "budget.limits")
+            try requireSafeBudgetActualIntegers(value["budget"]?["actual"], path: "budget.actual")
+            if let hostReceipt = value["host_receipt"], hostReceipt != .null {
+                try requireSafeReceiptIntegers(hostReceipt, path: "host_receipt")
+            }
+        case .capabilities:
+            break
+        }
+    }
+
+    private static func requireSafeBudgetIntegers(
+        _ budget: KDNAJSONValue?,
+        path: String
+    ) throws {
+        for name in ["max_projection_chars", "max_task_chars", "deadline_ms"] {
+            _ = try safeInteger(budget?[name], path: "\(path).\(name)", nullable: false)
+        }
+        for name in ["max_tokens", "max_model_calls"] {
+            _ = try safeInteger(budget?[name], path: "\(path).\(name)", nullable: true)
+        }
+    }
+
+    private static func requireSafeBudgetActualIntegers(
+        _ actual: KDNAJSONValue?,
+        path: String
+    ) throws {
+        _ = try safeInteger(actual?["projection_chars"], path: "\(path).projection_chars", nullable: true)
+        _ = try safeInteger(actual?["task_chars"], path: "\(path).task_chars", nullable: false)
+        _ = try safeInteger(actual?["elapsed_ms"], path: "\(path).elapsed_ms", nullable: true)
+        _ = try safeInteger(actual?["tokens_used"], path: "\(path).tokens_used", nullable: true)
+        _ = try safeInteger(actual?["model_calls"], path: "\(path).model_calls", nullable: true)
+    }
+
+    private static func requireSafeReceiptIntegers(
+        _ receipt: KDNAJSONValue,
+        path: String
+    ) throws {
+        let usage = receipt["runtime_receipt"]?["usage"]
+        _ = try safeInteger(
+            usage?["elapsed_ms"],
+            path: "\(path).runtime_receipt.usage.elapsed_ms",
+            nullable: false
+        )
+        _ = try safeInteger(
+            usage?["tokens_used"],
+            path: "\(path).runtime_receipt.usage.tokens_used",
+            nullable: true
+        )
+        _ = try safeInteger(
+            usage?["model_calls"],
+            path: "\(path).runtime_receipt.usage.model_calls",
+            nullable: true
+        )
+        if let outcomeUsage = receipt["outcome"]?["usage"], outcomeUsage != .null {
+            _ = try safeInteger(
+                outcomeUsage["tokens_used"],
+                path: "\(path).outcome.usage.tokens_used",
+                nullable: false
+            )
+            _ = try safeInteger(
+                outcomeUsage["model_calls"],
+                path: "\(path).outcome.usage.model_calls",
+                nullable: false
+            )
+        }
+    }
+
+    private static func unsafeIntegerError(path: String) -> KDNARuntimeContractError {
+        protocolError(
+            "KDNA_RUNTIME_INTEGER_UNSAFE",
+            "Runtime integer at \(path) is outside the exact cross-language range."
+        )
     }
 
     private static func compare(_ value: Int?, limit: Int?) -> String {
