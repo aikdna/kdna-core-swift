@@ -3,12 +3,13 @@ import CryptoKit
 import CoreFoundation
 
 /// JSON Schema resources used by the Swift loader are byte-for-byte copies of
-/// the canonical schemas at `aikdna/kdna@f2f9ac4`. Validation fails closed if a
-/// bundled resource is missing or its digest changes without updating this
-/// lock. The evaluator intentionally implements the complete set of JSON Schema
-/// keywords used by these three pinned schemas, including local/external refs.
+/// the canonical schemas in the KDNA Core 0.18.0 release at
+/// `aikdna/kdna@fed4fc8`. Validation fails closed if a bundled resource is
+/// missing or its digest changes without updating this lock. The evaluator
+/// intentionally implements the complete set of JSON Schema keywords used by
+/// these three pinned schemas, including local/external refs.
 enum KDNACanonicalSchemas {
-    static let canonicalCommit = "f2f9ac4b8300413b1fda58b43fdb6d12d4545820"
+    static let canonicalCommit = "fed4fc86e3c8447a94e7498a795d0fcd5108595e"
 
     static let expectedDigests = [
         "manifest.schema.json": "86fd5d90077026b465c853843cd7bd48bb31d8d10148a14eb51cfc34f5962839",

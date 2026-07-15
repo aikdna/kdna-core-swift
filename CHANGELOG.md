@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Rebind the embedded schema locks, AJV format fixture, and shared conformance
+  checkout to the published KDNA Core 0.18.0 release commit while preserving
+  the frozen Capsule 1 default and opt-in Capsule 2 golden parity.
 - Validate runtime manifests, payload profiles, and referenced load contracts
   against digest-locked copies of the canonical Node schemas; malformed nested
   values now block LoadPlan and Capsule emission instead of producing a false
