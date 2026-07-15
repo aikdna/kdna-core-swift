@@ -72,7 +72,7 @@ public class KDNAAssetReader {
             raw = try readEntry(asset: asset, name: "\(name).encrypted")
         }
         guard let manifest = manifest, let decryptEntry = decryptEntry else { return raw }
-        guard manifest.encryption?.encrypted_entries?.contains(name) == true else { return raw }
+        guard manifest.encryption?.encrypted_entries.contains(name) == true else { return raw }
         return try decryptEntry(asset, manifest, name, raw)
     }
 
@@ -96,12 +96,9 @@ public class KDNAAssetReader {
     }
 
     /// Decode the manifest as a typed KDNAManifest.
-    public func decodeManifest(asset: KDNAAsset) throws -> KDNAManifest? {
-        guard let data = try? readEntry(asset: asset, name: "kdna.json"),
-              let manifest = try? JSONDecoder().decode(KDNAManifest.self, from: data) else {
-            return nil
-        }
-        return manifest
+    public func decodeManifest(asset: KDNAAsset) throws -> KDNAManifest {
+        let data = try readEntry(asset: asset, name: "kdna.json")
+        return try JSONDecoder().decode(KDNAManifest.self, from: data)
     }
 
     // MARK: - List
@@ -153,20 +150,42 @@ public class KDNAAssetReader {
         verifyDeclaredChecksums(asset: asset, errors: &errors)
 
         if requireDecryption {
-            if let manifest = try? decodeManifest(asset: asset),
-               let encryptedEntries = manifest.encryption?.encrypted_entries,
-               !encryptedEntries.isEmpty {
-                if let decryptEntry = decryptEntry {
-                    for entryName in encryptedEntries {
-                        do {
-                            _ = try readEntry(asset: asset, name: entryName, manifest: manifest, decryptEntry: decryptEntry)
-                        } catch {
-                            errors.append("decryption failed for \(entryName): \(error.localizedDescription)")
-                        }
-                    }
-                } else {
-                    errors.append("encrypted entries present but no decryptEntry hook provided")
+            do {
+                let manifest = try decodeManifest(asset: asset)
+                guard manifest.format_version == "0.1.0",
+                      manifest.compatibility.profile == "kdna.payload.judgment",
+                      manifest.compatibility.profile_version == "0.1.0",
+                      manifest.payload.path == "payload.kdnab",
+                      manifest.payload.encoding == "cbor" else {
+                    errors.append("typed manifest does not use the current Runtime coordinates")
+                    return finalizeVerify(asset: asset, errors: errors, warnings: warnings)
                 }
+                if manifest.payload.encrypted {
+                    guard let encryption = manifest.encryption,
+                          [KDNA_LICENSED_ENTRY_PROFILE, PASSWORD_PROTECTED_PROFILE, KDNA_EXTERNAL_ENVELOPE_PROFILE]
+                            .contains(encryption.profile),
+                          encryption.profile_version == "0.1.0",
+                          encryption.encrypted_entries == [manifest.payload.path] else {
+                        errors.append("encrypted payload is missing current encryption metadata")
+                        return finalizeVerify(asset: asset, errors: errors, warnings: warnings)
+                    }
+                    guard let decryptEntry else {
+                        errors.append("encrypted entries present but no decryptEntry hook provided")
+                        return finalizeVerify(asset: asset, errors: errors, warnings: warnings)
+                    }
+                    do {
+                        _ = try readEntry(
+                            asset: asset,
+                            name: manifest.payload.path,
+                            manifest: manifest,
+                            decryptEntry: decryptEntry
+                        )
+                    } catch {
+                        errors.append("decryption failed for \(manifest.payload.path): \(error.localizedDescription)")
+                    }
+                }
+            } catch {
+                errors.append("typed manifest decode failed: \(error.localizedDescription)")
             }
         }
 
@@ -189,6 +208,21 @@ public class KDNAAssetReader {
         )
     }
 
+    private func finalizeVerify(
+        asset: KDNAAsset,
+        errors: [String],
+        warnings: [String]
+    ) -> VerifyResult {
+        VerifyResult(
+            ok: errors.isEmpty,
+            errors: errors,
+            warnings: warnings,
+            contentDigest: nil,
+            assetDigest: asset.assetDigest,
+            signatureValid: nil
+        )
+    }
+
     private func verifyDeclaredChecksums(asset: KDNAAsset, errors: inout [String]) {
         guard hasEntry(asset: asset, name: "checksums.json") else { return }
         let checksums: [String: Any]
@@ -204,6 +238,14 @@ public class KDNAAssetReader {
             return
         }
 
+        let schemaIssues = KDNACanonicalSchemas.validateChecksums(checksums)
+        if !schemaIssues.isEmpty {
+            errors.append(contentsOf: schemaIssues.map { "checksums.json: \($0)" })
+        }
+        if checksums.keys.contains("asset_digest") {
+            errors.append("checksums.json: retired asset_digest declaration is not allowed")
+        }
+
         if checksums["algorithm"] as? String ?? "sha256" != "sha256" {
             errors.append("checksums.json: unsupported digest algorithm")
         }
@@ -217,7 +259,7 @@ public class KDNAAssetReader {
         do {
             entrySetDigest = try KDNAChecksumDigests.entrySetDigest(in: checksums)
         } catch {
-            errors.append("checksums.json: conflicting or invalid entry-set digest declarations")
+            errors.append("checksums.json: invalid entry_set_digest declaration")
             return
         }
 

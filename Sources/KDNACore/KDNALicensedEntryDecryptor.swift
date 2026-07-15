@@ -1,14 +1,18 @@
 //  KDNACore — Licensed entry decryptor for RFC-0008 encrypted KDNA assets
 //
-//  Decrypts protected entries inside a .kdna container using the
-//  kdna-licensed-entry-v1 profile (HKDF-SHA256 + AES-256-KW + AES-256-GCM).
+//  Decrypts protected entries inside a .kdna container using the sole current
+//  licensed-entry profile (HKDF-SHA256 + AES-256-KW + AES-256-GCM).
 
 import Foundation
 import CryptoKit
 
-/// RFC-0008 encrypted entry envelope stored inside the .kdna container.
-public struct KDNALicensedEntryEnvelope: Codable {
+public let KDNA_LICENSED_ENTRY_PROFILE = "kdna.encryption.licensed-entry"
+public let KDNA_ENCRYPTION_PROFILE_VERSION = "0.1.0"
+
+/// Encrypted entry envelope stored as canonical CBOR inside the container.
+public struct KDNALicensedEntryEnvelope: Codable, Equatable, Sendable {
     public let profile: String
+    public let profile_version: String
     public let alg: String
     public let kdf: String
     public let key_wrapping: String
@@ -31,19 +35,18 @@ public class KDNALicensedEntryDecryptor {
     public func decrypt(entryName: String, envelopeData: Data, manifest: KDNAManifest) throws -> Data {
         let envelope = try KDNACBOR.decode(KDNALicensedEntryEnvelope.self, from: envelopeData)
 
-        switch envelope.profile {
-        case "kdna-licensed-entry-v1":
-            return try decryptV1(entryName: entryName, envelope: envelope, manifest: manifest)
-        case "kdna-licensed-entry-experimental":
-            throw KDNALicensedEntryError.unsupportedProfile("kdna-licensed-entry-experimental: scrypt not available in Swift core")
-        default:
+        guard envelope.profile == KDNA_LICENSED_ENTRY_PROFILE else {
             throw KDNALicensedEntryError.unsupportedProfile(envelope.profile)
         }
+        guard envelope.profile_version == KDNA_ENCRYPTION_PROFILE_VERSION else {
+            throw KDNALicensedEntryError.unsupportedProfileVersion(envelope.profile_version)
+        }
+        return try decryptCurrent(entryName: entryName, envelope: envelope, manifest: manifest)
     }
 
-    // MARK: - RFC-0008 V1 (HKDF-SHA256 + AES-256-KW + AES-256-GCM)
+    // MARK: - Current licensed entry contract
 
-    private func decryptV1(entryName: String, envelope: KDNALicensedEntryEnvelope, manifest: KDNAManifest) throws -> Data {
+    private func decryptCurrent(entryName: String, envelope: KDNALicensedEntryEnvelope, manifest: KDNAManifest) throws -> Data {
         guard envelope.alg == "AES-256-GCM" else {
             throw KDNALicensedEntryError.unsupportedAlgorithm(envelope.alg)
         }
@@ -74,14 +77,15 @@ public class KDNALicensedEntryDecryptor {
     // MARK: - Helpers
 
     private func deriveWrappingKey(licenseKey: String) -> Data {
-        let info = Data("kdna-licensed-entry-v1-kwk".utf8)
+        let info = Data("kdna.encryption.licensed-entry-kwk".utf8)
         return KDNACrypto.hkdfSha256(ikm: Data(licenseKey.utf8), info: info, length: 32)
     }
 
     private func encryptedEntryAad(entryName: String, manifest: KDNAManifest) -> Data {
         let lines = [
-            "kdna-licensed-entry-v1",
-            manifest.name,
+            KDNA_LICENSED_ENTRY_PROFILE,
+            KDNA_ENCRYPTION_PROFILE_VERSION,
+            manifest.asset_id,
             manifest.version,
             entryName,
         ]
@@ -108,6 +112,7 @@ public typealias KDNADecryptEntry = (KDNAAsset, KDNAManifest, String, Data) thro
 
 public enum KDNALicensedEntryError: Error, LocalizedError {
     case unsupportedProfile(String)
+    case unsupportedProfileVersion(String)
     case unsupportedAlgorithm(String)
     case unsupportedKDF(String)
     case unsupportedKeyWrapping(String)
@@ -116,6 +121,7 @@ public enum KDNALicensedEntryError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .unsupportedProfile(let p): return "Unsupported encrypted entry profile: \(p)"
+        case .unsupportedProfileVersion(let version): return "Unsupported encrypted entry profile_version: \(version)"
         case .unsupportedAlgorithm(let a): return "Unsupported encrypted entry algorithm: \(a)"
         case .unsupportedKDF(let k): return "Unsupported encrypted entry KDF: \(k)"
         case .unsupportedKeyWrapping(let w): return "Unsupported encrypted entry key wrapping: \(w)"

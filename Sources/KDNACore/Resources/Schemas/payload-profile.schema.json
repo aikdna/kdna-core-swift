@@ -1,16 +1,20 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/aikdna/kdna/schema/payload-profile-v1.schema.json",
-  "title": "Judgment Profile v1",
+  "$id": "https://github.com/aikdna/kdna/schema/payload-profile.schema.json",
+  "title": "KDNA Judgment Payload Profile",
   "description": "Schema for the payload entry of a .kdna container. The payload is the actual judgment data.",
   "type": "object",
-  "required": ["profile", "core"],
+  "required": ["profile", "profile_version", "core"],
   "additionalProperties": true,
   "properties": {
     "profile": {
       "type": "string",
-      "const": "judgment-profile-v1",
-      "description": "Profile identifier. Must be the literal string 'judgment-profile-v1'."
+      "const": "kdna.payload.judgment",
+      "description": "Profile identifier. Must be the literal string 'kdna.payload.judgment'."
+    },
+    "profile_version": {
+      "const": "0.1.0",
+      "description": "Compatibility coordinate for the judgment payload profile."
     },
     "core": {
       "type": "object",

@@ -4,7 +4,7 @@ import Argon2Kit
 
 // MARK: - RFC-0009 Password-Protected Asset Profile
 
-public let PASSWORD_PROTECTED_PROFILE = "kdna-password-protected-v1"
+public let PASSWORD_PROTECTED_PROFILE = "kdna.encryption.password"
 public let PASSWORD_KDF_NAME = "Argon2id"
 
 public struct KDNAPasswordKDFParams: Codable {
@@ -31,6 +31,7 @@ public struct KDNAKeySlot: Codable {
 
 public struct KDNAProtectedEnvelope: Codable {
     public let profile: String
+    public let profile_version: String
     public let alg: String
     public let kdf: String
     public let key_wrapping: String
@@ -154,6 +155,7 @@ public func encryptProtectedEntry(
 
     return KDNAProtectedEnvelope(
         profile: PASSWORD_PROTECTED_PROFILE,
+        profile_version: KDNA_ENCRYPTION_PROFILE_VERSION,
         alg: "AES-256-GCM",
         kdf: PASSWORD_KDF_NAME,
         key_wrapping: "AES-256-KW",
@@ -174,6 +176,9 @@ public func decryptProtectedEntry(
 ) throws -> Data {
     guard envelope.profile == PASSWORD_PROTECTED_PROFILE else {
         throw KDNAError.unsupportedProfile("unsupported profile: \(envelope.profile)")
+    }
+    guard envelope.profile_version == KDNA_ENCRYPTION_PROFILE_VERSION else {
+        throw KDNAError.unsupportedProfileVersion("unsupported profile_version: \(envelope.profile_version)")
     }
     guard envelope.alg == "AES-256-GCM" else {
         throw KDNAError.unsupportedAlgorithm("unsupported algorithm: \(envelope.alg)")
@@ -248,7 +253,8 @@ public func createRecoveryDecryptEntry(recoveryCode: String) -> KDNADecryptEntry
 private func protectedEntryAad(entryName: String, manifest: KDNAManifest) -> Data {
     let lines = [
         PASSWORD_PROTECTED_PROFILE,
-        manifest.name,
+        KDNA_ENCRYPTION_PROFILE_VERSION,
+        manifest.asset_id,
         manifest.version,
         entryName
     ]
@@ -261,6 +267,7 @@ public enum KDNAError: Error {
     case invalidRecoveryCode(String)
     case unsupportedKDF(String)
     case unsupportedProfile(String)
+    case unsupportedProfileVersion(String)
     case unsupportedAlgorithm(String)
     case unsupportedKeyWrapping(String)
     case missingCredential(String)

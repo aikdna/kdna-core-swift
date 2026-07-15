@@ -3,17 +3,17 @@ import Foundation
 /// Resolves the digest of the integrity-covered entry set declared by
 /// `checksums.json`.
 ///
-/// `entry_set_digest` is the unambiguous field name. `asset_digest` remains a
-/// deprecated compatibility alias for KDNA 1.0 containers, Runtime Capsule
-/// 1.0, and external grant v1. When both fields are present they must agree.
+/// `entry_set_digest` is the sole current field name. No deprecated digest
+/// declaration aliases are accepted at the Runtime boundary.
 public enum KDNAChecksumDigests {
-    public static let runtimeEntrySetProfile = "kdna-runtime-entry-set-v1"
+    public static let runtimeEntrySetProfile = "kdna.digest-basis.runtime-entry-set"
+    public static let runtimeEntrySetProfileVersion = "0.1.0"
     public static let runtimeCoveredEntries = ["kdna.json", "payload.kdnab"]
 
     public enum ResolutionError: Error {
-        case conflictingEntrySetDigests
         case invalidEntrySetDigestDeclaration
         case invalidDigestProfile
+        case invalidDigestProfileVersion
         case invalidCoveredEntries
     }
 
@@ -21,6 +21,10 @@ public enum KDNAChecksumDigests {
         if checksums.keys.contains("digest_profile"),
            checksums["digest_profile"] as? String != runtimeEntrySetProfile {
             throw ResolutionError.invalidDigestProfile
+        }
+        if checksums.keys.contains("digest_profile_version"),
+           checksums["digest_profile_version"] as? String != runtimeEntrySetProfileVersion {
+            throw ResolutionError.invalidDigestProfileVersion
         }
         if checksums.keys.contains("covered_entries"),
            checksums["covered_entries"] as? [String] != runtimeCoveredEntries {
@@ -33,17 +37,7 @@ public enum KDNAChecksumDigests {
            checksums["entry_set_digest"] as? String == nil {
             throw ResolutionError.invalidEntrySetDigestDeclaration
         }
-        if checksums.keys.contains("asset_digest"),
-           checksums["asset_digest"] as? String == nil {
-            throw ResolutionError.invalidEntrySetDigestDeclaration
-        }
-        let declared = checksums["entry_set_digest"] as? String
-        let legacy = checksums["asset_digest"] as? String
-
-        if let declared, let legacy, declared != legacy {
-            throw ResolutionError.conflictingEntrySetDigests
-        }
-        return declared ?? legacy
+        return checksums["entry_set_digest"] as? String
     }
 
     /// Compute E over the raw Runtime manifest and payload bytes.

@@ -83,7 +83,7 @@ final class KDNACoreTests: XCTestCase {
         fields: (String) -> [String: Any]
     ) throws -> (url: URL, entrySetDigest: String) {
         let manifest = try JSONSerialization.data(withJSONObject: [
-            "kdna_version": "1.0",
+            "format_version": "0.1.0",
             "asset_id": "kdna:test:checksum-digest",
             "asset_uid": "urn:uuid:00000000-0000-4000-8000-000000000099",
             "asset_type": "fixture",
@@ -92,12 +92,17 @@ final class KDNACoreTests: XCTestCase {
             "judgment_version": "1.0.0",
             "created_at": "2026-07-15T00:00:00Z",
             "updated_at": "2026-07-15T00:00:00Z",
-            "compatibility": ["min_loader_version": "0.16.0", "profile": "judgment-profile-v1"],
+            "compatibility": [
+                "min_loader_version": "0.18.1",
+                "profile": "kdna.payload.judgment",
+                "profile_version": "0.1.0",
+            ],
             "access": "public",
             "payload": ["path": "payload.kdnab", "encoding": "cbor", "encrypted": false]
         ], options: [.sortedKeys, .withoutEscapingSlashes])
         let payload = try KDNACBOR.encode([
-            "profile": "judgment-profile-v1",
+            "profile": "kdna.payload.judgment",
+            "profile_version": "0.1.0",
             "core": [
                 "highest_question": "Which checksum field names the entry set?",
                 "axioms": [] as [Any]
@@ -564,22 +569,30 @@ final class KDNACoreTests: XCTestCase {
 
         let manifestJSON = """
         {
-          "kdna_spec": "1.0-rc",
-          "name": "test-domain",
+          "format_version": "0.1.0",
+          "asset_id": "kdna:test:domain",
+          "asset_uid": "urn:uuid:00000000-0000-4000-8000-000000000011",
+          "asset_type": "fixture",
+          "title": "Test domain",
           "version": "0.1.0",
-          "status": "experimental",
-          "eval_score": 0.85,
-          "test_count": 12,
-          "quality_badge": "community"
+          "judgment_version": "0.1.0",
+          "created_at": "2026-07-15T00:00:00Z",
+          "updated_at": "2026-07-15T00:00:00Z",
+          "compatibility": {
+            "min_loader_version": "0.18.1",
+            "profile": "kdna.payload.judgment",
+            "profile_version": "0.1.0"
+          },
+          "payload": {"path": "payload.kdnab", "encoding": "cbor", "encrypted": false},
+          "status": "experimental"
         }
         """.data(using: .utf8)!
         try? manifestJSON.write(to: tempDir.appendingPathComponent("kdna.json"))
 
         let manifest = KDNADomainLoader.loadManifest(from: tempDir.path)
         XCTAssertNotNil(manifest)
-        XCTAssertEqual(manifest?.name, "test-domain")
-        XCTAssertEqual(manifest?.eval_score, 0.85)
-        XCTAssertEqual(manifest?.quality_badge, "community")
+        XCTAssertEqual(manifest?.asset_id, "kdna:test:domain")
+        XCTAssertEqual(manifest?.compatibility.profile_version, "0.1.0")
     }
 
     func testOldFieldNameDetection() {
@@ -1759,43 +1772,27 @@ final class KDNACoreTests: XCTestCase {
         )
     }
 
-    func testCanonicalEntrySetDigestAndLegacyAliasAreCompatible() throws {
-        for fields in [
-            {
-                [
-                    "entry_set_digest": $0,
-                    "digest_profile": "kdna-runtime-entry-set-v1",
-                    "covered_entries": ["kdna.json", "payload.kdnab"]
-                ] as [String: Any]
-            },
-            { ["asset_digest": $0] as [String: Any] },
-            {
-                [
-                    "entry_set_digest": $0,
-                    "asset_digest": $0,
-                    "digest_profile": "kdna-runtime-entry-set-v1",
-                    "covered_entries": ["kdna.json", "payload.kdnab"]
-                ] as [String: Any]
-            }
-        ] as [(String) -> [String: Any]] {
-            let fixture = try checksumRuntimeAsset(fields: fields)
-            defer { try? FileManager.default.removeItem(at: fixture.url) }
-
-            let plan = KDNARuntime.planLoad(assetURL: fixture.url)
-            XCTAssertTrue(plan.can_load_now, plan.issues.map(\.message).joined(separator: "\n"))
-            XCTAssertTrue(plan.checks.checksums_valid)
-            let capsule = try KDNARuntime.load(assetURL: fixture.url)
-            XCTAssertEqual(capsule.version, "1.0")
-            XCTAssertEqual(capsule.asset_digest, fixture.entrySetDigest)
-        }
-    }
-
-    func testConflictingEntrySetDigestAliasesFailClosed() throws {
+    func testCurrentEntrySetDigestContractIsAccepted() throws {
         let fixture = try checksumRuntimeAsset { digest in
             [
                 "entry_set_digest": digest,
-                "asset_digest": "sha256:" + String(repeating: "0", count: 64)
+                "digest_profile": "kdna.digest-basis.runtime-entry-set",
+                "digest_profile_version": "0.1.0",
+                "covered_entries": ["kdna.json", "payload.kdnab"],
             ]
+        }
+        defer { try? FileManager.default.removeItem(at: fixture.url) }
+
+        let plan = KDNARuntime.planLoad(assetURL: fixture.url)
+        XCTAssertTrue(plan.can_load_now, plan.issues.map(\.message).joined(separator: "\n"))
+        XCTAssertTrue(plan.checks.checksums_valid)
+        let asset = try KDNAAssetReader().open(url: fixture.url)
+        XCTAssertTrue(KDNAAssetReader().verifySync(asset).ok)
+    }
+
+    func testRetiredAssetDigestDeclarationFailsClosed() throws {
+        let fixture = try checksumRuntimeAsset { digest in
+            ["asset_digest": digest]
         }
         defer { try? FileManager.default.removeItem(at: fixture.url) }
 
@@ -1805,22 +1802,39 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertTrue(plan.issues.contains { $0.code == "KDNA_INTEGRITY_DIGEST_FAILED" })
         let asset = try KDNAAssetReader().open(url: fixture.url)
         XCTAssertFalse(KDNAAssetReader().verifySync(asset).ok)
-        XCTAssertThrowsError(try KDNARuntime.load(assetURL: fixture.url))
     }
 
-    func testInvalidEntrySetMetadataFailsClosedWhileLegacyOmissionRemainsCompatible() throws {
-        for invalidFields in [
-            { ["entry_set_digest": $0, "digest_profile": "other-profile"] as [String: Any] },
-            { _ in ["entry_set_digest": 7] as [String: Any] },
+    func testInvalidCurrentEntrySetMetadataFailsClosed() throws {
+        let invalidFields: [(String) -> [String: Any]] = [
             {
                 [
                     "entry_set_digest": $0,
-                    "digest_profile": "kdna-runtime-entry-set-v1",
-                    "covered_entries": ["payload.kdnab", "kdna.json"]
-                ] as [String: Any]
-            }
-        ] as [(String) -> [String: Any]] {
-            let fixture = try checksumRuntimeAsset(fields: invalidFields)
+                    "digest_profile": "other-profile",
+                    "digest_profile_version": "0.1.0",
+                    "covered_entries": ["kdna.json", "payload.kdnab"],
+                ]
+            },
+            {
+                [
+                    "entry_set_digest": $0,
+                    "digest_profile": "kdna.digest-basis.runtime-entry-set",
+                    "digest_profile_version": "9.9.9",
+                    "covered_entries": ["kdna.json", "payload.kdnab"],
+                ]
+            },
+            { _ in ["entry_set_digest": 7] },
+            {
+                [
+                    "entry_set_digest": $0,
+                    "digest_profile": "kdna.digest-basis.runtime-entry-set",
+                    "digest_profile_version": "0.1.0",
+                    "covered_entries": ["payload.kdnab", "kdna.json"],
+                ]
+            },
+        ]
+
+        for fields in invalidFields {
+            let fixture = try checksumRuntimeAsset(fields: fields)
             defer { try? FileManager.default.removeItem(at: fixture.url) }
 
             let plan = KDNARuntime.planLoad(assetURL: fixture.url)
@@ -2052,14 +2066,9 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertEqual(rt, rt2)
     }
     
-    // MARK: - Licensed Entry Decryption (RFC-0008)
+    // MARK: - Current encrypted-entry contracts
 
     func testLicenseSignatureVerifyThrowsUnsupported() throws {
-        // Per ADR-005 §5 and PR #5, the Swift implementation must NOT return
-        // `true` for license signatures (that would accept any license as
-        // valid). Instead, verifySignature must throw
-        // `KDNAError.unsupportedProfile` so callers can either skip license
-        // checks or refuse to validate licensed domains.
         let license = KDNALicenseActivation(
             version: "1",
             license_id: "test-license",
@@ -2071,11 +2080,10 @@ final class KDNACoreTests: XCTestCase {
             signature: "fake-signature-bytes"
         )
         XCTAssertThrowsError(try license.verifySignature(publicKey: "fake-public-key")) { error in
-            guard case KDNAError.unsupportedProfile(let msg) = error else {
-                XCTFail("Expected KDNAError.unsupportedProfile, got \(error)")
-                return
+            guard case KDNAError.unsupportedProfile(let message) = error else {
+                return XCTFail("Expected unsupportedProfile, got \(error)")
             }
-            XCTAssertTrue(msg.contains("license file signature verification"))
+            XCTAssertTrue(message.contains("license file signature verification"))
         }
     }
 
@@ -2088,84 +2096,78 @@ final class KDNACoreTests: XCTestCase {
     }
 
     func testAESKeyWrapRoundTrip() throws {
-        let key = Data([UInt8](repeating: 0xAB, count: 32))
-        let cek = Data([UInt8](repeating: 0xCD, count: 32))
+        let key = Data(repeating: 0xAB, count: 32)
+        let cek = Data(repeating: 0xCD, count: 32)
         let wrapped = try KDNACrypto.aesKeyWrap(key: key, plaintext: cek)
         XCTAssertEqual(wrapped.count, 40)
-        let unwrapped = try KDNACrypto.aesKeyUnwrap(key: key, ciphertext: wrapped)
-        XCTAssertEqual(unwrapped, cek)
+        XCTAssertEqual(try KDNACrypto.aesKeyUnwrap(key: key, ciphertext: wrapped), cek)
     }
 
-    func testLicensedEntryDecryptorRoundTrip() throws {
-        let licenseKey = "test-license-key-123"
-        let entryName = "KDNA_Core.json"
-        let plaintext = Data(#"{"axioms":[]}"#.utf8)
-
-        // Encrypt using JS-compatible envelope construction
-        let wrappingKey = KDNACrypto.hkdfSha256(ikm: Data(licenseKey.utf8), info: Data("kdna-licensed-entry-v1-kwk".utf8), length: 32)
-        let cek = KDNACrypto.hkdfSha256(ikm: Data("random-cek-seed".utf8), info: Data(), length: 32)
-        let wrappedKey = try KDNACrypto.aesKeyWrap(key: wrappingKey, plaintext: cek)
-
-        let nonce = AES.GCM.Nonce()
-        let aad = Data([
-            "kdna-licensed-entry-v1",
-            "@aikdna/test",
-            "1.0.0",
-            entryName,
-        ].joined(separator: "\n").utf8)
-        let sealed = try AES.GCM.seal(plaintext, using: SymmetricKey(data: cek), nonce: nonce, authenticating: aad)
-
-        let envelope = KDNALicensedEntryEnvelope(
-            profile: "kdna-licensed-entry-v1",
-            alg: "AES-256-GCM",
-            kdf: "HKDF-SHA256",
-            key_wrapping: "AES-256-KW",
-            wrapped_key: wrappedKey.base64EncodedString(),
-            iv: Data(nonce).base64EncodedString(),
-            tag: sealed.tag.base64EncodedString(),
-            ciphertext: sealed.ciphertext.base64EncodedString()
-        )
-
-        let envelopeData = try KDNACBOR.encode(envelope)
-        let manifest = KDNAManifest(
-            kdna_spec: "1.0-rc",
-            name: "@aikdna/test",
-            version: "1.0.0",
-            status: nil,
+    private func currentManifest(
+        assetID: String = "kdna:test:encrypted",
+        version: String = "1.0.0",
+        encryptionProfile: String = KDNA_LICENSED_ENTRY_PROFILE,
+        entitlementProfile: String = "account"
+    ) -> KDNAManifest {
+        KDNAManifest(
+            asset_id: assetID,
+            asset_uid: "urn:uuid:00000000-0000-4000-8000-000000000010",
+            asset_type: "fixture",
+            title: "Encrypted fixture",
+            version: version,
+            judgment_version: version,
+            created_at: "2026-07-15T00:00:00Z",
+            updated_at: "2026-07-15T00:00:00Z",
+            compatibility: KDNACompatibility(
+                min_loader_version: "0.18.1",
+                profile: "kdna.payload.judgment",
+                profile_version: "0.1.0"
+            ),
+            payload: KDNAPayloadDescriptor(encrypted: true),
             access: "licensed",
-            language: nil,
-            author: nil,
-            license: nil,
-            encryption: KDNAEncryption(profile: "kdna-licensed-entry-v1", encrypted_entries: [entryName]),
-            description: nil,
-            keywords: nil,
-            core_insight: nil,
-            eval_score: nil,
-            test_count: nil,
-            quality_badge: nil
+            entitlement: KDNAEntitlement(profile: entitlementProfile, offline: false, revocable: true),
+            encryption: KDNAEncryption(
+                profile: encryptionProfile,
+                profile_version: KDNA_ENCRYPTION_PROFILE_VERSION,
+                encrypted_entries: ["payload.kdnab"]
+            )
         )
-
-        let decryptor = KDNALicensedEntryDecryptor(licenseKey: licenseKey)
-        let decrypted = try decryptor.decrypt(entryName: entryName, envelopeData: envelopeData, manifest: manifest)
-        XCTAssertEqual(decrypted, plaintext)
     }
 
-    // MARK: - Licensed Entry Failure Path Tests
-
-    func makeLicensedEnvelope(licenseKey: String, entryName: String, plaintext: Data, manifest: KDNAManifest) throws -> Data {
-        let wrappingKey = KDNACrypto.hkdfSha256(ikm: Data(licenseKey.utf8), info: Data("kdna-licensed-entry-v1-kwk".utf8), length: 32)
-        let cek = KDNACrypto.hkdfSha256(ikm: Data("random-cek-seed".utf8), info: Data(), length: 32)
+    private func makeLicensedEnvelope(
+        licenseKey: String,
+        entryName: String,
+        plaintext: Data,
+        manifest: KDNAManifest
+    ) throws -> Data {
+        let wrappingKey = KDNACrypto.hkdfSha256(
+            ikm: Data(licenseKey.utf8),
+            info: Data("kdna.encryption.licensed-entry-kwk".utf8),
+            length: 32
+        )
+        let cek = KDNACrypto.hkdfSha256(
+            ikm: Data("deterministic-test-cek".utf8),
+            info: Data(),
+            length: 32
+        )
         let wrappedKey = try KDNACrypto.aesKeyWrap(key: wrappingKey, plaintext: cek)
-        let nonce = try AES.GCM.Nonce(data: Data([UInt8](repeating: 0x01, count: 12)))
+        let nonce = try AES.GCM.Nonce(data: Data(repeating: 0x01, count: 12))
         let aad = Data([
-            "kdna-licensed-entry-v1",
-            manifest.name,
+            KDNA_LICENSED_ENTRY_PROFILE,
+            KDNA_ENCRYPTION_PROFILE_VERSION,
+            manifest.asset_id,
             manifest.version,
             entryName,
         ].joined(separator: "\n").utf8)
-        let sealed = try AES.GCM.seal(plaintext, using: SymmetricKey(data: cek), nonce: nonce, authenticating: aad)
-        let envelope = KDNALicensedEntryEnvelope(
-            profile: "kdna-licensed-entry-v1",
+        let sealed = try AES.GCM.seal(
+            plaintext,
+            using: SymmetricKey(data: cek),
+            nonce: nonce,
+            authenticating: aad
+        )
+        return try KDNACBOR.encode(KDNALicensedEntryEnvelope(
+            profile: KDNA_LICENSED_ENTRY_PROFILE,
+            profile_version: KDNA_ENCRYPTION_PROFILE_VERSION,
             alg: "AES-256-GCM",
             kdf: "HKDF-SHA256",
             key_wrapping: "AES-256-KW",
@@ -2173,450 +2175,278 @@ final class KDNACoreTests: XCTestCase {
             iv: Data(nonce).base64EncodedString(),
             tag: sealed.tag.base64EncodedString(),
             ciphertext: sealed.ciphertext.base64EncodedString()
-        )
-        return try KDNACBOR.encode(envelope)
-    }
-
-    func testLicensedEntryDecryptorWrongKeyFails() throws {
-        let licenseKey = "test-license-key-123"
-        let entryName = "KDNA_Core.json"
-        let plaintext = Data(#"{"axioms":[]}"#.utf8)
-        let manifest = KDNAManifest(
-            kdna_spec: "1.0-rc", name: "@aikdna/test", version: "1.0.0",
-            status: nil, access: "licensed", language: nil, author: nil, license: nil,
-            encryption: KDNAEncryption(profile: "kdna-licensed-entry-v1", encrypted_entries: [entryName]),
-            description: nil, keywords: nil, core_insight: nil, eval_score: nil, test_count: nil, quality_badge: nil
-        )
-        let envelopeData = try makeLicensedEnvelope(licenseKey: licenseKey, entryName: entryName, plaintext: plaintext, manifest: manifest)
-        let decryptor = KDNALicensedEntryDecryptor(licenseKey: "wrong-key")
-        XCTAssertThrowsError(try decryptor.decrypt(entryName: entryName, envelopeData: envelopeData, manifest: manifest)) { error in
-            XCTAssertTrue(error.localizedDescription.contains("integrity check failed") || error.localizedDescription.contains("Authentication"))
-        }
-    }
-
-    func testLicensedEntryDecryptorTamperedCiphertextFails() throws {
-        let licenseKey = "test-license-key-123"
-        let entryName = "KDNA_Core.json"
-        let plaintext = Data(#"{"axioms":[]}"#.utf8)
-        let manifest = KDNAManifest(
-            kdna_spec: "1.0-rc", name: "@aikdna/test", version: "1.0.0",
-            status: nil, access: "licensed", language: nil, author: nil, license: nil,
-            encryption: KDNAEncryption(profile: "kdna-licensed-entry-v1", encrypted_entries: [entryName]),
-            description: nil, keywords: nil, core_insight: nil, eval_score: nil, test_count: nil, quality_badge: nil
-        )
-        var envelope = try KDNACBOR.decode(
-            KDNALicensedEntryEnvelope.self,
-            from: makeLicensedEnvelope(licenseKey: licenseKey, entryName: entryName, plaintext: plaintext, manifest: manifest)
-        )
-        var ciphertext = try XCTUnwrap(Data(base64Encoded: envelope.ciphertext))
-        ciphertext[ciphertext.startIndex] ^= 0x01
-        envelope = KDNALicensedEntryEnvelope(
-            profile: envelope.profile, alg: envelope.alg, kdf: envelope.kdf, key_wrapping: envelope.key_wrapping,
-            wrapped_key: envelope.wrapped_key, iv: envelope.iv, tag: envelope.tag,
-            ciphertext: ciphertext.base64EncodedString()
-        )
-        let envelopeData = try KDNACBOR.encode(envelope)
-        let decryptor = KDNALicensedEntryDecryptor(licenseKey: licenseKey)
-        XCTAssertThrowsError(try decryptor.decrypt(entryName: entryName, envelopeData: envelopeData, manifest: manifest))
-    }
-
-    func testLicensedEntryDecryptorTamperedWrappedKeyFails() throws {
-        let licenseKey = "test-license-key-123"
-        let entryName = "KDNA_Core.json"
-        let plaintext = Data(#"{"axioms":[]}"#.utf8)
-        let manifest = KDNAManifest(
-            kdna_spec: "1.0-rc", name: "@aikdna/test", version: "1.0.0",
-            status: nil, access: "licensed", language: nil, author: nil, license: nil,
-            encryption: KDNAEncryption(profile: "kdna-licensed-entry-v1", encrypted_entries: [entryName]),
-            description: nil, keywords: nil, core_insight: nil, eval_score: nil, test_count: nil, quality_badge: nil
-        )
-        var envelopeData = try makeLicensedEnvelope(licenseKey: licenseKey, entryName: entryName, plaintext: plaintext, manifest: manifest)
-        var envelope = try KDNACBOR.decode(KDNALicensedEntryEnvelope.self, from: envelopeData)
-        // Tamper with wrapped_key: decode, flip a byte, re-encode
-        var wrappedData = Data(base64Encoded: envelope.wrapped_key)!
-        wrappedData[wrappedData.count - 1] ^= 0xFF
-        envelope = KDNALicensedEntryEnvelope(
-            profile: envelope.profile, alg: envelope.alg, kdf: envelope.kdf, key_wrapping: envelope.key_wrapping,
-            wrapped_key: wrappedData.base64EncodedString(), iv: envelope.iv, tag: envelope.tag, ciphertext: envelope.ciphertext
-        )
-        envelopeData = try KDNACBOR.encode(envelope)
-        let decryptor = KDNALicensedEntryDecryptor(licenseKey: licenseKey)
-        XCTAssertThrowsError(try decryptor.decrypt(entryName: entryName, envelopeData: envelopeData, manifest: manifest)) { error in
-            XCTAssertTrue(error.localizedDescription.contains("integrity check failed"))
-        }
-    }
-
-    func testLicensedEntryDecryptorTamperedTagFails() throws {
-        let licenseKey = "test-license-key-123"
-        let entryName = "KDNA_Core.json"
-        let plaintext = Data(#"{"axioms":[]}"#.utf8)
-        let manifest = KDNAManifest(
-            kdna_spec: "1.0-rc", name: "@aikdna/test", version: "1.0.0",
-            status: nil, access: "licensed", language: nil, author: nil, license: nil,
-            encryption: KDNAEncryption(profile: "kdna-licensed-entry-v1", encrypted_entries: [entryName]),
-            description: nil, keywords: nil, core_insight: nil, eval_score: nil, test_count: nil, quality_badge: nil
-        )
-        var envelopeData = try makeLicensedEnvelope(licenseKey: licenseKey, entryName: entryName, plaintext: plaintext, manifest: manifest)
-        var envelope = try KDNACBOR.decode(KDNALicensedEntryEnvelope.self, from: envelopeData)
-        // Tamper with auth tag: decode, flip a byte, re-encode
-        var tagData = Data(base64Encoded: envelope.tag)!
-        tagData[tagData.count - 1] ^= 0xFF
-        envelope = KDNALicensedEntryEnvelope(
-            profile: envelope.profile, alg: envelope.alg, kdf: envelope.kdf, key_wrapping: envelope.key_wrapping,
-            wrapped_key: envelope.wrapped_key, iv: envelope.iv, tag: tagData.base64EncodedString(), ciphertext: envelope.ciphertext
-        )
-        envelopeData = try KDNACBOR.encode(envelope)
-        let decryptor = KDNALicensedEntryDecryptor(licenseKey: licenseKey)
-        XCTAssertThrowsError(try decryptor.decrypt(entryName: entryName, envelopeData: envelopeData, manifest: manifest))
-    }
-
-    func testHistoricalJSLicensedVectorDecryptsAfterCBORWireConversion() throws {
-        let fixtureURL = self.fixtureURL("test_licensed_entry.kdna")
-        guard FileManager.default.fileExists(atPath: fixtureURL.path) else {
-            throw XCTSkip("Shared fixture not found: \(fixtureURL.path)")
-        }
-        let reader = KDNAAssetReader()
-        let asset = try reader.open(url: fixtureURL)
-        let manifest = try XCTUnwrap(reader.decodeManifest(asset: asset))
-        XCTAssertEqual(manifest.access, "licensed")
-        XCTAssertEqual(manifest.encryption?.encrypted_entries, ["KDNA_Core.json"])
-
-        let historicalEnvelope = try JSONDecoder().decode(
-            KDNALicensedEntryEnvelope.self,
-            from: reader.readEntry(asset: asset, name: "KDNA_Core.json")
-        )
-        let envelopeData = try KDNACBOR.encode(historicalEnvelope)
-        let coreData = try KDNALicensedEntryDecryptor(
-            licenseKey: "KDNA-TEST-LICENSE-VECTOR-2026"
-        ).decrypt(entryName: "KDNA_Core.json", envelopeData: envelopeData, manifest: manifest)
-        let coreJSON = try JSONSerialization.jsonObject(with: coreData) as? [String: Any]
-        XCTAssertNotNil(coreJSON?["meta"])
-
-        let expectedURL = self.fixtureURL("expected/KDNA_Core.json")
-        let expectedData = try Data(contentsOf: expectedURL)
-        let expectedJSON = try JSONSerialization.jsonObject(with: expectedData) as? [String: Any]
-        XCTAssertEqual(coreJSON?["meta"] as? NSDictionary, expectedJSON?["meta"] as? NSDictionary)
-        XCTAssertEqual(coreJSON?["axioms"] as? NSArray, expectedJSON?["axioms"] as? NSArray)
-    }
-
-    func testVerifySyncRequiresDecryptionForLicensed() throws {
-        let licenseKey = "KDNA-TEST-LICENSE-VECTOR-2026"
-        let typedManifest = KDNAManifest(
-            name: "@aikdna/test-licensed-runtime",
-            version: "1.0.0",
-            access: "licensed",
-            encryption: KDNAEncryption(profile: "kdna-licensed-entry-v1", encrypted_entries: ["payload.kdnab"])
-        )
-        let payload = try KDNACBOR.encode([
-            "profile": "judgment-profile-v1",
-            "core": ["axioms": []] as [String: Any],
-            "patterns": [] as [Any]
-        ] as [String: Any])
-        let encryptedPayload = try makeLicensedEnvelope(
-            licenseKey: licenseKey,
-            entryName: "payload.kdnab",
-            plaintext: payload,
-            manifest: typedManifest
-        )
-        let manifestData = try JSONSerialization.data(withJSONObject: [
-            "kdna_version": "1.0",
-            "asset_id": "@aikdna/test-licensed-runtime",
-            "asset_uid": "urn:uuid:00000000-0000-4000-8000-000000000010",
-            "asset_type": "fixture",
-            "name": "@aikdna/test-licensed-runtime",
-            "title": "Licensed Runtime Fixture",
-            "version": "1.0.0",
-            "judgment_version": "1.0.0",
-            "access": "licensed",
-            "entitlement": ["profile": "local_receipt", "offline": true, "revocable": true],
-            "payload": ["path": "payload.kdnab", "encoding": "cbor", "encrypted": true],
-            "encryption": ["profile": "kdna-licensed-entry-v1", "encrypted_entries": ["payload.kdnab"]]
-        ])
-        let runtimeData = makeZip(entries: [
-            ("mimetype", Data(KDNAAssetReader.kdnaMediaType.utf8)),
-            ("kdna.json", manifestData),
-            ("payload.kdnab", encryptedPayload),
-            ("checksums.json", Data(#"{"algorithm":"sha256"}"#.utf8))
-        ])
-        let reader = KDNAAssetReader()
-        let asset = try reader.open(data: runtimeData, path: "licensed-runtime.kdna")
-
-        // Without requireDecryption: should pass basic checks
-        let basicResult = reader.verifySync(asset)
-        XCTAssertTrue(basicResult.ok)
-
-        // With requireDecryption but no hook: should fail
-        let noHookResult = reader.verifySync(asset, requireDecryption: true)
-        XCTAssertFalse(noHookResult.ok)
-        XCTAssertTrue(noHookResult.errors.contains(where: { $0.contains("no decryptEntry hook provided") }))
-
-        // With requireDecryption and correct hook: should pass
-        let decryptEntry = createLicensedDecryptEntry(licenseKey: licenseKey, machineFingerprint: nil)
-        let fullResult = reader.verifySync(asset, requireDecryption: true, decryptEntry: decryptEntry)
-        XCTAssertTrue(fullResult.ok)
-
-        // With wrong key: should fail decryption
-        let badDecryptEntry = createLicensedDecryptEntry(licenseKey: "WRONG-KEY", machineFingerprint: nil)
-        let badResult = reader.verifySync(asset, requireDecryption: true, decryptEntry: badDecryptEntry)
-        XCTAssertFalse(badResult.ok)
-        XCTAssertTrue(badResult.errors.contains(where: { $0.contains("decryption failed") }))
-    }
-
-    // MARK: - RFC-0009 Protected Profile Tests
-
-    func testProtectedEntryEncryptsAndDecryptsWithPassword() throws {
-        let password = "KDNA-Test-Vector-2026"
-        let manifest = KDNAManifest(name: "@test/protected", version: "1.0.0")
-        let plaintext = Data(#"{"secret": "protected judgment"}"#.utf8)
-
-        let envelope = try encryptProtectedEntry(
-            plaintext: plaintext,
-            entryName: "KDNA_Core.json",
-            manifest: manifest,
-            password: password
-        )
-
-        XCTAssertEqual(envelope.profile, "kdna-password-protected-v1")
-        XCTAssertEqual(envelope.alg, "AES-256-GCM")
-        XCTAssertEqual(envelope.kdf, "Argon2id")
-        XCTAssertEqual(envelope.key_slots.count, 2)
-        XCTAssertEqual(envelope.key_slots[0].slot, "password")
-        XCTAssertEqual(envelope.key_slots[1].slot, "recovery")
-        XCTAssertFalse(envelope.password_kdf.salt.isEmpty)
-
-        let decrypted = try decryptProtectedEntry(
-            envelope: envelope,
-            entryName: "KDNA_Core.json",
-            manifest: manifest,
-            password: password
-        )
-        XCTAssertEqual(decrypted, plaintext)
-    }
-
-    func testProtectedEntryWrongPasswordFails() throws {
-        let password = "KDNA-Test-Vector-2026"
-        let manifest = KDNAManifest(name: "@test/protected", version: "1.0.0")
-        let plaintext = Data(#"{"secret": "protected judgment"}"#.utf8)
-
-        let envelope = try encryptProtectedEntry(
-            plaintext: plaintext,
-            entryName: "KDNA_Core.json",
-            manifest: manifest,
-            password: password
-        )
-
-        XCTAssertThrowsError(try decryptProtectedEntry(
-            envelope: envelope,
-            entryName: "KDNA_Core.json",
-            manifest: manifest,
-            password: "wrong-password"
         ))
     }
 
-    func testProtectedRecoveryCodeRoundTrip() throws {
-        let password = "KDNA-Test-Vector-2026"
-        let manifest = KDNAManifest(name: "@test/protected", version: "1.0.0")
-        let plaintext = Data(#"{"secret": "protected judgment"}"#.utf8)
-
-        // Generate a known recovery key (32 bytes = 64 hex chars)
-        var recoveryKeyBytes = [UInt8](repeating: 0, count: 32)
-        let status = SecRandomCopyBytes(kSecRandomDefault, recoveryKeyBytes.count, &recoveryKeyBytes)
-        XCTAssertEqual(status, errSecSuccess)
-        let recoveryKey = Data(recoveryKeyBytes)
-
-        // Build CEK and wrap it with both password key and recovery key
-        let cek = SymmetricKey(size: .bits256)
-        let cekData = cek.withUnsafeBytes { Data($0) }
-        let salt = Data((0..<16).map { _ in UInt8.random(in: 0...255) })
-        let passwordKdf = KDNAPasswordKDFParams(
-            salt: salt.base64EncodedString(),
-            memory_kib: 65536,
-            iterations: 3,
-            parallelism: 4
+    func testLicensedEntryCurrentContractRoundTrip() throws {
+        let manifest = currentManifest()
+        let plaintext = try KDNACBOR.encode([
+            "profile": "kdna.payload.judgment",
+            "profile_version": "0.1.0",
+            "content": ["axioms": []] as [String: Any],
+        ] as [String: Any])
+        let envelope = try makeLicensedEnvelope(
+            licenseKey: "test-license-key",
+            entryName: "payload.kdnab",
+            plaintext: plaintext,
+            manifest: manifest
         )
-        let passwordKey = try derivePasswordKey(password: password, params: passwordKdf)
-        let passwordWrappedKey = try KDNACrypto.aesKeyWrap(key: passwordKey, plaintext: cekData)
-        let recoveryWrappedKey = try KDNACrypto.aesKeyWrap(key: recoveryKey, plaintext: cekData)
-
-        let iv = AES.GCM.Nonce()
-        let aad = Data("kdna-password-protected-v1\n@test/protected\n1.0.0\nKDNA_Core.json".utf8)
-        let sealedBox = try AES.GCM.seal(plaintext, using: cek, nonce: iv, authenticating: aad)
-
-        let testEnvelope = KDNAProtectedEnvelope(
-            profile: "kdna-password-protected-v1",
-            alg: "AES-256-GCM",
-            kdf: "Argon2id",
-            key_wrapping: "AES-256-KW",
-            password_kdf: passwordKdf,
-            key_slots: [
-                KDNAKeySlot(slot: "password", wrap: "AES-256-KW", wrapped_key: passwordWrappedKey.base64EncodedString()),
-                KDNAKeySlot(slot: "recovery", wrap: "AES-256-KW", wrapped_key: recoveryWrappedKey.base64EncodedString())
-            ],
-            iv: Data(iv).base64EncodedString(),
-            tag: sealedBox.tag.base64EncodedString(),
-            ciphertext: sealedBox.ciphertext.base64EncodedString()
-        )
-
-        // Encode recovery key as recovery code (64 hex chars = 16 groups of 4)
-        let hex = recoveryKey.map { String(format: "%02X", $0) }.joined()
-        let groups = stride(from: 0, to: hex.count, by: 4).map {
-            let start = hex.index(hex.startIndex, offsetBy: $0)
-            let end = hex.index(start, offsetBy: 4, limitedBy: hex.endIndex) ?? hex.endIndex
-            return String(hex[start..<end])
-        }
-        let testRecoveryCode = "kdna-recover-\(groups.joined(separator: "-"))"
-
-        let decrypted = try decryptProtectedEntry(
-            envelope: testEnvelope,
-            entryName: "KDNA_Core.json",
-            manifest: manifest,
-            recoveryCode: testRecoveryCode
+        let decrypted = try KDNALicensedEntryDecryptor(licenseKey: "test-license-key").decrypt(
+            entryName: "payload.kdnab",
+            envelopeData: envelope,
+            manifest: manifest
         )
         XCTAssertEqual(decrypted, plaintext)
     }
 
-    func testProtectedAssetReaderIntegration() throws {
-        let password = "KDNA-Test-Vector-2026"
-        let manifestObj = KDNAManifest(
-            name: "@test/protected",
-            version: "0.1.0",
-            access: "licensed",
-            encryption: KDNAEncryption(profile: "kdna-password-protected-v1", encrypted_entries: ["payload.kdnab"])
-        )
-
-        let payload: [String: Any] = [
-            "profile": "judgment-profile-v1",
-            "core": [
-                "highest_question": "Can protected judgment remain private?",
-                "axioms": [["id": "a1", "one_sentence": "Decrypted judgment stays in memory."]]
-            ] as [String: Any],
-            "patterns": [] as [Any]
-        ]
-        let payloadData = try KDNACBOR.encode(payload)
-        let envelope = try encryptProtectedEntry(
-            plaintext: payloadData,
+    func testLicensedEntryRejectsWrongKeyAndAADBindings() throws {
+        let manifest = currentManifest()
+        let plaintext = Data("bound judgment".utf8)
+        let envelope = try makeLicensedEnvelope(
+            licenseKey: "test-license-key",
             entryName: "payload.kdnab",
-            manifest: manifestObj,
-            password: password
-        )
-        let envelopeData = try KDNACBOR.encode(envelope)
-
-        let decryptEntry = createPasswordDecryptEntry(password: password)
-
-        let tmpDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: tmpDir) }
-        let tmpURL = tmpDir.appendingPathComponent("protected.kdna")
-        let manifestData = try JSONSerialization.data(withJSONObject: [
-            "kdna_version": "1.0",
-            "asset_id": "kdna:test:protected",
-            "asset_uid": "urn:uuid:00000000-0000-4000-8000-000000000009",
-            "asset_type": "fixture",
-            "name": "@test/protected",
-            "title": "Protected Runtime Asset",
-            "version": "0.1.0",
-            "judgment_version": "0.1.0",
-            "created_at": "2026-07-15T00:00:00Z",
-            "updated_at": "2026-07-15T00:00:00Z",
-            "compatibility": ["min_loader_version": "0.16.0", "profile": "judgment-profile-v1"],
-            "access": "licensed",
-            "entitlement": ["profile": "password", "offline": true, "revocable": false],
-            "payload": ["path": "payload.kdnab", "encoding": "cbor", "encrypted": true],
-            "encryption": ["profile": "kdna-password-protected-v1", "encrypted_entries": ["payload.kdnab"]]
-        ])
-
-        let entries: [(String, Data)] = [
-            ("mimetype", Data(KDNAAssetReader.kdnaMediaType.utf8)),
-            ("kdna.json", manifestData),
-            ("payload.kdnab", envelopeData),
-            ("checksums.json", Data(#"{"algorithm":"sha256"}"#.utf8))
-        ]
-        try makeZip(entries: entries).write(to: tmpURL)
-
-        let reader = KDNAAssetReader()
-        let asset = try reader.open(url: tmpURL)
-        let manifest = try XCTUnwrap(reader.decodeManifest(asset: asset))
-        XCTAssertEqual(manifest.access, "licensed")
-
-        let decryptedViaHook = try reader.readEntry(asset: asset, name: "payload.kdnab", manifest: manifest, decryptEntry: decryptEntry)
-        XCTAssertEqual(decryptedViaHook, payloadData)
-        XCTAssertEqual(try KDNACBOR.decodeObject(decryptedViaHook)["profile"] as? String, "judgment-profile-v1")
-
-        let capsule = try KDNARuntime.load(
-            assetURL: tmpURL,
-            credential: KDNACredential(password: password)
-        )
-        XCTAssertEqual(capsule.type, "kdna.context.capsule")
-        XCTAssertEqual(capsule.domain, "@test/protected")
-        XCTAssertEqual(capsule.context["axioms"]?.arrayValue?.count, 1)
-    }
-
-    func testCrossLanguageFixtureDecryptsProtectedEntryFromJS() throws {
-        let fixtureURL = fixtureURL("test_protected_entry.kdna")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: fixtureURL.path), "shared fixture must exist")
-
-        let reader = KDNAAssetReader()
-        let asset = try reader.open(url: fixtureURL)
-        let manifest = try XCTUnwrap(reader.decodeManifest(asset: asset))
-        XCTAssertEqual(manifest.access, "protected")
-        XCTAssertEqual(manifest.encryption?.profile, "kdna-password-protected-v1")
-
-        // This committed fixture predates the single runtime container and keeps
-        // its JS-generated envelope as JSON. Decode only the historical vector
-        // here, then prove Swift can decrypt the same cryptographic bytes. All
-        // current runtime containers and public APIs remain CBOR-only.
-        let coreEnvelope = try JSONDecoder().decode(
-            KDNAProtectedEnvelope.self,
-            from: reader.readEntry(asset: asset, name: "KDNA_Core.json")
-        )
-        let patternsEnvelope = try JSONDecoder().decode(
-            KDNAProtectedEnvelope.self,
-            from: reader.readEntry(asset: asset, name: "KDNA_Patterns.json")
-        )
-        let coreData = try decryptProtectedEntry(
-            envelope: coreEnvelope,
-            entryName: "KDNA_Core.json",
-            manifest: manifest,
-            password: "KDNA-TEST-VECTOR-2026"
-        )
-        let patternsData = try decryptProtectedEntry(
-            envelope: patternsEnvelope,
-            entryName: "KDNA_Patterns.json",
-            manifest: manifest,
-            password: "KDNA-TEST-VECTOR-2026"
-        )
-
-        let coreJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: coreData) as? [String: Any])
-        let patternsJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: patternsData) as? [String: Any])
-
-        XCTAssertEqual(coreJSON["meta"] as? [String: String], [
-            "domain": "protected_test",
-            "version": "0.1.0",
-            "created": "2026-06-02",
-            "purpose": "test",
-            "load_condition": "always"
-        ])
-        XCTAssertEqual((coreJSON["axioms"] as? [[String: String]])?.first?["id"], "protected_a1")
-        XCTAssertEqual((patternsJSON["misunderstandings"] as? [[String: String]])?.first?["id"], "protected_m1")
-    }
-
-    func testProtectedEntryTamperedCiphertextFails() throws {
-        let password = "KDNA-Test-Vector-2026"
-        let manifest = KDNAManifest(name: "@test/protected", version: "1.0.0")
-        let plaintext = Data(#"{"secret": "protected judgment"}"#.utf8)
-
-        var envelope = try encryptProtectedEntry(
             plaintext: plaintext,
-            entryName: "KDNA_Core.json",
-            manifest: manifest,
-            password: password
+            manifest: manifest
         )
+        let decryptor = KDNALicensedEntryDecryptor(licenseKey: "test-license-key")
 
-        // Tamper with ciphertext
-        var ciphertextBytes = Data(base64Encoded: envelope.ciphertext)!
-        ciphertextBytes[0] = ciphertextBytes[0] ^ 0xFF
-        envelope = KDNAProtectedEnvelope(
+        XCTAssertThrowsError(try KDNALicensedEntryDecryptor(licenseKey: "wrong-key").decrypt(
+            entryName: "payload.kdnab",
+            envelopeData: envelope,
+            manifest: manifest
+        ))
+        XCTAssertThrowsError(try decryptor.decrypt(
+            entryName: "different.kdnab",
+            envelopeData: envelope,
+            manifest: manifest
+        ))
+        XCTAssertThrowsError(try decryptor.decrypt(
+            entryName: "payload.kdnab",
+            envelopeData: envelope,
+            manifest: currentManifest(assetID: "kdna:test:different")
+        ))
+        XCTAssertThrowsError(try decryptor.decrypt(
+            entryName: "payload.kdnab",
+            envelopeData: envelope,
+            manifest: currentManifest(version: "2.0.0")
+        ))
+    }
+
+    func testLicensedEntryRejectsWrongProfileVersionAndTamper() throws {
+        let manifest = currentManifest()
+        let encoded = try makeLicensedEnvelope(
+            licenseKey: "test-license-key",
+            entryName: "payload.kdnab",
+            plaintext: Data("bound judgment".utf8),
+            manifest: manifest
+        )
+        let envelope = try KDNACBOR.decode(KDNALicensedEntryEnvelope.self, from: encoded)
+        let wrongVersion = KDNALicensedEntryEnvelope(
             profile: envelope.profile,
+            profile_version: "9.9.9",
+            alg: envelope.alg,
+            kdf: envelope.kdf,
+            key_wrapping: envelope.key_wrapping,
+            wrapped_key: envelope.wrapped_key,
+            iv: envelope.iv,
+            tag: envelope.tag,
+            ciphertext: envelope.ciphertext
+        )
+        XCTAssertThrowsError(try KDNALicensedEntryDecryptor(licenseKey: "test-license-key").decrypt(
+            entryName: "payload.kdnab",
+            envelopeData: try KDNACBOR.encode(wrongVersion),
+            manifest: manifest
+        )) { error in
+            guard case KDNALicensedEntryError.unsupportedProfileVersion("9.9.9") = error else {
+                return XCTFail("Expected unsupported profile_version, got \(error)")
+            }
+        }
+
+        var ciphertext = try XCTUnwrap(Data(base64Encoded: envelope.ciphertext))
+        ciphertext[0] ^= 0x01
+        let tampered = KDNALicensedEntryEnvelope(
+            profile: envelope.profile,
+            profile_version: envelope.profile_version,
+            alg: envelope.alg,
+            kdf: envelope.kdf,
+            key_wrapping: envelope.key_wrapping,
+            wrapped_key: envelope.wrapped_key,
+            iv: envelope.iv,
+            tag: envelope.tag,
+            ciphertext: ciphertext.base64EncodedString()
+        )
+        XCTAssertThrowsError(try KDNALicensedEntryDecryptor(licenseKey: "test-license-key").decrypt(
+            entryName: "payload.kdnab",
+            envelopeData: try KDNACBOR.encode(tampered),
+            manifest: manifest
+        ))
+    }
+
+    func testCurrentLicensedNodeFixtureDecryptsByteForByte() throws {
+        let fixture = fixtureURL("test_licensed_entry.kdna")
+        XCTAssertEqual(
+            sha256Hex(try Data(contentsOf: fixture)),
+            "d785725fc2b53cad5c3627ddc91ae737ab58502224e64dca8896ac818c4e9790"
+        )
+        let reader = KDNAAssetReader()
+        let asset = try reader.open(url: fixture)
+        let manifest = try reader.decodeManifest(asset: asset)
+        XCTAssertEqual(manifest.format_version, "0.1.0")
+        XCTAssertEqual(manifest.compatibility.profile, "kdna.payload.judgment")
+        XCTAssertEqual(manifest.compatibility.profile_version, "0.1.0")
+        XCTAssertEqual(manifest.encryption?.profile, KDNA_LICENSED_ENTRY_PROFILE)
+        XCTAssertEqual(manifest.encryption?.profile_version, KDNA_ENCRYPTION_PROFILE_VERSION)
+        XCTAssertEqual(manifest.encryption?.encrypted_entries, ["payload.kdnab"])
+
+        let plaintext = try KDNALicensedEntryDecryptor(
+            licenseKey: "KDNA-TEST-LICENSE-VECTOR-2026"
+        ).decrypt(
+            entryName: "payload.kdnab",
+            envelopeData: reader.readEntry(asset: asset, name: "payload.kdnab"),
+            manifest: manifest
+        )
+        let expected = try Data(contentsOf: sharedKDNARepoURL().appendingPathComponent("examples/minimal/payload.kdnab"))
+        XCTAssertEqual(
+            try KDNACBOR.decodeObject(plaintext) as NSDictionary,
+            try KDNACBOR.decodeObject(expected) as NSDictionary
+        )
+    }
+
+    func testVerifySyncRequiresCurrentLicensedDecryption() throws {
+        let fixture = fixtureURL("test_licensed_entry.kdna")
+        let reader = KDNAAssetReader()
+        let asset = try reader.open(url: fixture)
+
+        XCTAssertTrue(reader.verifySync(asset).ok)
+
+        let noHook = reader.verifySync(asset, requireDecryption: true)
+        XCTAssertFalse(noHook.ok)
+        XCTAssertTrue(noHook.errors.contains { $0.contains("no decryptEntry hook provided") })
+
+        let correct = reader.verifySync(
+            asset,
+            requireDecryption: true,
+            decryptEntry: createLicensedDecryptEntry(
+                licenseKey: "KDNA-TEST-LICENSE-VECTOR-2026"
+            )
+        )
+        XCTAssertTrue(correct.ok, correct.errors.joined(separator: "; "))
+
+        let wrong = reader.verifySync(
+            asset,
+            requireDecryption: true,
+            decryptEntry: createLicensedDecryptEntry(licenseKey: "WRONG-KEY")
+        )
+        XCTAssertFalse(wrong.ok)
+        XCTAssertTrue(wrong.errors.contains { $0.contains("decryption failed") })
+    }
+
+    private func repackLicensedFixture(
+        mutateManifest: (inout [String: Any]) -> Void
+    ) throws -> KDNAAsset {
+        let reader = KDNAAssetReader()
+        let source = try reader.open(url: fixtureURL("test_licensed_entry.kdna"))
+        var manifest = try XCTUnwrap(reader.readManifest(asset: source))
+        mutateManifest(&manifest)
+        let manifestData = try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys])
+        let entries = try reader.listEntries(asset: source).map { name -> (String, Data) in
+            if name == "kdna.json" { return (name, manifestData) }
+            return (name, try reader.readEntry(asset: source, name: name))
+        }
+        return try reader.open(data: makeZip(entries: entries), path: "mutated-licensed.kdna")
+    }
+
+    func testVerifySyncRequireDecryptionFailsClosedOnMalformedTypedManifest() throws {
+        let asset = try repackLicensedFixture { manifest in
+            manifest.removeValue(forKey: "asset_id")
+        }
+        let result = KDNAAssetReader().verifySync(
+            asset,
+            requireDecryption: true,
+            decryptEntry: createLicensedDecryptEntry(
+                licenseKey: "KDNA-TEST-LICENSE-VECTOR-2026"
+            )
+        )
+        XCTAssertFalse(result.ok)
+        XCTAssertTrue(result.errors.contains { $0.contains("typed manifest decode failed") })
+    }
+
+    func testVerifySyncRequireDecryptionRejectsWrongCoordinatesAndProfile() throws {
+        let wrongCoordinates = try repackLicensedFixture { manifest in
+            var compatibility = manifest["compatibility"] as! [String: Any]
+            compatibility["profile_version"] = "9.9.9"
+            manifest["compatibility"] = compatibility
+        }
+        let coordinateResult = KDNAAssetReader().verifySync(
+            wrongCoordinates,
+            requireDecryption: true,
+            decryptEntry: createLicensedDecryptEntry(
+                licenseKey: "KDNA-TEST-LICENSE-VECTOR-2026"
+            )
+        )
+        XCTAssertFalse(coordinateResult.ok)
+        XCTAssertTrue(coordinateResult.errors.contains {
+            $0.contains("current Runtime coordinates")
+        })
+
+        let wrongProfile = try repackLicensedFixture { manifest in
+            var encryption = manifest["encryption"] as! [String: Any]
+            encryption["profile"] = "kdna.encryption.unsupported"
+            manifest["encryption"] = encryption
+        }
+        let profileResult = KDNAAssetReader().verifySync(
+            wrongProfile,
+            requireDecryption: true,
+            decryptEntry: createLicensedDecryptEntry(
+                licenseKey: "KDNA-TEST-LICENSE-VECTOR-2026"
+            )
+        )
+        XCTAssertFalse(profileResult.ok)
+        XCTAssertTrue(profileResult.errors.contains {
+            $0.contains("current encryption metadata")
+        })
+    }
+
+    func testPasswordProfileRoundTripAndVersionGate() throws {
+        let manifest = currentManifest(
+            assetID: "kdna:test:password",
+            encryptionProfile: PASSWORD_PROTECTED_PROFILE,
+            entitlementProfile: "password"
+        )
+        let password = "KDNA-Test-Vector-2026"
+        let plaintext = Data("private judgment".utf8)
+        let envelope = try encryptProtectedEntry(
+            plaintext: plaintext,
+            entryName: "payload.kdnab",
+            manifest: manifest,
+            password: password,
+            includeRecovery: false
+        )
+        XCTAssertEqual(envelope.profile, PASSWORD_PROTECTED_PROFILE)
+        XCTAssertEqual(envelope.profile_version, KDNA_ENCRYPTION_PROFILE_VERSION)
+        XCTAssertEqual(
+            try decryptProtectedEntry(
+                envelope: envelope,
+                entryName: "payload.kdnab",
+                manifest: manifest,
+                password: password
+            ),
+            plaintext
+        )
+        XCTAssertThrowsError(try decryptProtectedEntry(
+            envelope: envelope,
+            entryName: "payload.kdnab",
+            manifest: currentManifest(
+                assetID: "kdna:test:different",
+                encryptionProfile: PASSWORD_PROTECTED_PROFILE,
+                entitlementProfile: "password"
+            ),
+            password: password
+        ))
+
+        let wrongVersion = KDNAProtectedEnvelope(
+            profile: envelope.profile,
+            profile_version: "9.9.9",
             alg: envelope.alg,
             kdf: envelope.kdf,
             key_wrapping: envelope.key_wrapping,
@@ -2624,17 +2454,19 @@ final class KDNACoreTests: XCTestCase {
             key_slots: envelope.key_slots,
             iv: envelope.iv,
             tag: envelope.tag,
-            ciphertext: ciphertextBytes.base64EncodedString()
+            ciphertext: envelope.ciphertext
         )
-
         XCTAssertThrowsError(try decryptProtectedEntry(
-            envelope: envelope,
-            entryName: "KDNA_Core.json",
+            envelope: wrongVersion,
+            entryName: "payload.kdnab",
             manifest: manifest,
             password: password
-        ))
+        )) { error in
+            guard case KDNAError.unsupportedProfileVersion = error else {
+                return XCTFail("Expected unsupported profile_version, got \(error)")
+            }
+        }
     }
-
     private struct AuthorizationCaseIndex: Decodable {
         let cases: [AuthorizationCase]
     }
@@ -2657,7 +2489,7 @@ final class KDNACoreTests: XCTestCase {
 
     private func normalizedLoadPlan(_ plan: KDNALoadPlan, fixture: String) -> KDNALoadPlan {
         KDNALoadPlan(
-            kdna_version: plan.kdna_version,
+            format_version: plan.format_version,
             asset: plan.asset,
             access: plan.access,
             access_alias: plan.access_alias,
@@ -2666,6 +2498,7 @@ final class KDNACoreTests: XCTestCase {
             required_action: plan.required_action,
             can_load_now: plan.can_load_now,
             projection_policy: plan.projection_policy,
+            input_fingerprint: plan.input_fingerprint,
             checks: plan.checks,
             issues: plan.issues,
             source: KDNALoadPlanSource(kind: plan.source.kind, path: "<fixture:\(fixture)>")
@@ -2674,7 +2507,7 @@ final class KDNACoreTests: XCTestCase {
 
     private func normalizedLoadPlanWithoutSourceKind(_ plan: KDNALoadPlan, fixture: String) -> KDNALoadPlan {
         KDNALoadPlan(
-            kdna_version: plan.kdna_version,
+            format_version: plan.format_version,
             asset: plan.asset,
             access: plan.access,
             access_alias: plan.access_alias,
@@ -2683,6 +2516,7 @@ final class KDNACoreTests: XCTestCase {
             required_action: plan.required_action,
             can_load_now: plan.can_load_now,
             projection_policy: plan.projection_policy,
+            input_fingerprint: plan.input_fingerprint,
             checks: plan.checks,
             issues: plan.issues,
             source: KDNALoadPlanSource(kind: nil, path: "<fixture:\(fixture)>")

@@ -1,8 +1,10 @@
 import Foundation
 import CryptoKit
 
-public let KDNA_EXTERNAL_ENVELOPE_PROFILE = "kdna-envelope-external-grant-v1"
-public let KDNA_EXTERNAL_GRANT_PROFILE = "kdna-key-grant-v1"
+public let KDNA_EXTERNAL_ENVELOPE_PROFILE = "kdna.envelope.external-grant"
+public let KDNA_EXTERNAL_GRANT_PROFILE = "kdna.grant.external-key"
+public let KDNA_EXTERNAL_GRANT_CONTRACT_VERSION = "0.1.0"
+public let KDNA_DEVICE_GRANT_KEY_CONTEXT = "kdna.key-context.device-grant"
 
 public enum KDNAExternalGrantError: Error, LocalizedError, Equatable {
     case failure(code: String, message: String)
@@ -18,6 +20,7 @@ public enum KDNAExternalGrantError: Error, LocalizedError, Equatable {
 
 public struct KDNAExternalEnvelope: Codable, Equatable {
     public let profile: String
+    public let contract_version: String
     public let alg: String
     public let cek_derivation: String
     public let key_ref: String
@@ -49,6 +52,7 @@ public struct KDNAExternalGrantWrap: Codable, Equatable {
 
 public struct KDNAExternalKeyGrant: Codable, Equatable {
     public let profile: String
+    public let contract_version: String
     public let grant_id: String
     public let issuer: String
     public let signing_key_id: String
@@ -98,7 +102,7 @@ public final class KDNAExternalGrantAuthorization: Equatable {
         grantData: Data,
         envelopeData: Data,
         manifest: [String: Any],
-        checksums: [String: Any],
+        expectedAssetDigest: String,
         issuerPublicKeys: [String: String],
         deviceAgreementPrivateKey: String,
         expectedAccountID: String,
@@ -148,19 +152,10 @@ public final class KDNAExternalGrantAuthorization: Equatable {
         try equal(grant.device_id, expectedDeviceID, code: "KDNA_GRANT_DEVICE_MISMATCH", label: "grant device")
         try equal(grant.device_public_key, expectedDevicePublicKey, code: "KDNA_GRANT_DEVICE_MISMATCH", label: "device agreement key")
         try equal(grant.device_signing_public_key, expectedDeviceSigningPublicKey, code: "KDNA_GRANT_DEVICE_MISMATCH", label: "device signing key")
-        try equal(grant.asset.asset_id, manifest["asset_id"] as? String ?? manifest["name"] as? String, code: "KDNA_GRANT_ASSET_MISMATCH", label: "asset ID")
+        try equal(grant.asset.asset_id, manifest["asset_id"] as? String, code: "KDNA_GRANT_ASSET_MISMATCH", label: "asset ID")
         try equal(grant.asset.asset_uid, manifest["asset_uid"] as? String, code: "KDNA_GRANT_ASSET_MISMATCH", label: "asset UID")
         try equal(grant.asset.version, manifest["version"] as? String, code: "KDNA_GRANT_ASSET_MISMATCH", label: "asset version")
-        let entrySetDigest: String?
-        do {
-            entrySetDigest = try KDNAChecksumDigests.entrySetDigest(in: checksums)
-        } catch {
-            throw failure("KDNA_GRANT_DIGEST_MISMATCH", "checksum entry-set digest aliases disagree")
-        }
-        // External grant v1 continues to bind the integrity-covered entry set.
-        // Only the checksums.json field name changed; the signed grant and AAD
-        // contracts remain unchanged.
-        try equal(grant.asset.digest, entrySetDigest, code: "KDNA_GRANT_DIGEST_MISMATCH", label: "asset digest")
+        try equal(grant.asset.digest, expectedAssetDigest, code: "KDNA_GRANT_DIGEST_MISMATCH", label: "asset digest")
         try equal(grant.asset.entry_path, envelope.entry_path, code: "KDNA_GRANT_ASSET_MISMATCH", label: "entry path")
         try equal(grant.asset.key_ref, envelope.key_ref, code: "KDNA_GRANT_ASSET_MISMATCH", label: "key reference")
         try equal(grant.asset.issuer_key_id, envelope.issuer_key_id, code: "KDNA_GRANT_ASSET_MISMATCH", label: "issuer asset key")
@@ -183,7 +178,7 @@ public final class KDNAExternalGrantAuthorization: Equatable {
         let kekKey = shared.hkdfDerivedSymmetricKey(
             using: SHA256.self,
             salt: salt,
-            sharedInfo: Data("kdna-device-grant-kek-v1\n\(grant.grant_id)".utf8),
+            sharedInfo: Data("\(KDNA_DEVICE_GRANT_KEY_CONTEXT)\n\(KDNA_EXTERNAL_GRANT_CONTRACT_VERSION)\n\(grant.grant_id)".utf8),
             outputByteCount: 32
         )
         var kek = kekKey.withUnsafeBytes { Data($0) }
@@ -217,8 +212,8 @@ public final class KDNAExternalGrantAuthorization: Equatable {
         }
     }
 
-    private static let envelopeKeys: Set<String> = ["profile", "alg", "cek_derivation", "key_ref", "issuer_key_id", "entry_path", "plaintext_digest", "iv", "tag", "ciphertext"]
-    private static let grantKeys: Set<String> = ["profile", "grant_id", "issuer", "signing_key_id", "entitlement_id", "account_id", "device_id", "device_public_key", "device_signing_public_key", "asset", "issued_at", "refresh_after", "offline_grace_until", "expires_at", "status", "status_version", "wrap", "signature"]
+    private static let envelopeKeys: Set<String> = ["profile", "contract_version", "alg", "cek_derivation", "key_ref", "issuer_key_id", "entry_path", "plaintext_digest", "iv", "tag", "ciphertext"]
+    private static let grantKeys: Set<String> = ["profile", "contract_version", "grant_id", "issuer", "signing_key_id", "entitlement_id", "account_id", "device_id", "device_public_key", "device_signing_public_key", "asset", "issued_at", "refresh_after", "offline_grace_until", "expires_at", "status", "status_version", "wrap", "signature"]
     private static let grantAssetKeys: Set<String> = ["asset_id", "asset_uid", "version", "digest", "entry_path", "ciphertext_digest", "key_ref", "issuer_key_id"]
     private static let grantWrapKeys: Set<String> = ["alg", "ephemeral_public_key", "salt", "wrapped_cek"]
 
@@ -234,6 +229,7 @@ public final class KDNAExternalGrantAuthorization: Equatable {
         do { envelope = try JSONDecoder().decode(KDNAExternalEnvelope.self, from: json) }
         catch { throw failure("KDNA_ENVELOPE_FORMAT_INVALID", "external envelope is invalid") }
         guard envelope.profile == KDNA_EXTERNAL_ENVELOPE_PROFILE,
+              envelope.contract_version == KDNA_EXTERNAL_GRANT_CONTRACT_VERSION,
               envelope.alg == "A256GCM", envelope.cek_derivation == "HKDF-SHA256" else {
             throw failure("KDNA_ENVELOPE_FORMAT_INVALID", "external envelope profile is unsupported")
         }
@@ -242,6 +238,7 @@ public final class KDNAExternalGrantAuthorization: Equatable {
 
     private static func validateGrantShape(_ grant: KDNAExternalKeyGrant) throws {
         guard grant.profile == KDNA_EXTERNAL_GRANT_PROFILE,
+              grant.contract_version == KDNA_EXTERNAL_GRANT_CONTRACT_VERSION,
               grant.wrap.alg == "X25519-HKDF-SHA256+A256KW",
               grant.status_version >= 1 else {
             throw failure("KDNA_GRANT_FORMAT_INVALID", "external key grant profile is unsupported")
@@ -324,8 +321,9 @@ public final class KDNAExternalGrantAuthorization: Equatable {
         let entitlement = manifest["entitlement"] as? [String: Any]
         let fields = [
             KDNA_EXTERNAL_ENVELOPE_PROFILE,
+            KDNA_EXTERNAL_GRANT_CONTRACT_VERSION,
             manifest["asset_uid"] as? String ?? "",
-            manifest["asset_id"] as? String ?? manifest["name"] as? String ?? "",
+            manifest["asset_id"] as? String ?? "",
             manifest["version"] as? String ?? "",
             entryName,
             envelope.plaintext_digest,
@@ -334,7 +332,7 @@ public final class KDNAExternalGrantAuthorization: Equatable {
             manifest["access"] as? String ?? "",
             entitlement?["profile"] as? String ?? "",
         ]
-        guard !fields.contains(where: { $0.isEmpty }), fields[8] == "licensed", ["account", "org"].contains(fields[9]) else {
+        guard !fields.contains(where: { $0.isEmpty }), fields[9] == "licensed", ["account", "org"].contains(fields[10]) else {
             throw failure("KDNA_ENVELOPE_BINDING_INVALID", "manifest is missing an external envelope binding")
         }
         return Data(fields.joined(separator: "\n").utf8)

@@ -39,11 +39,17 @@ public struct KDNALoadPlanIssue: Codable, Equatable, Sendable {
 
 public struct KDNALoadPlanSource: Codable, Equatable, Sendable {
     public let kind: String?
-    public let path: String
+    public let path: String?
+}
+
+public struct KDNALoadPlanInputFingerprint: Codable, Equatable, Sendable {
+    public let source_fingerprint: String?
+    public let has_password_input: Bool
+    public let entitlement_input: String?
 }
 
 public struct KDNALoadPlan: Codable, Equatable, Sendable {
-    public let kdna_version: String?
+    public let format_version: String?
     public let asset: KDNALoadPlanAsset
     public var access: String?
     public let access_alias: String?
@@ -52,6 +58,7 @@ public struct KDNALoadPlan: Codable, Equatable, Sendable {
     public var required_action: String
     public var can_load_now: Bool
     public var projection_policy: String
+    public let input_fingerprint: KDNALoadPlanInputFingerprint?
     public var checks: KDNALoadPlanChecks
     public var issues: [KDNALoadPlanIssue]
     public let source: KDNALoadPlanSource
@@ -481,7 +488,7 @@ public enum KDNALoadPlanCore {
         let entitlementProfile = inferEntitlementProfile(manifest: manifest)
 
         var plan = KDNALoadPlan(
-            kdna_version: manifest["kdna_version"] as? String,
+            format_version: manifest["format_version"] as? String,
             asset: KDNALoadPlanAsset(
                 asset_id: manifest["asset_id"] as? String,
                 asset_uid: manifest["asset_uid"] as? String,
@@ -490,26 +497,32 @@ public enum KDNALoadPlanCore {
                 judgment_version: manifest["judgment_version"] as? String
             ),
             access: accessInfo.access,
-            access_alias: accessInfo.alias,
+            access_alias: nil,
             entitlement_profile: entitlementProfile,
             state: "invalid",
             required_action: "block",
             can_load_now: false,
             projection_policy: "none",
+            input_fingerprint: inputFingerprint(layout: layout, environment: environment),
             checks: checks.result,
-            issues: accessInfo.alias == nil ? [] : [
-                KDNALoadPlanIssue(
-                    code: "KDNA_AUTH_ACCESS_ALIAS",
-                    severity: "info",
-                    message: "Access value \"\(accessInfo.alias!)\" is treated as \"\(accessInfo.access ?? "")\"."
-                )
-            ],
+            issues: [],
             source: KDNALoadPlanSource(kind: layout.sourceKind, path: assetURL.path)
         )
 
         if !checks.result.overall_valid {
+            if let declaredAccess = manifest["access"] as? String,
+               !["public", "licensed", "remote"].contains(declaredAccess) {
+                plan.access = nil
+            }
             plan.issues.append(contentsOf: checks.problems.map {
-                KDNALoadPlanIssue(code: validationProblemCode($0), severity: "blocking", message: $0)
+                let message = $0 == "schema: $.access: value is not in enum"
+                    ? "manifest: /access must be equal to one of the allowed values"
+                    : $0
+                return KDNALoadPlanIssue(
+                    code: validationProblemCode(message),
+                    severity: "blocking",
+                    message: message
+                )
             })
             return plan
         }
@@ -566,7 +579,8 @@ public enum KDNALoadPlanCore {
         let payload = loaded.payload
 
         let profile = payload["profile"] as? String
-        guard profile == "judgment-profile-v1" else {
+        guard profile == "kdna.payload.judgment",
+              payload["profile_version"] as? String == "0.1.0" else {
             throw KDNALoadError.unsupportedPayloadProfile(profile)
         }
 
@@ -690,13 +704,7 @@ public enum KDNALoadPlanCore {
             } else if let password = credential.password {
               do {
                 let envelope = try KDNACBOR.decode(KDNAProtectedEnvelope.self, from: layout.payload)
-                let manifest = KDNAManifest(
-                    name: layout.manifest["name"] as? String
-                        ?? layout.manifest["asset_id"] as? String
-                        ?? "",
-                    version: layout.manifest["version"] as? String ?? "0.0.0",
-                    access: layout.manifest["access"] as? String
-                )
+                let manifest = try JSONDecoder().decode(KDNAManifest.self, from: layout.rawManifest)
                 payloadData = try decryptProtectedEntry(
                     envelope: envelope,
                     entryName: "payload.kdnab",
@@ -719,13 +727,14 @@ public enum KDNALoadPlanCore {
         } catch {
             throw KDNALoadError.invalidPayload("payload.kdnab is not a valid CBOR map")
         }
-        guard (payload["profile"] as? String) == "judgment-profile-v1" else {
+        guard (payload["profile"] as? String) == "kdna.payload.judgment",
+              payload["profile_version"] as? String == "0.1.0" else {
             throw KDNALoadError.unsupportedPayloadProfile(payload["profile"] as? String)
         }
         let payloadIssues = KDNACanonicalSchemas.validatePayload(payload)
         guard payloadIssues.isEmpty else {
             throw KDNALoadError.invalidPayload(
-                "payload.kdnab does not match judgment-profile-v1: \(payloadIssues.joined(separator: "; "))"
+                "payload.kdnab does not match kdna.payload.judgment/0.1.0: \(payloadIssues.joined(separator: "; "))"
             )
         }
         return (plan, layout, payload)
@@ -846,6 +855,7 @@ public enum KDNALoadPlanCore {
 
     struct SourceLayout {
         let sourceKind: String
+        let entries: [(String, Data)]
         let manifest: [String: Any]
         let payload: Data
         let checksums: [String: Any]?
@@ -874,14 +884,41 @@ public enum KDNALoadPlanCore {
         } else {
             checksums = nil
         }
+        let entries = reader.listEntries(asset: asset).compactMap { name -> (String, Data)? in
+            guard let data = try? reader.readEntry(asset: asset, name: name) else { return nil }
+            return (name, data)
+        }
 
         return SourceLayout(
             sourceKind: sourceKind,
+            entries: entries,
             manifest: manifest,
             payload: payloadData,
             checksums: checksums,
             rawManifest: manifestData,
             rawMimeType: mimeData
+        )
+    }
+
+    private static func inputFingerprint(
+        layout: SourceLayout,
+        environment: KDNALoadEnvironment
+    ) -> KDNALoadPlanInputFingerprint {
+        var hasher = SHA256()
+        for (name, bytes) in layout.entries.sorted(by: { $0.0 < $1.0 }) {
+            hasher.update(data: Data(name.utf8))
+            hasher.update(data: Data([0]))
+            hasher.update(data: Data(String(bytes.count).utf8))
+            hasher.update(data: Data([0]))
+            hasher.update(data: bytes)
+            hasher.update(data: Data([0]))
+        }
+        let digest = hasher.finalize().map { String(format: "%02x", $0) }.joined()
+        let allowed = Set(["active", "expired", "revoked", "offline_grace"])
+        return KDNALoadPlanInputFingerprint(
+            source_fingerprint: "sha256:\(digest)",
+            has_password_input: environment.hasPassword,
+            entitlement_input: environment.entitlementStatus.flatMap { allowed.contains($0) ? $0 : nil }
         )
     }
 
@@ -892,7 +929,7 @@ public enum KDNALoadPlanCore {
         sourceKind: String? = nil
     ) -> KDNALoadPlan {
         KDNALoadPlan(
-            kdna_version: nil,
+            format_version: nil,
             asset: KDNALoadPlanAsset(asset_id: nil, asset_uid: nil, title: nil, version: nil, judgment_version: nil),
             access: nil,
             access_alias: nil,
@@ -901,6 +938,7 @@ public enum KDNALoadPlanCore {
             required_action: "block",
             can_load_now: false,
             projection_policy: "none",
+            input_fingerprint: nil,
             checks: KDNALoadPlanChecks(
                 format_valid: false,
                 schema_valid: false,
@@ -955,6 +993,15 @@ public enum KDNALoadPlanCore {
         }
 
         if let checksums = layout.checksums {
+            let checksumSchemaIssues = KDNACanonicalSchemas.validateChecksums(checksums)
+            if !checksumSchemaIssues.isEmpty {
+                result.checksums_valid = false
+                problems += checksumSchemaIssues.map { "checksums schema: \($0)" }
+            }
+            if checksums.keys.contains("asset_digest") {
+                result.checksums_valid = false
+                problems.append("checksums: retired asset_digest declaration is not allowed")
+            }
             if (checksums["algorithm"] as? String ?? "sha256") != "sha256" {
                 result.checksums_valid = false
                 problems.append("checksums: unsupported digest algorithm \(checksums["algorithm"] ?? "") (supported: sha256)")
@@ -963,7 +1010,10 @@ public enum KDNALoadPlanCore {
                 try KDNAChecksumDigests.validateMetadata(in: checksums)
             } catch KDNAChecksumDigests.ResolutionError.invalidDigestProfile {
                 result.checksums_valid = false
-                problems.append("checksums: digest_profile must be kdna-runtime-entry-set-v1")
+                problems.append("checksums: digest_profile must be kdna.digest-basis.runtime-entry-set")
+            } catch KDNAChecksumDigests.ResolutionError.invalidDigestProfileVersion {
+                result.checksums_valid = false
+                problems.append("checksums: digest_profile_version must be 0.1.0")
             } catch KDNAChecksumDigests.ResolutionError.invalidCoveredEntries {
                 result.checksums_valid = false
                 problems.append("checksums: covered_entries must be [kdna.json, payload.kdnab]")
@@ -976,10 +1026,7 @@ public enum KDNALoadPlanCore {
             } catch KDNAChecksumDigests.ResolutionError.invalidEntrySetDigestDeclaration {
                 result.checksums_valid = false
                 problems.append("checksums: entry-set digest declarations must be strings")
-            } catch {
-                result.checksums_valid = false
-                problems.append("checksums: entry_set_digest and deprecated asset_digest alias disagree")
-            }
+            } catch { result.checksums_valid = false }
             verifyDigest(
                 key: "manifest_digest",
                 entryName: "kdna.json",
@@ -1058,8 +1105,7 @@ public enum KDNALoadPlanCore {
         ).replacingOccurrences(of: "sha256:", with: "")
         if actual != expected {
             result.checksums_valid = false
-            let field = checksums["entry_set_digest"] == nil ? "asset_digest" : "entry_set_digest"
-            problems.append("checksums: \(field) mismatch (declared \(String(expected.prefix(8)))..., actual \(String(actual.prefix(8)))...)")
+            problems.append("checksums: entry_set_digest mismatch (declared \(String(expected.prefix(8)))..., actual \(String(actual.prefix(8)))...)")
         }
     }
 
@@ -1068,11 +1114,7 @@ public enum KDNALoadPlanCore {
     }
 
     private static func normalizeAccess(_ access: String?) -> (access: String?, alias: String?) {
-        let value = access ?? "public"
-        if value == "open" { return ("public", value) }
-        if value == "protected" { return ("licensed", value) }
-        if value == "runtime" { return ("remote", value) }
-        return (value, nil)
+        (access ?? "public", nil)
     }
 
     private static func inferEntitlementProfile(manifest: [String: Any]) -> String? {
@@ -1081,10 +1123,7 @@ public enum KDNALoadPlanCore {
             return profile
         }
         if let encryption = manifest["encryption"] as? [String: Any],
-           (encryption["profile"] as? String)?.hasPrefix("kdna-password-protected-v1") == true {
-            return "password"
-        }
-        if manifest["access"] as? String == "protected" {
+           encryption["profile"] as? String == PASSWORD_PROTECTED_PROFILE {
             return "password"
         }
         return nil
@@ -1141,6 +1180,18 @@ public enum KDNALoadPlanCore {
 
         if plan.entitlement_profile == "account" {
             if let authorization = environment.externalAuthorization {
+                guard authorization.grant.asset.asset_id == plan.asset.asset_id,
+                      authorization.grant.asset.asset_uid == plan.asset.asset_uid,
+                      authorization.grant.asset.version == plan.asset.version else {
+                    plan.state = "invalid"
+                    plan.required_action = "block"
+                    plan.issues.append(KDNALoadPlanIssue(
+                        code: "KDNA_GRANT_ASSET_MISMATCH",
+                        severity: "blocking",
+                        message: "The verified grant is bound to a different asset release."
+                    ))
+                    return plan
+                }
                 plan.state = authorization.entitlementStatus == "offline_grace" ? "offline_grace" : "ready"
                 plan.required_action = authorization.entitlementStatus == "offline_grace" ? "sync" : "load"
                 plan.can_load_now = true
@@ -1159,6 +1210,18 @@ public enum KDNALoadPlanCore {
 
         if plan.entitlement_profile == "org" {
             if let authorization = environment.externalAuthorization {
+                guard authorization.grant.asset.asset_id == plan.asset.asset_id,
+                      authorization.grant.asset.asset_uid == plan.asset.asset_uid,
+                      authorization.grant.asset.version == plan.asset.version else {
+                    plan.state = "invalid"
+                    plan.required_action = "block"
+                    plan.issues.append(KDNALoadPlanIssue(
+                        code: "KDNA_GRANT_ASSET_MISMATCH",
+                        severity: "blocking",
+                        message: "The verified grant is bound to a different asset release."
+                    ))
+                    return plan
+                }
                 plan.state = authorization.entitlementStatus == "offline_grace" ? "offline_grace" : "ready"
                 plan.required_action = authorization.entitlementStatus == "offline_grace" ? "sync" : "load"
                 plan.can_load_now = true

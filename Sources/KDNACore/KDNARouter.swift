@@ -143,7 +143,7 @@ public class KDNARouter {
 
         for dir in installedDomains {
             guard let manifest = loadManifest(from: dir) else { continue }
-            let domainName = manifest.name
+            let domainName = manifest.asset_id
 
             // Yank check
             // (kdna.json yanked field not in current manifest struct — extend if needed)
@@ -314,7 +314,7 @@ public class KDNARouter {
 
     /// Expose available installed domain names for simpler use cases.
     public func availableDomains(from dirs: [URL]) -> [String] {
-        dirs.compactMap { loadManifest(from: $0)?.name }
+        dirs.compactMap { loadManifest(from: $0)?.asset_id }
     }
 
     /// Quick keyword match — lightweight version without full route analysis.
@@ -339,7 +339,7 @@ public class KDNARouter {
                 if disqualified != nil { break }
             }
             if let dq = disqualified {
-                dropped.append(KDNAMatchDrop(domain: manifest.name, reason: dq))
+                dropped.append(KDNAMatchDrop(domain: manifest.asset_id, reason: dq))
                 continue
             }
 
@@ -355,7 +355,7 @@ public class KDNARouter {
             score += overlapScore(taskTokens, descText)
 
             if score > 0 {
-                hints.append(KDNAMatchHint(domain: manifest.name, score: score, description: manifest.description ?? ""))
+                hints.append(KDNAMatchHint(domain: manifest.asset_id, score: score, description: manifest.description ?? ""))
             }
         }
 

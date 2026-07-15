@@ -28,7 +28,7 @@ public class KDNATrustVerifier {
         }
 
         // ── Ed25519 signature verification ─────────────────
-        let requiresSig = manifest.access == "licensed" || manifest.access == "runtime"
+        let requiresSig = manifest.access == "licensed"
         if requiresSig || manifestObj["signature"] != nil {
             signatureValid = verifyEd25519Signature(domainDir: domainDir, manifestObj: manifestObj)
             if signatureValid == false {
@@ -39,8 +39,8 @@ public class KDNATrustVerifier {
         }
 
         // ── License check ──────────────────────────────────
-        if manifest.access == "licensed" || manifest.access == "runtime" {
-            let safeName = manifest.name.replacingOccurrences(of: "@", with: "").replacingOccurrences(of: "/", with: "-")
+        if manifest.access == "licensed" {
+            let safeName = manifest.asset_id.replacingOccurrences(of: "@", with: "").replacingOccurrences(of: "/", with: "-")
             let licensePath = KDNAPlatformPaths.licensesDirectory.appendingPathComponent("\(safeName).json")
             if FileManager.default.fileExists(atPath: licensePath.path) {
                 do {
@@ -50,20 +50,20 @@ public class KDNATrustVerifier {
                     // Expiry check
                     if activation.isExpired() {
                         licenseValid = false
-                        failures.append("license expired for \(manifest.name)")
+                        failures.append("license expired for \(manifest.asset_id)")
                     }
 
                     // Machine binding check
                     let currentFingerprint = try? machineFingerprint()
                     if !activation.isBound(to: currentFingerprint) {
                         licenseValid = false
-                        failures.append("license machine binding mismatch for \(manifest.name)")
+                        failures.append("license machine binding mismatch for \(manifest.asset_id)")
                     }
 
                     // Revocation check
-                    if isRevoked(licenseID: activation.license_id, domain: manifest.name) {
+                    if isRevoked(licenseID: activation.license_id, domain: manifest.asset_id) {
                         licenseValid = false
-                        failures.append("license revoked for \(manifest.name)")
+                        failures.append("license revoked for \(manifest.asset_id)")
                     }
 
                     if licenseValid == nil {
@@ -71,7 +71,7 @@ public class KDNATrustVerifier {
                     }
                 } catch {
                     licenseValid = false
-                    failures.append("invalid license file for \(manifest.name): \(error.localizedDescription)")
+                    failures.append("invalid license file for \(manifest.asset_id): \(error.localizedDescription)")
                 }
             } else {
                 licenseValid = false

@@ -455,83 +455,133 @@ public struct KDNAJudgment {
 
 // MARK: - Manifest Types
 
-/// Parsed kdna.json manifest for a KDNA domain asset.
-/// Aligns with SPEC.md v0.7 Section 3.4
-public struct KDNAManifest: Codable {
-    public let format: String?
-    public let format_version: String?
-    public let spec_version: String?
-    public let kdna_spec: String?
-    public let name: String
+/// Typed representation of the sole current `kdna.json` contract.
+///
+/// Required fields intentionally have no legacy aliases. A document that does
+/// not decode as this type is not eligible for typed crypto or Runtime loading.
+public struct KDNAManifest: Codable, Equatable, Sendable {
+    public let format_version: String
+    public let asset_id: String
+    public let asset_uid: String
+    public let asset_type: String
+    public let title: String
     public let version: String
-    public let status: String?
+    public let judgment_version: String
+    public let created_at: String
+    public let updated_at: String
+    public let compatibility: KDNACompatibility
+    public let payload: KDNAPayloadDescriptor
     public let access: String?
-    public let language: [String]?
-    public let author: KDNAManifestAuthor?
-    public let license: KDNAManifestLicense?
+    public let entitlement: KDNAEntitlement?
     public let encryption: KDNAEncryption?
+    public let creator: KDNAManifestCreator?
+    public let status: String?
     public let description: String?
     public let keywords: [String]?
     public let core_insight: String?
-    public let eval_score: Double?
-    public let test_count: Int?
-    public let quality_badge: String?
 
     public init(
-        format: String? = nil,
-        format_version: String? = nil,
-        spec_version: String? = nil,
-        kdna_spec: String? = nil,
-        name: String,
+        format_version: String = "0.1.0",
+        asset_id: String,
+        asset_uid: String,
+        asset_type: String,
+        title: String,
         version: String,
-        status: String? = nil,
+        judgment_version: String,
+        created_at: String,
+        updated_at: String,
+        compatibility: KDNACompatibility,
+        payload: KDNAPayloadDescriptor,
         access: String? = nil,
-        language: [String]? = nil,
-        author: KDNAManifestAuthor? = nil,
-        license: KDNAManifestLicense? = nil,
+        entitlement: KDNAEntitlement? = nil,
         encryption: KDNAEncryption? = nil,
+        creator: KDNAManifestCreator? = nil,
+        status: String? = nil,
         description: String? = nil,
         keywords: [String]? = nil,
-        core_insight: String? = nil,
-        eval_score: Double? = nil,
-        test_count: Int? = nil,
-        quality_badge: String? = nil
+        core_insight: String? = nil
     ) {
-        self.format = format
         self.format_version = format_version
-        self.spec_version = spec_version
-        self.kdna_spec = kdna_spec
-        self.name = name
+        self.asset_id = asset_id
+        self.asset_uid = asset_uid
+        self.asset_type = asset_type
+        self.title = title
         self.version = version
-        self.status = status
+        self.judgment_version = judgment_version
+        self.created_at = created_at
+        self.updated_at = updated_at
+        self.compatibility = compatibility
+        self.payload = payload
         self.access = access
-        self.language = language
-        self.author = author
-        self.license = license
+        self.entitlement = entitlement
         self.encryption = encryption
+        self.creator = creator
+        self.status = status
         self.description = description
         self.keywords = keywords
         self.core_insight = core_insight
-        self.eval_score = eval_score
-        self.test_count = test_count
-        self.quality_badge = quality_badge
     }
 }
 
-public struct KDNAManifestAuthor: Codable {
-    public let name: String
-    public let id: String
-}
-
-public struct KDNAManifestLicense: Codable {
-    public let type: String
-    public let url: String?
-}
-
-/// Encryption metadata for licensed assets (RFC-0008).
-public struct KDNAEncryption: Codable {
+public struct KDNACompatibility: Codable, Equatable, Sendable {
+    public let min_loader_version: String
     public let profile: String
-    public let encrypted_entries: [String]?
+    public let profile_version: String
+
+    public init(min_loader_version: String, profile: String, profile_version: String) {
+        self.min_loader_version = min_loader_version
+        self.profile = profile
+        self.profile_version = profile_version
+    }
+}
+
+public struct KDNAPayloadDescriptor: Codable, Equatable, Sendable {
+    public let path: String
+    public let encoding: String
+    public let encrypted: Bool
+
+    public init(path: String = "payload.kdnab", encoding: String = "cbor", encrypted: Bool) {
+        self.path = path
+        self.encoding = encoding
+        self.encrypted = encrypted
+    }
+}
+
+public struct KDNAEntitlement: Codable, Equatable, Sendable {
+    public let profile: String
+    public let offline: Bool?
+    public let revocable: Bool?
+
+    public init(profile: String, offline: Bool? = nil, revocable: Bool? = nil) {
+        self.profile = profile
+        self.offline = offline
+        self.revocable = revocable
+    }
+}
+
+public struct KDNAManifestCreator: Codable, Equatable, Sendable {
+    public let name: String
+    public let id: String?
+    public let creator_type: String?
+
+    public init(name: String, id: String? = nil, creator_type: String? = nil) {
+        self.name = name
+        self.id = id
+        self.creator_type = creator_type
+    }
+}
+
+/// Encryption metadata for protected Runtime entries.
+public struct KDNAEncryption: Codable, Equatable, Sendable {
+    public let profile: String
+    public let profile_version: String
+    public let encrypted_entries: [String]
+
+    public init(profile: String, profile_version: String, encrypted_entries: [String]) {
+        self.profile = profile
+        self.profile_version = profile_version
+        self.encrypted_entries = encrypted_entries
+    }
 }
 
 // MARK: - Product Contract v1.0 Types

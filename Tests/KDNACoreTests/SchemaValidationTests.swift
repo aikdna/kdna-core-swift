@@ -6,7 +6,7 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "a1ad1ea265f0de9d1f21006e7753e7717c55a788"
+            "4ede2aa539b94edd45aac973a0b4937c734c544a"
         )
         for name in KDNACanonicalSchemas.expectedDigests.keys.sorted() {
             _ = try KDNACanonicalSchemas.resourceData(named: name)
@@ -30,7 +30,7 @@ final class SchemaValidationTests: XCTestCase {
 
     func testAJVGeneratedFormatBoundariesMatchSwift() throws {
         let url = try XCTUnwrap(Bundle.module.url(
-            forResource: "schema-format-ajv-v1",
+            forResource: "schema-format-ajv",
             withExtension: "json"
         ))
         let fixture = try XCTUnwrap(
@@ -55,7 +55,7 @@ final class SchemaValidationTests: XCTestCase {
         XCTAssertTrue(KDNACanonicalSchemas.validateManifest(manifest).isEmpty)
 
         let required = [
-            "kdna_version", "asset_id", "asset_uid", "asset_type", "title",
+            "format_version", "asset_id", "asset_uid", "asset_type", "title",
             "version", "judgment_version", "created_at", "updated_at",
             "compatibility", "payload",
         ]
@@ -119,7 +119,7 @@ final class SchemaValidationTests: XCTestCase {
         let payload = validPayload()
         XCTAssertTrue(KDNACanonicalSchemas.validatePayload(payload).isEmpty)
 
-        for key in ["profile", "core"] {
+        for key in ["profile", "profile_version", "core"] {
             var candidate = payload
             candidate.removeValue(forKey: key)
             XCTAssertFalse(KDNACanonicalSchemas.validatePayload(candidate).isEmpty)
@@ -150,7 +150,7 @@ final class SchemaValidationTests: XCTestCase {
     func testPayloadSelfCheckUsesOnlyCanonicalSingularField() throws {
         let schema = try XCTUnwrap(
             JSONSerialization.jsonObject(
-                with: KDNACanonicalSchemas.resourceData(named: "payload-profile-v1.schema.json")
+                with: KDNACanonicalSchemas.resourceData(named: "payload-profile.schema.json")
             ) as? [String: Any]
         )
         let properties = try XCTUnwrap(schema["properties"] as? [String: Any])
@@ -358,7 +358,7 @@ final class SchemaValidationTests: XCTestCase {
 
     private func validManifest() -> [String: Any] {
         [
-            "kdna_version": "1.0",
+            "format_version": "0.1.0",
             "asset_id": "kdna:test:schema",
             "asset_uid": "urn:uuid:00190000-0000-4000-8000-000000000001",
             "asset_type": "fixture",
@@ -367,7 +367,11 @@ final class SchemaValidationTests: XCTestCase {
             "judgment_version": "1.0.0",
             "created_at": "2026-07-15T00:00:00Z",
             "updated_at": "2026-07-15T00:00:00Z",
-            "compatibility": ["min_loader_version": "0.16.0", "profile": "judgment-profile-v1"],
+            "compatibility": [
+                "min_loader_version": "0.18.1",
+                "profile": "kdna.payload.judgment",
+                "profile_version": "0.1.0",
+            ],
             "payload": ["path": "payload.kdnab", "encoding": "cbor", "encrypted": false],
             "load_contract": validLoadContract(),
         ]
@@ -387,7 +391,8 @@ final class SchemaValidationTests: XCTestCase {
 
     private func validPayload() -> [String: Any] {
         [
-            "profile": "judgment-profile-v1",
+            "profile": "kdna.payload.judgment",
+            "profile_version": "0.1.0",
             "core": [
                 "highest_question": "Does formal schema validation hold?",
                 "worldview": ["Validation is evidence."],
@@ -400,16 +405,8 @@ final class SchemaValidationTests: XCTestCase {
     private func mutatedGolden(
         _ mutate: (inout [String: Any], inout [String: Any]) -> Void
     ) throws -> Data {
-        let url = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .appendingPathComponent("Fixtures/capsule-v2-minimal.kdna.b64")
-        let encoded = try String(contentsOf: url, encoding: .utf8)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let original = try XCTUnwrap(Data(base64Encoded: encoded))
-        let reader = KDNAAssetReader()
-        let asset = try reader.open(data: original)
-        var manifest = try XCTUnwrap(reader.readManifest(asset: asset))
-        var payload = try KDNACBOR.decodeObject(reader.readEntry(asset: asset, name: "payload.kdnab"))
+        var manifest = validManifest()
+        var payload = validPayload()
         mutate(&manifest, &payload)
         let manifestData = try JSONSerialization.data(
             withJSONObject: manifest,
@@ -422,7 +419,8 @@ final class SchemaValidationTests: XCTestCase {
         )
         let checksums = try JSONSerialization.data(withJSONObject: [
             "algorithm": "sha256",
-            "digest_profile": "kdna-runtime-entry-set-v1",
+            "digest_profile": "kdna.digest-basis.runtime-entry-set",
+            "digest_profile_version": "0.1.0",
             "covered_entries": ["kdna.json", "payload.kdnab"],
             "manifest_digest": "sha256:\(sha256Hex(manifestData))",
             "payload_digest": "sha256:\(sha256Hex(payloadData))",

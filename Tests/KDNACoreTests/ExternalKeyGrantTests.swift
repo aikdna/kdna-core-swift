@@ -11,7 +11,6 @@ final class ExternalKeyGrantTests: XCTestCase {
             var value = n
             return Data(bytes: &value, count: 2)
         }
-
         func u32(_ n: UInt32) -> Data {
             var value = n
             return Data(bytes: &value, count: 4)
@@ -73,33 +72,42 @@ final class ExternalKeyGrantTests: XCTestCase {
     }
 
     private func fixture() throws -> [String: Any] {
-        let url = try XCTUnwrap(Bundle.module.url(forResource: "external-grant-v1", withExtension: "json"))
-        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "external-grant", withExtension: "json"))
+        return try XCTUnwrap(
+            JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any]
+        )
     }
 
     private func authorization(
         fixture: [String: Any],
         grantOverride: [String: Any]? = nil,
-        checksumsOverride: [String: Any]? = nil,
+        manifestOverride: [String: Any]? = nil,
+        expectedAssetDigest: String? = nil,
         minimumStatusVersion: Int? = nil,
         minimumVerifiedTime: Date? = nil,
-        now: Date = ISO8601DateFormatter().date(from: "2026-07-13T12:00:00Z")!
+        now: Date = ISO8601DateFormatter().date(from: "2026-07-13T00:00:00Z")!
     ) throws -> KDNAExternalGrantAuthorization {
-        let manifest = try XCTUnwrap(fixture["manifest"] as? [String: Any])
-        let checksums = try XCTUnwrap(checksumsOverride ?? fixture["checksums"] as? [String: Any])
+        let manifest = try XCTUnwrap(manifestOverride ?? fixture["manifest"] as? [String: Any])
         let keys = try XCTUnwrap(fixture["test_keys"] as? [String: String])
         let grant = try XCTUnwrap(grantOverride ?? fixture["grant"] as? [String: Any])
-        let grantData = try JSONSerialization.data(withJSONObject: grant, options: [.sortedKeys, .withoutEscapingSlashes])
-        let envelopeData = try XCTUnwrap(Data(base64URLEncoded: fixture["envelope_cbor"] as? String ?? ""))
+        let signingKeyID = try XCTUnwrap(grant["signing_key_id"] as? String)
+        let grantData = try JSONSerialization.data(
+            withJSONObject: grant,
+            options: [.sortedKeys, .withoutEscapingSlashes]
+        )
+        let envelopeData = try XCTUnwrap(
+            Data(base64URLEncoded: fixture["envelope_cbor"] as? String ?? "")
+        )
         return try KDNAExternalGrantAuthorization.authorize(
             grantData: grantData,
             envelopeData: envelopeData,
             manifest: manifest,
-            checksums: checksums,
-            issuerPublicKeys: ["fixture-grant-signing-v1": keys["issuer_signing_public_key"]!],
+            expectedAssetDigest: expectedAssetDigest
+                ?? (fixture["expected_asset_digest"] as? String ?? ""),
+            issuerPublicKeys: [signingKeyID: keys["issuer_signing_public_key"]!],
             deviceAgreementPrivateKey: keys["device_agreement_private_key"]!,
-            expectedAccountID: "acct_fixture_01",
-            expectedDeviceID: "dev_fixture_01",
+            expectedAccountID: grant["account_id"] as? String ?? "",
+            expectedDeviceID: grant["device_id"] as? String ?? "",
             expectedDevicePublicKey: keys["device_agreement_public_key"]!,
             expectedDeviceSigningPublicKey: keys["device_signing_public_key"]!,
             minimumStatusVersion: minimumStatusVersion,
@@ -108,70 +116,97 @@ final class ExternalKeyGrantTests: XCTestCase {
         )
     }
 
-    func testDecryptsJavaScriptGoldenVector() throws {
+    func testCurrentNodeGoldenVerifiesAndDecrypts() throws {
         let value = try fixture()
         let authorization = try authorization(fixture: value)
         XCTAssertEqual(authorization.entitlementStatus, "active")
+        XCTAssertEqual(authorization.grant.profile, KDNA_EXTERNAL_GRANT_PROFILE)
+        XCTAssertEqual(
+            authorization.grant.contract_version,
+            KDNA_EXTERNAL_GRANT_CONTRACT_VERSION
+        )
+
         let manifest = try XCTUnwrap(value["manifest"] as? [String: Any])
-        let envelope = try XCTUnwrap(Data(base64URLEncoded: value["envelope_cbor"] as? String ?? ""))
-        let expected = try XCTUnwrap(Data(base64URLEncoded: value["plaintext_cbor"] as? String ?? ""))
-        let plaintext = try authorization.decrypt(entryName: "payload.kdnab", envelopeData: envelope, manifest: manifest)
+        let envelope = try XCTUnwrap(
+            Data(base64URLEncoded: value["envelope_cbor"] as? String ?? "")
+        )
+        let expected = try XCTUnwrap(
+            Data(base64URLEncoded: value["plaintext_cbor"] as? String ?? "")
+        )
+        let plaintext = try authorization.decrypt(
+            entryName: "payload.kdnab",
+            envelopeData: envelope,
+            manifest: manifest
+        )
         XCTAssertEqual(plaintext, expected)
-        XCTAssertEqual(try KDNACBOR.decodeObject(plaintext)["profile"] as? String, "judgment-profile-v1")
+        let payload = try KDNACBOR.decodeObject(plaintext)
+        XCTAssertEqual(payload["profile"] as? String, "kdna.payload.judgment")
+        XCTAssertEqual(payload["profile_version"] as? String, "0.1.0")
     }
 
-    func testGrantV1AcceptsCanonicalEntrySetDigestNameWithoutChangingBinding() throws {
+    func testGrantBindsPackedAssetDigestAndAssetRelease() throws {
         let value = try fixture()
-        var checksums = try XCTUnwrap(value["checksums"] as? [String: Any])
-        checksums["entry_set_digest"] = checksums.removeValue(forKey: "asset_digest")
-
-        let authorization = try self.authorization(fixture: value, checksumsOverride: checksums)
-        XCTAssertEqual(authorization.grant.asset.digest, checksums["entry_set_digest"] as? String)
-    }
-
-    func testGrantV1RejectsConflictingEntrySetDigestAliases() throws {
-        let value = try fixture()
-        var checksums = try XCTUnwrap(value["checksums"] as? [String: Any])
-        checksums["entry_set_digest"] = "sha256:" + String(repeating: "0", count: 64)
-
-        XCTAssertThrowsError(try authorization(fixture: value, checksumsOverride: checksums)) { error in
+        XCTAssertThrowsError(try authorization(
+            fixture: value,
+            expectedAssetDigest: "sha256:" + String(repeating: "0", count: 64)
+        )) { error in
             XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_GRANT_DIGEST_MISMATCH")
+        }
+
+        var manifest = try XCTUnwrap(value["manifest"] as? [String: Any])
+        manifest["version"] = "2.0.0"
+        XCTAssertThrowsError(try authorization(
+            fixture: value,
+            manifestOverride: manifest
+        )) { error in
+            XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_GRANT_ASSET_MISMATCH")
         }
     }
 
-    func testTamperAndExpiryFailClosed() throws {
+    func testTamperExpiryAndRollbackFailClosed() throws {
         let value = try fixture()
         var tampered = try XCTUnwrap(value["grant"] as? [String: Any])
         tampered["account_id"] = "acct_attacker"
-        XCTAssertThrowsError(try authorization(fixture: value, grantOverride: tampered)) { error in
+        XCTAssertThrowsError(try authorization(
+            fixture: value,
+            grantOverride: tampered
+        )) { error in
             XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_GRANT_SIGNATURE_INVALID")
         }
+
         let expired = ISO8601DateFormatter().date(from: "2026-07-22T00:00:00Z")!
         XCTAssertThrowsError(try authorization(fixture: value, now: expired)) { error in
             XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_GRANT_EXPIRED")
         }
-    }
-
-    func testStatusRollbackFailsClosed() throws {
-        let value = try fixture()
-        XCTAssertThrowsError(try authorization(fixture: value, minimumStatusVersion: 2)) { error in
+        XCTAssertThrowsError(try authorization(
+            fixture: value,
+            minimumStatusVersion: 2
+        )) { error in
             XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_GRANT_ROLLBACK_DETECTED")
         }
+
         let lastVerified = ISO8601DateFormatter().date(from: "2026-07-14T00:00:00Z")!
         let rolledBack = ISO8601DateFormatter().date(from: "2026-07-13T00:00:00Z")!
-        XCTAssertThrowsError(try authorization(fixture: value, minimumVerifiedTime: lastVerified, now: rolledBack)) { error in
+        XCTAssertThrowsError(try authorization(
+            fixture: value,
+            minimumVerifiedTime: lastVerified,
+            now: rolledBack
+        )) { error in
             XCTAssertEqual((error as? KDNAExternalGrantError)?.code, "KDNA_AUTH_CLOCK_ROLLBACK")
         }
     }
 
-    func testVerifiedAuthorizationDrivesLoadPlanAndCapsule() throws {
+    func testVerifiedAuthorizationOnlyReadiesItsBoundAssetRelease() throws {
         let value = try fixture()
         let authorization = try authorization(fixture: value)
         let manifest = try XCTUnwrap(value["manifest"] as? [String: Any])
-        let envelope = try XCTUnwrap(Data(base64URLEncoded: value["envelope_cbor"] as? String ?? ""))
+        let envelope = try XCTUnwrap(
+            Data(base64URLEncoded: value["envelope_cbor"] as? String ?? "")
+        )
         let assetURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("external-grant-\(UUID().uuidString).kdna")
         defer { try? FileManager.default.removeItem(at: assetURL) }
+
         let manifestData = try JSONSerialization.data(
             withJSONObject: manifest,
             options: [.sortedKeys, .withoutEscapingSlashes]
@@ -187,21 +222,38 @@ final class ExternalKeyGrantTests: XCTestCase {
             assetURL: assetURL,
             environment: KDNALoadEnvironment(externalAuthorization: authorization)
         )
-        XCTAssertTrue(ready.can_load_now)
+        XCTAssertTrue(ready.can_load_now, ready.issues.map(\.message).joined(separator: "; "))
         XCTAssertEqual(ready.state, "ready")
-        let capsule = try KDNARuntime.load(
-            assetURL: assetURL,
-            credential: KDNACredential(externalAuthorization: authorization),
-            profile: "compact"
+
+        var otherManifest = manifest
+        otherManifest["asset_id"] = "kdna:fixture:different"
+        let otherURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("external-grant-other-\(UUID().uuidString).kdna")
+        defer { try? FileManager.default.removeItem(at: otherURL) }
+        try makeZip(entries: [
+            ("mimetype", Data(KDNALoadPlanCore.mimeType.utf8)),
+            ("kdna.json", try JSONSerialization.data(
+                withJSONObject: otherManifest,
+                options: [.sortedKeys, .withoutEscapingSlashes]
+            )),
+            ("payload.kdnab", envelope),
+        ]).write(to: otherURL)
+        let rejected = KDNARuntime.planLoad(
+            assetURL: otherURL,
+            environment: KDNALoadEnvironment(externalAuthorization: authorization)
         )
-        XCTAssertEqual(capsule.type, "kdna.context.capsule")
-        XCTAssertEqual(capsule.domain, "@fixture/external-grant")
+        XCTAssertFalse(rejected.can_load_now)
+        XCTAssertEqual(rejected.state, "invalid")
+        XCTAssertTrue(rejected.issues.contains {
+            $0.code == "KDNA_GRANT_ASSET_MISMATCH"
+        })
     }
 }
 
 private extension Data {
     init?(base64URLEncoded value: String) {
-        var base64 = value.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        var base64 = value.replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
         base64 += String(repeating: "=", count: (4 - base64.count % 4) % 4)
         self.init(base64Encoded: base64)
     }

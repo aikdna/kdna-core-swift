@@ -4,17 +4,18 @@ import CoreFoundation
 
 /// JSON Schema resources used by the Swift loader are byte-for-byte copies of
 /// the canonical schemas at
-/// `aikdna/kdna@a1ad1ea`. Validation fails closed if a bundled resource is
+/// `aikdna/kdna@4ede2aa539b94edd45aac973a0b4937c734c544a`. Validation fails closed if a bundled resource is
 /// missing or its digest changes without updating this lock. The evaluator
 /// intentionally implements the complete set of JSON Schema keywords used by
 /// these three pinned schemas, including local/external refs.
 enum KDNACanonicalSchemas {
-    static let canonicalCommit = "a1ad1ea265f0de9d1f21006e7753e7717c55a788"
+    static let canonicalCommit = "4ede2aa539b94edd45aac973a0b4937c734c544a"
 
     static let expectedDigests = [
-        "manifest.schema.json": "86fd5d90077026b465c853843cd7bd48bb31d8d10148a14eb51cfc34f5962839",
-        "payload-profile-v1.schema.json": "498fc5d4c114c00a33a30331132518fd3d9700afeb53a4e77b1504df4ca11118",
+        "manifest.schema.json": "1000e45cd8a85186a13bb75c6e15b7cd2aa0bf611ee0921b0d528eeba169ab0c",
+        "payload-profile.schema.json": "1f15f00786628b619c6f06c8873ef09541e1d041b1572dd410c12c9bee291c32",
         "load-contract.schema.json": "1b262a02f3c63ec25c72ae6dc79c4a472325414d4b06c6fa3f85f56998178ebb",
+        "checksums.schema.json": "7fd1f5d5a98a2f0a4d311a6ebba7d13d0e00253ab042098ac0aeec9e31c4d4e8",
     ]
 
     static func validateManifest(_ instance: Any) -> [String] {
@@ -22,7 +23,7 @@ enum KDNACanonicalSchemas {
     }
 
     static func validatePayload(_ instance: Any) -> [String] {
-        var issues = validate(instance, against: "payload-profile-v1.schema.json")
+        var issues = validate(instance, against: "payload-profile.schema.json")
 
         // `reasoning.self_check` is the sole canonical source field. Preserve
         // one stable, actionable diagnostic for the removed plural alias
@@ -41,6 +42,10 @@ enum KDNACanonicalSchemas {
 
     static func validateLoadContract(_ instance: Any) -> [String] {
         validate(instance, against: "load-contract.schema.json")
+    }
+
+    static func validateChecksums(_ instance: Any) -> [String] {
+        validate(instance, against: "checksums.schema.json")
     }
 
     static func resourceData(named name: String) throws -> Data {
@@ -221,6 +226,24 @@ private struct KDNAJSONSchemaEvaluator {
             }.count
             if matches != 1 { issues.append("\(path): must match exactly one schema in oneOf") }
         }
+        if let branches = schema["anyOf"] as? [Any], !branches.contains(where: {
+            validate(instance, schema: $0, document: document, path: path).isEmpty
+        }) {
+            issues.append("\(path): must match at least one schema in anyOf")
+        }
+        if let branches = schema["allOf"] as? [Any] {
+            for branch in branches {
+                issues += validate(instance, schema: branch, document: document, path: path)
+            }
+        }
+        if let condition = schema["if"] {
+            let matched = validate(instance, schema: condition, document: document, path: path).isEmpty
+            if matched, let consequence = schema["then"] {
+                issues += validate(instance, schema: consequence, document: document, path: path)
+            } else if !matched, let alternative = schema["else"] {
+                issues += validate(instance, schema: alternative, document: document, path: path)
+            }
+        }
 
         if let declaration = schema["type"], !matchesType(instance, declaration: declaration) {
             issues.append("\(path): type does not match schema")
@@ -252,9 +275,27 @@ private struct KDNAJSONSchemaEvaluator {
             issues.append("\(path): number is below minimum")
         }
 
-        if let array = instance as? [Any], let itemSchema = schema["items"] {
-            for (index, item) in array.enumerated() {
+        if let array = instance as? [Any] {
+            if let minimum = schema["minItems"] as? NSNumber, array.count < minimum.intValue {
+                issues.append("\(path): array has fewer items than minItems")
+            }
+            if let maximum = schema["maxItems"] as? NSNumber, array.count > maximum.intValue {
+                issues.append("\(path): array has more items than maxItems")
+            }
+            let prefixSchemas = schema["prefixItems"] as? [Any] ?? []
+            for (index, itemSchema) in prefixSchemas.enumerated() where index < array.count {
+                issues += validate(
+                    array[index],
+                    schema: itemSchema,
+                    document: document,
+                    path: "\(path)[\(index)]"
+                )
+            }
+            if let itemSchema = schema["items"] {
+                for index in prefixSchemas.count..<array.count {
+                    let item = array[index]
                 issues += validate(item, schema: itemSchema, document: document, path: "\(path)[\(index)]")
+                }
             }
         }
 
