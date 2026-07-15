@@ -64,76 +64,72 @@ print("Content digest:", result.contentDigest ?? "")
 // should start from a packaged .kdna file and the LoadPlan path above.
 ```
 
-### Opt-in Runtime Capsule 2
+### Current Runtime contract
 
-The existing `KDNARuntime.load(...)` API continues to return the frozen
-Runtime Capsule 1 shape. Call `loadV2` explicitly when a consumer needs named
-A/C/E digest evidence and a delivery digest P:
+`KDNARuntime.load(...)` returns the sole current `KDNARuntimeCapsule`. The
+Capsule wire type is `kdna.runtime-capsule` and its contract version is
+`0.1.0`. There is no generation selector or adapter in the public Runtime API.
 
 ```swift
-let capsule2 = try KDNARuntime.loadV2(
+let capsule = try KDNARuntime.load(
     assetURL: fileURL,
     expected: KDNAExpectedDigests(
-        asset: KDNAExpectedDigest(value: receiptAssetDigest, source: "install_receipt")
+        asset: KDNAExpectedDigest(
+            value: receiptAssetDigest,
+            source: "install_receipt"
+        )
     )
 )
-
-let deliveryDigest = try KDNACapsuleV2.computeDeliveryDigest(capsule2)
-let capsule1 = try KDNACapsuleV2.adaptToV1(capsule2)
+let deliveryDigest = try KDNARuntimeCapsuleCore.computeDeliveryDigest(capsule)
 ```
 
-Capsule 2 snapshots the packaged file once, computes A from those exact bytes,
-C from the canonical content tree, and E from the raw `kdna.json` and
-`payload.kdnab` entry set. Mismatched evidence blocks Capsule emission. P is
-SHA-256 over strict RFC 8785 JCS bytes of the delivered Capsule and is not
-embedded in the Capsule itself. `KDNAJCS` rejects non-finite numbers rather
-than converting them to `null`.
+The Runtime snapshots the packaged file once and emits explicit digest
+evidence:
 
-Direct Capsule 1 loading and Capsule 2 adaptation emit the same frozen wire
-shape. Capsule 1 preserves a manifest's legacy `open`, `protected`, or
-`runtime` access spelling, while LoadPlan and Capsule 2 use the canonical
-`public`, `licensed`, or `remote` value for policy decisions. Its trace uses
-the cross-language loader identifier `kdna-core`.
+- A uses `kdna.digest-basis.container-bytes` for the exact packaged bytes.
+- C uses `kdna.digest-basis.content-tree` for the canonical content tree.
+- E uses `kdna.digest-basis.runtime-entry-set` for `kdna.json` and
+  `payload.kdnab`.
+- P uses `kdna.canonicalization.runtime-capsule-jcs` over strict RFC 8785 JCS
+  bytes of the delivered Capsule.
 
-All public Capsule value types conform to `Sendable`. Decoding Capsule 1 or 2
-is fail closed for declared fields: required-but-nullable fields must be
-present, closed objects reject unknown properties, and nested trace, signature,
-digest, compatibility, and extension values are validated before a Capsule
-value is returned. The frozen Capsule 1 schema intentionally remains
-extensible at its top level and in `trace`; legal future properties there are
-ignored by older Swift clients, while its closed `signature` object stays
-strict.
+A mismatch blocks delivery. Required-but-nullable fields must be present,
+closed objects reject unknown properties, and non-finite numbers are rejected
+instead of being rewritten. The public Capsule graph is `Sendable`.
 
-LoadPlan validates `kdna.json`, decrypted `payload.kdnab`, and referenced
-`load_contract` values against byte-for-byte copies of the canonical schemas
-pinned to `aikdna/kdna@a1ad1ea`. Resource
-SHA-256 locks make missing or drifted schema files fail closed. Date-time and
-URI formats follow the same full `ajv-formats` behavior as Node rather than
-Foundation's more permissive parsers, including ECMAScript's exact whitespace
-set and ASCII-only RFC 3986 URI matching. Encrypted payload structure is
-validated after authorized in-memory decryption, before a Runtime Capsule can
-be emitted.
+The same authority defines the execution chain:
+
+```text
+ConsumptionPlan
+→ Agent Host capability negotiation
+→ correlated Host request and receipt
+→ terminal JudgmentTrace
+```
+
+Swift validates the Plan digest, task and asset identity, Capsule contract,
+A/C/E/P evidence, projected-character budget, request/receipt correlation,
+terminal status, and exact budget evidence. Host completion is recorded
+separately from semantic consumption or behavioral influence.
+
+LoadPlan, Runtime Capsule, digest evidence, ConsumptionPlan, Agent Host, and
+JudgmentTrace schemas are byte-for-byte resources pinned to
+`aikdna/kdna@4ede2aa539b94edd45aac973a0b4937c734c544a`. SHA-256 resource locks
+make missing or drifted schemas fail closed. Date-time and URI formats follow
+the canonical Node validation boundaries. Encrypted payloads are schema
+validated after authorized in-memory decryption and before Runtime delivery.
 
 ### Digest vocabulary
 
-- `KDNAAsset.assetDigest` is the SHA-256 digest of the complete `.kdna` file
-  bytes.
-- `VerifyResult.contentDigest` is the canonical content-tree digest. Binary
-  entries such as `payload.kdnab` are hashed as their original bytes.
-- `checksums.json.entry_set_digest` covers `kdna.json` and `payload.kdnab`
-  under `kdna-runtime-entry-set-v1`. Existing KDNA 1.0 assets may use the
-  deprecated `checksums.json.asset_digest` alias; if both are present they must
-  be identical.
-- Runtime Capsule 1.0 and external grant v1 retain their existing
-  `asset_digest`/`asset.digest` wire names for this entry-set binding.
-- Runtime Capsule 2 exposes these values as `digests.asset`,
-  `digests.content`, and `digests.runtime_entry_set`. Its delivery digest uses
-  the separate `kdna-capsule-jcs-v1` basis.
+- `KDNAAsset.assetDigest` is the SHA-256 digest of the complete `.kdna` bytes.
+- `VerifyResult.contentDigest` is the canonical content-tree digest; binary
+  entries are hashed as their original bytes.
+- `checksums.json.entry_set_digest` covers exactly `kdna.json` and
+  `payload.kdnab` under `kdna.digest-basis.runtime-entry-set` version `0.1.0`.
+- External grants bind the exact packaged asset digest and the declared
+  payload entry path as well as asset identity and version.
 
-Use `KDNAContentDigest.computeValidated(asset:reader:)` when computing a
-digest directly so malformed JSON is handled as an error. The older
-non-throwing `compute` overload remains temporarily for source compatibility
-and never returns a value matching the `sha256:` digest shape on invalid input.
+Use `KDNAContentDigest.computeValidated(asset:reader:)` for direct digest
+computation so malformed JSON fails closed.
 
 ## What It Does
 
@@ -153,7 +149,8 @@ and never returns a value matching the `sha256:` digest shape on invalid input.
 | `KDNADomainLoader.swift` | Domain loading, scanning, task classification, context formatting |
 | `KDNADomainValidator.swift` | Structural lint, cross-file validation, ID uniqueness |
 | `KDNAExternalKeyGrant.swift` | RFC-0019 signature/binding verification, X25519 unwrap, and in-memory decryption |
-| `KDNACapsuleV2.swift` | Opt-in A/C/E evidence, strict RFC 8785 JCS/P, Capsule 2 model, and v2-to-v1 adapter |
+| `KDNARuntimeCapsule.swift` | Current Runtime Capsule, A/C/E evidence, and strict RFC 8785 JCS/P |
+| `KDNARuntimeContracts.swift` | ConsumptionPlan, Agent Host negotiation/request/receipt, budget evidence, and JudgmentTrace validation |
 | `KDNAStrictCodable.swift` | Shared fail-closed Capsule decoding helpers |
 | `KDNJudgmentPipeline.swift` | Pre-filtering, system prompt construction, post-validation of agent outputs |
 | `KDNARouter.swift` | **7-State Domain Router** — full routing pipeline (Intent Gate → Negative Match → Domain Fit → Trust Gate → Ambiguity Gate) |
@@ -168,8 +165,8 @@ and never returns a value matching the `sha256:` digest shape on invalid input.
 | Verify local `.kdna` container digests | Beta |
 | LoadPlan authorization planning | Beta |
 | CBOR payload and encrypted-envelope decoding | Beta |
-| Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Beta |
-| Opt-in Runtime Capsule 2 A/C/E/P parity | Beta; shared JavaScript golden vector |
+| Current Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Beta; shared JavaScript golden vector |
+| A/C/E/P and Plan/Host/Trace parity | Beta; shared JavaScript contract fixtures |
 | RFC-0019 account/device external grant verification | Beta; shared JS golden vector |
 | `KDNAJudgmentProjection` rendering | Beta |
 | Developer fixture loading | Developer compatibility |
@@ -207,7 +204,7 @@ so a plain status value cannot manufacture authorization. The CEK stays inside
 the in-memory authorization object and is cleared on deinitialization; account
 assets never fall back to password loading.
 
-`load` returns a `KDNAContextCapsule`, not the raw payload. Its context follows
+`load` returns a `KDNARuntimeCapsule`, not the raw payload. Its context follows
 the selected `index`, `compact`, `scenario`, or `full` load profile. The older
 `loadWithCredential` projection API remains available to native UI code, but
 Agent consumption should use the Capsule path.

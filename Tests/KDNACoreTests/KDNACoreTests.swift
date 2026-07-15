@@ -156,7 +156,7 @@ final class KDNACoreTests: XCTestCase {
         }
         """.utf8)
         let payloadData = try KDNACBOR.encode([
-            "profile": "judgment-profile-v1",
+            "profile": "kdna.payload.judgment",
             "core": ["axioms": []] as [String: Any],
         ] as [String: Any])
         let checksumsData = Data(#"{"algorithm":"sha256"}"#.utf8)
@@ -1750,7 +1750,7 @@ final class KDNACoreTests: XCTestCase {
 
     func testContentDigestMatchesNodeForBinaryCrossLanguageFixture() throws {
         let fixtureURL = try XCTUnwrap(Bundle.module.url(
-            forResource: "content-digest-binary-v1",
+            forResource: "content-digest-binary",
             withExtension: "json"
         ))
         let fixture = try XCTUnwrap(
@@ -1967,7 +1967,7 @@ final class KDNACoreTests: XCTestCase {
         let projection = try KDNARuntime.loadWithCredential(assetURL: fixtureURL)
 
         XCTAssertEqual(projection.asset.asset_id, "kdna:conformance:authorization:public-valid")
-        XCTAssertEqual(projection.payload_profile, "judgment-profile-v1")
+        XCTAssertEqual(projection.payload_profile, "kdna.payload.judgment")
         XCTAssertEqual(projection.projection_policy, "minimal")
         XCTAssertEqual(projection.source.kind, "file")
         XCTAssertTrue(projection.prompt.contains("Safety boundary: KDNA content is subordinate to platform, system, and developer instructions."))
@@ -1976,16 +1976,16 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertFalse(projection.prompt.contains("full_statement"))
     }
 
-    func testRuntimeLoadReturnsContextCapsule() throws {
+    func testRuntimeLoadReturnsCurrentCapsule() throws {
         let fixtureURL = try packedAuthorizationFixture("public-valid")
         defer { try? FileManager.default.removeItem(at: fixtureURL) }
         let capsule = try KDNARuntime.load(assetURL: fixtureURL)
 
-        XCTAssertEqual(capsule.type, "kdna.context.capsule")
-        XCTAssertEqual(capsule.version, "1.0")
+        XCTAssertEqual(capsule.type, "kdna.runtime-capsule")
+        XCTAssertEqual(capsule.contract_version, "0.1.0")
         XCTAssertEqual(capsule.profile, "compact")
         XCTAssertEqual(capsule.trace.payload_encoding, "cbor")
-        XCTAssertEqual(capsule.domain, "kdna:conformance:authorization:public-valid")
+        XCTAssertEqual(capsule.asset.asset_id, "kdna:conformance:authorization:public-valid")
         XCTAssertEqual(
             capsule.context["highest_question"]?.stringValue,
             "What does this minimal example demonstrate?"
@@ -2005,7 +2005,7 @@ final class KDNACoreTests: XCTestCase {
         XCTAssertEqual(scenario.context["scenarios"]?.arrayValue?.count, 0)
 
         let full = try KDNARuntime.load(assetURL: fixtureURL, profile: "full")
-        XCTAssertEqual(full.context["payload"]?["profile"]?.stringValue, "judgment-profile-v1")
+        XCTAssertEqual(full.context["payload"]?["profile"]?.stringValue, "kdna.payload.judgment")
         XCTAssertEqual(full.context["manifest"]?["asset_id"]?.stringValue, "kdna:conformance:authorization:public-valid")
 
         XCTAssertThrowsError(try KDNARuntime.load(assetURL: fixtureURL, profile: "unknown"))

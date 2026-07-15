@@ -201,9 +201,8 @@ final class SchemaValidationTests: XCTestCase {
         let bytes = try mutatedGolden { _, payload in
             payload = fixturePayload
         }
-        let capsule = try KDNALoadPlanCore.loadCapsule(
+        let capsule = try KDNARuntime.load(
             assetData: bytes,
-            sourcePath: "<canonical-node-self-check-fixture>",
             loadedAt: "2026-07-15T00:00:00.000Z"
         )
         let projected = try XCTUnwrap(capsule.context["self_checks"]?.arrayValue)
@@ -240,10 +239,7 @@ final class SchemaValidationTests: XCTestCase {
             XCTAssertFalse(plan.checks.overall_valid)
             XCTAssertFalse(plan.can_load_now)
             XCTAssertTrue(plan.issues.contains { $0.message.contains("$.reasoning.self_checks") })
-            XCTAssertThrowsError(try KDNALoadPlanCore.loadCapsule(
-                assetData: bytes,
-                sourcePath: "<deprecated-self-check-alias>"
-            )) { error in
+            XCTAssertThrowsError(try KDNARuntime.load(assetData: bytes)) { error in
                 guard case KDNALoadError.notAuthorized(let rejectedPlan) = error else {
                     return XCTFail("expected fail-closed LoadPlan rejection, got \(error)")
                 }
@@ -262,7 +258,7 @@ final class SchemaValidationTests: XCTestCase {
         let manifestPlan = KDNALoadPlanCore.planLoad(assetData: invalidManifestBytes)
         XCTAssertFalse(manifestPlan.checks.schema_valid)
         XCTAssertFalse(manifestPlan.can_load_now)
-        XCTAssertThrowsError(try KDNACapsuleV2.load(assetData: invalidManifestBytes))
+        XCTAssertThrowsError(try KDNARuntime.load(assetData: invalidManifestBytes))
 
         let invalidPayloadBytes = try mutatedGolden { _, payload in
             var core = payload["core"] as! [String: Any]
@@ -272,7 +268,7 @@ final class SchemaValidationTests: XCTestCase {
         let payloadPlan = KDNALoadPlanCore.planLoad(assetData: invalidPayloadBytes)
         XCTAssertFalse(payloadPlan.checks.payload_valid)
         XCTAssertFalse(payloadPlan.can_load_now)
-        XCTAssertThrowsError(try KDNACapsuleV2.load(assetData: invalidPayloadBytes))
+        XCTAssertThrowsError(try KDNARuntime.load(assetData: invalidPayloadBytes))
 
         let invalidLoadContractBytes = try mutatedGolden { manifest, _ in
             var contract = manifest["load_contract"] as! [String: Any]
@@ -320,7 +316,7 @@ final class SchemaValidationTests: XCTestCase {
         let validFEFFPlan = KDNALoadPlanCore.planLoad(assetData: validFEFFDateBytes)
         XCTAssertTrue(validFEFFPlan.checks.schema_valid, validFEFFPlan.issues.map(\.message).joined(separator: "\n"))
         XCTAssertTrue(validFEFFPlan.can_load_now)
-        let validFEFFCapsule = try KDNACapsuleV2.load(assetData: validFEFFDateBytes)
+        let validFEFFCapsule = try KDNARuntime.load(assetData: validFEFFDateBytes)
         XCTAssertTrue(validFEFFCapsule.trace.schema_valid)
     }
 
@@ -332,20 +328,21 @@ final class SchemaValidationTests: XCTestCase {
             source: nil
         )
         let evidence = KDNADigestEvidence(
-            profile: "kdna-capsule-digests-v1",
+            profile: "kdna.digest-evidence",
+            profile_version: "0.1.0",
             asset: KDNADigestObservation(
                 value: nil,
-                basis: "kdna-container-bytes-v1",
+                basis: "kdna.digest-basis.container-bytes",
                 comparison: unavailable
             ),
             content: KDNADigestObservation(
                 value: nil,
-                basis: "kdna-content-tree-v1",
+                basis: "kdna.digest-basis.content-tree",
                 comparison: unavailable
             ),
             runtime_entry_set: KDNADigestObservation(
                 value: nil,
-                basis: "kdna-runtime-entry-set-v1",
+                basis: "kdna.digest-basis.runtime-entry-set",
                 comparison: unavailable
             )
         )

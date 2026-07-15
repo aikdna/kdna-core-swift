@@ -2,51 +2,29 @@
 
 ## Unreleased
 
-- Read only canonical `reasoning.self_check` payloads, preserve declared
-  string and structured-question shapes in compact projection, and reject the
-  removed plural alias before LoadPlan or Runtime delivery.
-- Rebind the embedded schema locks, AJV format fixture, and shared conformance
-  checkout to the current canonical KDNA Core commit.
-- Validate runtime manifests, payload profiles, and referenced load contracts
-  against digest-locked copies of the canonical Node schemas; malformed nested
-  values now block LoadPlan and Capsule emission instead of producing a false
-  `schema_valid` trace.
-- Match full AJV date-time and URI format boundaries through a Node-generated
-  shared fixture, including lowercase/whitespace RFC 3339 forms and invalid
-  Foundation URL edge cases. Use the exact ECMAScript whitespace set and an
-  ASCII-only RFC 3986 URI boundary so ICU Unicode digits and case folding
-  cannot create Swift-only valid values.
-- Preserve frozen Capsule 1 extensibility at the top level and in trace while
-  retaining strict decoding for its closed signature object.
-- Support generic digest evidence whose unavailable observations carry a null
-  value, while continuing to reject unavailable or mismatched evidence from a
-  successful Capsule 2.
-- Add opt-in Runtime Capsule 2 loading with explicit A/C/E digest evidence,
-  strict RFC 8785 JCS delivery digest P, successful-Capsule invariants, and a
-  one-way Capsule 2 to frozen Capsule 1 adapter.
-- Match the JavaScript Capsule 2 golden bytes and A/C/E/P values, preserve
-  legacy domain/access/extensions only as adapter metadata, and fail closed on
-  independent digest mismatches.
-- Make direct Capsule 1 output byte-for-byte equivalent to the Capsule 2
-  adapter, including the shared `kdna-core` loader identifier and the original
-  `open`, `protected`, or `runtime` access spelling on the frozen v1 wire.
-- Reject unknown Capsule properties and missing required-but-nullable fields
-  during decoding, including nested signature, trace, digest, evidence,
-  compatibility, and extension objects.
-- Make the public Capsule and LoadPlan value graph `Sendable`, and keep the
-  test suite clean under Swift 6 complete concurrency checking with warnings
-  as errors.
-- Order content-tree entry paths by UTF-8 bytes while retaining RFC 8785 UTF-16
-  object-key ordering, and compute Capsule 1 E even without checksums.json.
-- Hash non-JSON content-digest entries as their original bytes and add a
-  JavaScript/Swift binary-payload conformance vector.
-- Add throwing content-digest computation for fail-closed invalid JSON while
-  retaining a deprecated non-throwing compatibility wrapper.
-- Accept the explicit `entry_set_digest` checksum field and its metadata while
-  retaining the KDNA 1.0 `asset_digest` alias; conflicting declarations are
-  rejected.
-- Preserve Runtime Capsule 1.0 and external grant v1 entry-set bindings while
-  improving JSON string, key-order, and number canonicalization parity.
+- Replace generation-specific Capsule APIs with the sole current
+  `KDNARuntimeCapsule` contract and strict `kdna.runtime-capsule` wire model.
+- Match the canonical JavaScript Runtime fixtures byte-for-byte for A/C/E/P,
+  ConsumptionPlan, Agent Host request/receipt, and all terminal JudgmentTrace
+  states.
+- Validate Plan digest, task/asset identity, Runtime negotiation, A/C/E/P,
+  pre-Host character budget, Host receipt correlation, terminal status, and
+  exact budget evidence fail closed.
+- Pin the embedded Manifest, Payload, LoadPlan, Runtime Capsule, digest
+  evidence, ConsumptionPlan, Agent Host, and JudgmentTrace schemas to the
+  canonical Node authority with independent SHA-256 resource locks.
+- Enforce the current container and CBOR/encryption contracts without JSON
+  fallback or removed checksum declarations.
+- Bind verified external grants to the exact packaged asset bytes and payload
+  entry path in addition to asset identity and version.
+- Preserve canonical `reasoning.self_check` projections and reject removed
+  payload field spellings before LoadPlan or Runtime delivery.
+- Match canonical AJV date-time and URI validation boundaries and strict RFC
+  8785 JSON canonicalization semantics.
+- Hash binary content entries as their original bytes and retain fail-closed
+  digest computation for malformed JSON.
+- Keep the public Runtime and LoadPlan value graph `Sendable` under Swift 6
+  complete concurrency checking.
 
 ## 0.4.0 (2026-07-13)
 

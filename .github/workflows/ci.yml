@@ -11,9 +11,11 @@ jobs:
     env:
       KDNA_CONFORMANCE_COMMIT: 4ede2aa539b94edd45aac973a0b4937c734c544a
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - name: Audit public surface
         run: python3 scripts/check_public_surface.py
+      - name: Audit Runtime cutover and workflow pins
+        run: python3 scripts/check_runtime_cutover.py
       - name: Checkout fixed kdna conformance fixtures
         run: |
           cd ..

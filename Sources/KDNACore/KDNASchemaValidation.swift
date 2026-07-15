@@ -7,7 +7,8 @@ import CoreFoundation
 /// `aikdna/kdna@4ede2aa539b94edd45aac973a0b4937c734c544a`. Validation fails closed if a bundled resource is
 /// missing or its digest changes without updating this lock. The evaluator
 /// intentionally implements the complete set of JSON Schema keywords used by
-/// these three pinned schemas, including local/external refs.
+/// the pinned authoring and Runtime-contract schemas, including local/external
+/// refs.
 enum KDNACanonicalSchemas {
     static let canonicalCommit = "4ede2aa539b94edd45aac973a0b4937c734c544a"
 
@@ -16,6 +17,13 @@ enum KDNACanonicalSchemas {
         "payload-profile.schema.json": "1f15f00786628b619c6f06c8873ef09541e1d041b1572dd410c12c9bee291c32",
         "load-contract.schema.json": "1b262a02f3c63ec25c72ae6dc79c4a472325414d4b06c6fa3f85f56998178ebb",
         "checksums.schema.json": "7fd1f5d5a98a2f0a4d311a6ebba7d13d0e00253ab042098ac0aeec9e31c4d4e8",
+        "runtime-capsule.schema.json": "5ecabe3c02bc09e638c3391d8747c5d48b0f357776ca3b837bc2e03310dcc339",
+        "digest-evidence.schema.json": "294939c0a230639a1ae7b059a28d87310ead350ff03d9d6cf46e112acf3d9f75",
+        "consumption-plan.schema.json": "f73c52884c59e1566d4e6121e42b9e2dfed43ffbee6452b6239a56cf8262785f",
+        "agent-host-capabilities.schema.json": "00ab3aeceffae5061faeecfdb82ac95afde4c60ad73faa796b2d7bd463e2e834",
+        "agent-host-request.schema.json": "e827bc2ca51937c31d9ff089b9ae9b37f154ae69836d778f0027480f0d2ee693",
+        "agent-host-receipt.schema.json": "ecdac9d9b6670ead0cf94b3c307b7d9580e4eacdf0d1ce683d2b100b59a3f115",
+        "judgment-trace.schema.json": "a2ea5744372312688f9774133e629832f3ec89469bb2af09048e5667b85cd330",
     ]
 
     static func validateManifest(_ instance: Any) -> [String] {
@@ -48,6 +56,30 @@ enum KDNACanonicalSchemas {
         validate(instance, against: "checksums.schema.json")
     }
 
+    static func validateRuntimeCapsule(_ instance: Any) -> [String] {
+        validate(instance, against: "runtime-capsule.schema.json")
+    }
+
+    static func validateConsumptionPlan(_ instance: Any) -> [String] {
+        validate(instance, against: "consumption-plan.schema.json")
+    }
+
+    static func validateAgentHostCapabilities(_ instance: Any) -> [String] {
+        validate(instance, against: "agent-host-capabilities.schema.json")
+    }
+
+    static func validateAgentHostRequest(_ instance: Any) -> [String] {
+        validate(instance, against: "agent-host-request.schema.json")
+    }
+
+    static func validateAgentHostReceipt(_ instance: Any) -> [String] {
+        validate(instance, against: "agent-host-receipt.schema.json")
+    }
+
+    static func validateJudgmentTrace(_ instance: Any) -> [String] {
+        validate(instance, against: "judgment-trace.schema.json")
+    }
+
     static func resourceData(named name: String) throws -> Data {
         guard expectedDigests[name] != nil else {
             throw ResourceError("schema resource is not pinned: \(name)")
@@ -73,9 +105,13 @@ enum KDNACanonicalSchemas {
         do {
             var documents: [String: Any] = [:]
             for resourceName in expectedDigests.keys.sorted() {
-                documents[resourceName] = try JSONSerialization.jsonObject(
+                let document = try JSONSerialization.jsonObject(
                     with: resourceData(named: resourceName)
                 )
+                documents[resourceName] = document
+                if let identifier = (document as? [String: Any])?["$id"] as? String {
+                    documents[identifier] = document
+                }
             }
             guard let root = documents[name] else {
                 return ["$: schema resource is missing: \(name)"]
@@ -260,6 +296,9 @@ private struct KDNAJSONSchemaEvaluator {
             if let minimum = schema["minLength"] as? NSNumber, string.count < minimum.intValue {
                 issues.append("\(path): string is shorter than minLength")
             }
+            if let maximum = schema["maxLength"] as? NSNumber, string.count > maximum.intValue {
+                issues.append("\(path): string is longer than maxLength")
+            }
             if let pattern = schema["pattern"] as? String, !matchesPattern(string, pattern: pattern) {
                 issues.append("\(path): string does not match pattern")
             }
@@ -281,6 +320,14 @@ private struct KDNAJSONSchemaEvaluator {
             }
             if let maximum = schema["maxItems"] as? NSNumber, array.count > maximum.intValue {
                 issues.append("\(path): array has more items than maxItems")
+            }
+            if (schema["uniqueItems"] as? Bool) == true {
+                for left in array.indices {
+                    if array.indices.contains(where: { $0 > left && jsonEqual(array[left], array[$0]) }) {
+                        issues.append("\(path): array items are not unique")
+                        break
+                    }
+                }
             }
             let prefixSchemas = schema["prefixItems"] as? [Any] ?? []
             for (index, itemSchema) in prefixSchemas.enumerated() where index < array.count {
