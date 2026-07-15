@@ -6,7 +6,7 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "fed4fc86e3c8447a94e7498a795d0fcd5108595e"
+            "a1ad1ea265f0de9d1f21006e7753e7717c55a788"
         )
         for name in KDNACanonicalSchemas.expectedDigests.keys.sorted() {
             _ = try KDNACanonicalSchemas.resourceData(named: name)
@@ -145,6 +145,114 @@ final class SchemaValidationTests: XCTestCase {
         var badEvolution = payload
         badEvolution["evolution"] = ["version_notes": ["ok", 1] as [Any]]
         XCTAssertFalse(KDNACanonicalSchemas.validatePayload(badEvolution).isEmpty)
+    }
+
+    func testPayloadSelfCheckUsesOnlyCanonicalSingularField() throws {
+        let schema = try XCTUnwrap(
+            JSONSerialization.jsonObject(
+                with: KDNACanonicalSchemas.resourceData(named: "payload-profile-v1.schema.json")
+            ) as? [String: Any]
+        )
+        let properties = try XCTUnwrap(schema["properties"] as? [String: Any])
+        let reasoning = try XCTUnwrap(properties["reasoning"] as? [String: Any])
+        let reasoningProperties = try XCTUnwrap(reasoning["properties"] as? [String: Any])
+        XCTAssertNotNil(reasoningProperties["self_check"])
+        XCTAssertEqual(reasoningProperties["self_checks"] as? Bool, false)
+
+        var stringAndObject = validPayload()
+        stringAndObject["reasoning"] = [
+            "self_check": [
+                "Did I preserve the canonical question?",
+                ["question": "Did I preserve the structured question?"],
+            ] as [Any],
+        ]
+        XCTAssertTrue(KDNACanonicalSchemas.validatePayload(stringAndObject).isEmpty)
+
+        for keepCanonicalField in [false, true] {
+            var deprecatedAlias = validPayload()
+            var deprecatedReasoning = deprecatedAlias["reasoning"] as! [String: Any]
+            if !keepCanonicalField {
+                deprecatedReasoning.removeValue(forKey: "self_check")
+            }
+            deprecatedReasoning["self_checks"] = ["This alias must never be accepted."]
+            deprecatedAlias["reasoning"] = deprecatedReasoning
+
+            let issues = KDNACanonicalSchemas.validatePayload(deprecatedAlias)
+            XCTAssertTrue(issues.contains { $0.contains("$.reasoning.self_checks") })
+        }
+    }
+
+    func testCanonicalNodeSelfCheckFixturePreservesCompactAndRenderedProjection() throws {
+        guard let conformanceRoot = ProcessInfo.processInfo.environment["KDNA_CONFORMANCE_ROOT"],
+              !conformanceRoot.isEmpty else { return }
+        let fixtureURL = URL(fileURLWithPath: conformanceRoot)
+            .appendingPathComponent("packages/kdna-core/test/fixtures/golden-single-asset.json")
+        let fixture = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: Data(contentsOf: fixtureURL)) as? [String: Any]
+        )
+        let fixturePayload = try XCTUnwrap(fixture["payload"] as? [String: Any])
+        let reasoning = try XCTUnwrap(fixturePayload["reasoning"] as? [String: Any])
+        let selfCheck = try XCTUnwrap(reasoning["self_check"] as? [Any])
+        let textQuestion = try XCTUnwrap(selfCheck.first as? String)
+        let structured = try XCTUnwrap(selfCheck.dropFirst().first as? [String: Any])
+        let structuredQuestion = try XCTUnwrap(structured["question"] as? String)
+        XCTAssertTrue(KDNACanonicalSchemas.validatePayload(fixturePayload).isEmpty)
+
+        let bytes = try mutatedGolden { _, payload in
+            payload = fixturePayload
+        }
+        let capsule = try KDNALoadPlanCore.loadCapsule(
+            assetData: bytes,
+            sourcePath: "<canonical-node-self-check-fixture>",
+            loadedAt: "2026-07-15T00:00:00.000Z"
+        )
+        let projected = try XCTUnwrap(capsule.context["self_checks"]?.arrayValue)
+        XCTAssertEqual(capsule.context["self_checks"], KDNAJSONValue(any: selfCheck))
+        XCTAssertEqual(projected.count, 2)
+        XCTAssertEqual(projected[0].stringValue, textQuestion)
+        XCTAssertEqual(projected[1]["question"]?.stringValue, structuredQuestion)
+
+        let assetURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("kdna-self-check-\(UUID().uuidString).kdna")
+        defer { try? FileManager.default.removeItem(at: assetURL) }
+        try bytes.write(to: assetURL)
+        let projection = try KDNARuntime.loadWithCredential(assetURL: assetURL)
+        let section = try XCTUnwrap(projection.sections.first { $0.id == "self_checks" })
+        XCTAssertEqual(section.items, [textQuestion, structuredQuestion])
+        XCTAssertTrue(projection.prompt.contains(textQuestion))
+        XCTAssertTrue(projection.prompt.contains(structuredQuestion))
+    }
+
+    func testLoadPlanAndRuntimeRejectDeprecatedPluralSelfChecks() throws {
+        for keepCanonicalField in [false, true] {
+            let bytes = try mutatedGolden { _, payload in
+                var reasoning = payload["reasoning"] as? [String: Any] ?? [:]
+                if keepCanonicalField {
+                    reasoning["self_check"] = ["Canonical question remains present."]
+                } else {
+                    reasoning.removeValue(forKey: "self_check")
+                }
+                reasoning["self_checks"] = ["Deprecated plural question."]
+                payload["reasoning"] = reasoning
+            }
+            let plan = KDNALoadPlanCore.planLoad(assetData: bytes)
+            XCTAssertFalse(plan.checks.payload_valid)
+            XCTAssertFalse(plan.checks.overall_valid)
+            XCTAssertFalse(plan.can_load_now)
+            XCTAssertTrue(plan.issues.contains { $0.message.contains("$.reasoning.self_checks") })
+            XCTAssertThrowsError(try KDNALoadPlanCore.loadCapsule(
+                assetData: bytes,
+                sourcePath: "<deprecated-self-check-alias>"
+            )) { error in
+                guard case KDNALoadError.notAuthorized(let rejectedPlan) = error else {
+                    return XCTFail("expected fail-closed LoadPlan rejection, got \(error)")
+                }
+                XCTAssertFalse(rejectedPlan.can_load_now)
+                XCTAssertTrue(
+                    rejectedPlan.issues.contains { $0.message.contains("$.reasoning.self_checks") }
+                )
+            }
+        }
     }
 
     func testLoadPlanAndCapsuleFailClosedOnFormalSchemaViolations() throws {

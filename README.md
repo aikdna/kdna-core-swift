@@ -106,7 +106,7 @@ strict.
 
 LoadPlan validates `kdna.json`, decrypted `payload.kdnab`, and referenced
 `load_contract` values against byte-for-byte copies of the canonical schemas
-pinned to the KDNA Core 0.18.0 release at `aikdna/kdna@fed4fc8`. Resource
+pinned to `aikdna/kdna@a1ad1ea`. Resource
 SHA-256 locks make missing or drifted schema files fail closed. Date-time and
 URI formats follow the same full `ajv-formats` behavior as Node rather than
 Foundation's more permissive parsers, including ECMAScript's exact whitespace

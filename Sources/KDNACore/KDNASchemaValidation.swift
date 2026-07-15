@@ -3,17 +3,17 @@ import CryptoKit
 import CoreFoundation
 
 /// JSON Schema resources used by the Swift loader are byte-for-byte copies of
-/// the canonical schemas in the KDNA Core 0.18.0 release at
-/// `aikdna/kdna@fed4fc8`. Validation fails closed if a bundled resource is
+/// the canonical schemas at
+/// `aikdna/kdna@a1ad1ea`. Validation fails closed if a bundled resource is
 /// missing or its digest changes without updating this lock. The evaluator
 /// intentionally implements the complete set of JSON Schema keywords used by
 /// these three pinned schemas, including local/external refs.
 enum KDNACanonicalSchemas {
-    static let canonicalCommit = "fed4fc86e3c8447a94e7498a795d0fcd5108595e"
+    static let canonicalCommit = "a1ad1ea265f0de9d1f21006e7753e7717c55a788"
 
     static let expectedDigests = [
         "manifest.schema.json": "86fd5d90077026b465c853843cd7bd48bb31d8d10148a14eb51cfc34f5962839",
-        "payload-profile-v1.schema.json": "7c9835da3dcdc72e9d52a923ae04a93f2a96d0c9a7f877304a4893aa61ab9e66",
+        "payload-profile-v1.schema.json": "498fc5d4c114c00a33a30331132518fd3d9700afeb53a4e77b1504df4ca11118",
         "load-contract.schema.json": "1b262a02f3c63ec25c72ae6dc79c4a472325414d4b06c6fa3f85f56998178ebb",
     ]
 
@@ -22,7 +22,21 @@ enum KDNACanonicalSchemas {
     }
 
     static func validatePayload(_ instance: Any) -> [String] {
-        validate(instance, against: "payload-profile-v1.schema.json")
+        var issues = validate(instance, against: "payload-profile-v1.schema.json")
+
+        // `reasoning.self_check` is the sole canonical source field. Preserve
+        // one stable, actionable diagnostic for the removed plural alias
+        // after the canonical false schema has rejected it.
+        if let payload = instance as? [String: Any],
+           let reasoning = payload["reasoning"] as? [String: Any],
+           reasoning.keys.contains("self_checks") {
+            issues.removeAll { $0.hasPrefix("$.reasoning.self_checks:") }
+            issues.append(
+                "$.reasoning.self_checks: deprecated alias is not allowed; use $.reasoning.self_check"
+            )
+        }
+
+        return issues
     }
 
     static func validateLoadContract(_ instance: Any) -> [String] {
@@ -185,6 +199,9 @@ private struct KDNAJSONSchemaEvaluator {
         document: String,
         path: String
     ) -> [String] {
+        if let allowed = schema as? Bool {
+            return allowed ? [] : ["\(path): value is disallowed by schema"]
+        }
         guard let schema = schema as? [String: Any] else {
             return ["\(path): schema node is not an object"]
         }

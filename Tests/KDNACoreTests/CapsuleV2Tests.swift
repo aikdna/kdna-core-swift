@@ -3,10 +3,10 @@ import CryptoKit
 @testable import KDNACore
 
 final class CapsuleV2Tests: XCTestCase {
-    private let expectedA = "sha256:936afdde43ff207fa7570cf1524f36d89ad2b6b95f0a5811ba0d985878121d6e"
-    private let expectedC = "sha256:07517fae8ad821c71829f9f802b4fd85a3227c5557efa7485ad0f9b091a3e2b2"
-    private let expectedE = "sha256:c64dfa87b9599629f8b618310a9eaf1bacac3a8660a05d89c94515db0435ddfc"
-    private let expectedP = "sha256:50bf805cd7e39a7dfb96c08df16dc5ff1c691af809a1035de750258cfbb996e4"
+    private let expectedA = "sha256:5e9c54730dafb228bcb27217cd37f77ed8cbdf97228bb0d43d81e7ac058d70ea"
+    private let expectedC = "sha256:a1cb3891698de129f25904ad2dde0db21b516b37cfb09a0dbfd8b43bcc782786"
+    private let expectedE = "sha256:d5af12b8287bd43105c67700281e1861497cce9e5da6d8cad9ce1e877e346c99"
+    private let expectedP = "sha256:768e450135c7bb66648711604a852d2c022b160599d935a6b865e15a4308bc08"
     private let loadedAt = "2026-07-15T00:00:00.000Z"
 
     func testNodeGoldenFreezesACEPCapsuleAndAdapterBytes() throws {

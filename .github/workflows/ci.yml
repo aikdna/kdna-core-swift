@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: macos-14
     env:
-      KDNA_CONFORMANCE_COMMIT: fed4fc86e3c8447a94e7498a795d0fcd5108595e
+      KDNA_CONFORMANCE_COMMIT: a1ad1ea265f0de9d1f21006e7753e7717c55a788
     steps:
       - uses: actions/checkout@v7
       - name: Audit public surface

@@ -765,7 +765,9 @@ public enum KDNALoadPlanCore {
                     : NSNull(),
                 "axioms": (core["axioms"] as? [Any] ?? []).compactMap(normalizeCompactAxiom),
                 "boundaries": normalizeCompactList(core["boundaries"]),
-                "self_checks": normalizeCompactList(reasoning["self_checks"]),
+                // Canonical payload spelling is singular. Capsule context
+                // keeps its established plural projection field.
+                "self_checks": preserveSelfCheckList(reasoning["self_check"]),
                 "failure_modes": normalizeCompactList(reasoning["failure_modes"]),
                 "patterns": Array(normalizeCompactList(payload["patterns"]).prefix(3))
             ]
@@ -820,6 +822,13 @@ public enum KDNALoadPlanCore {
         (value as? [Any] ?? []).compactMap { item in
             if let text = item as? String { return ["type": "text", "text": text] }
             if item is [String: Any] { return item }
+            return nil
+        }
+    }
+
+    private static func preserveSelfCheckList(_ value: Any?) -> [Any] {
+        (value as? [Any] ?? []).compactMap { item in
+            if item is String || item is [String: Any] { return item }
             return nil
         }
     }
@@ -1266,7 +1275,7 @@ public enum KDNALoadPlanCore {
 
         if let reasoning = payload["reasoning"] as? [String: Any] {
             var selfCheckItems: [String] = []
-            for item in reasoning["self_checks"] as? [Any] ?? [] {
+            for item in reasoning["self_check"] as? [Any] ?? [] {
                 if let text = item as? String {
                     selfCheckItems.append(text)
                 } else if let object = item as? [String: Any],
