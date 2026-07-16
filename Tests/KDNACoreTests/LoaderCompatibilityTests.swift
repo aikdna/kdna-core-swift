@@ -62,11 +62,33 @@ final class LoaderCompatibilityTests: XCTestCase {
     }
 
     func testPinnedNodeAndSwiftExecuteTheSameVectors() throws {
-        guard let root = ProcessInfo.processInfo.environment["KDNA_CONFORMANCE_ROOT"],
+        let environment = ProcessInfo.processInfo.environment
+        guard let root = environment["KDNA_CONFORMANCE_ROOT"],
               !root.isEmpty else { return }
+        let nodePath = try XCTUnwrap(
+            environment["NODE"],
+            "NODE must name the controlled Node executable when KDNA_CONFORMANCE_ROOT is enabled"
+        )
+        guard (nodePath as NSString).isAbsolutePath else {
+            XCTFail("NODE must be an absolute path")
+            return
+        }
+        var nodeIsDirectory = ObjCBool(false)
+        guard FileManager.default.fileExists(atPath: nodePath, isDirectory: &nodeIsDirectory),
+              !nodeIsDirectory.boolValue,
+              FileManager.default.isExecutableFile(atPath: nodePath) else {
+            XCTFail("NODE must name an existing executable file")
+            return
+        }
+        let nodeExecutableURL = URL(fileURLWithPath: nodePath)
         let fixtureURL = try vectorFixtureURL()
         let moduleURL = URL(fileURLWithPath: root, isDirectory: true)
             .appendingPathComponent("packages/kdna-core/src/loader-compatibility.js")
+        let moduleData = try Data(contentsOf: moduleURL)
+        guard sha256Hex(moduleData) == "6bc0a34ebcada8181bde391eae3e60a39751dda7e6aca423babad0e9846aac9d" else {
+            XCTFail("Node loader compatibility module does not match the fixed Core authority")
+            return
+        }
         let script = #"""
         const fs = require('fs');
         const fixture = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
@@ -93,8 +115,9 @@ final class LoaderCompatibilityTests: XCTestCase {
         let process = Process()
         let standardOutput = Pipe()
         let standardError = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["node", "-e", script, fixtureURL.path, moduleURL.path]
+        process.executableURL = nodeExecutableURL
+        process.arguments = ["-e", script, fixtureURL.path, moduleURL.path]
+        process.environment = [:]
         process.standardOutput = standardOutput
         process.standardError = standardError
         try process.run()

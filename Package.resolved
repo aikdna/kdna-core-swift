@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "argon2kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rkreutz/Argon2Kit.git",
+      "state" : {
+        "revision" : "87b9ca9c42304b8c6a5c14d7f6d6a0342917e71c",
+        "version" : "0.1.1"
+      }
+    }
+  ],
+  "version" : 2
+}

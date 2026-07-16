@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail when any Git-tracked text file exposes a configured private name or machine path."""
+"""Fail when any candidate Git-tree text file exposes private names or paths."""
 
 from __future__ import annotations
 
@@ -42,14 +42,29 @@ def digest(value: str) -> str:
     return hashlib.sha256(value.lower().encode("utf-8")).hexdigest()
 
 
-def tracked_files() -> list[str]:
-    output = subprocess.check_output(["git", "ls-files", "-z"])
+def candidate_files() -> list[str]:
+    output = subprocess.check_output(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"]
+    )
     return [item.decode("utf-8") for item in output.split(b"\0") if item]
 
 
 findings: list[tuple[str, int, str, str]] = []
 scanned = 0
-for file_name in tracked_files():
+candidate = candidate_files()
+if "Package.resolved" not in candidate:
+    findings.append(("Package.resolved", 0, "missing-candidate-authority", "Package.resolved"))
+
+ignored_lock = subprocess.run(
+    ["git", "check-ignore", "--no-index", "--quiet", "Package.resolved"],
+    check=False,
+).returncode
+if ignored_lock == 0:
+    findings.append((".gitignore", 0, "ignored-candidate-authority", "Package.resolved"))
+elif ignored_lock != 1:
+    raise SystemExit("public-surface check could not inspect Package.resolved ignore state")
+
+for file_name in candidate:
     if file_name == SELF:
         continue
     try:
@@ -76,4 +91,4 @@ if findings:
         print(f"{file_name}:{line_number} [{rule}] {match}", file=sys.stderr)
     raise SystemExit(1)
 
-print(f"public-surface check passed: {scanned} tracked text files, 0 findings")
+print(f"public-surface check passed: {scanned} candidate text files, 0 findings")
