@@ -34,7 +34,7 @@ public enum KDNALoaderVersionError: Error, Equatable, LocalizedError {
 /// build syntax, and it compares decimal components as strings so untrusted
 /// manifest values cannot overflow a fixed-width integer.
 public enum KDNALoaderCompatibility {
-    public static let currentVersion = "0.19.0"
+    public static let currentVersion = "0.20.0"
 
     public static func parse(_ value: String) -> [String]? {
         let components = value.split(separator: ".", omittingEmptySubsequences: false)

@@ -174,7 +174,6 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
     public let digests: KDNADigestEvidence
     public let signature: KDNARuntimeCapsuleSignature
     public let access: String
-    public let risk_level: String?
     public let profile: String
     public let context: KDNAJSONValue
     public let trace: KDNARuntimeCapsuleTrace
@@ -186,7 +185,6 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
         digests: KDNADigestEvidence,
         signature: KDNARuntimeCapsuleSignature,
         access: String,
-        risk_level: String?,
         profile: String,
         context: KDNAJSONValue,
         trace: KDNARuntimeCapsuleTrace
@@ -197,14 +195,13 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
         self.digests = digests
         self.signature = signature
         self.access = access
-        self.risk_level = risk_level
         self.profile = profile
         self.context = context
         self.trace = trace
     }
 
     private enum CodingKeys: String, CodingKey {
-        case type, contract_version, asset, digests, signature, access, risk_level, profile, context, trace
+        case type, contract_version, asset, digests, signature, access, profile, context, trace
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -215,8 +212,6 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
         try container.encode(digests, forKey: .digests)
         try container.encode(signature, forKey: .signature)
         try container.encode(access, forKey: .access)
-        if let risk_level { try container.encode(risk_level, forKey: .risk_level) }
-        else { try container.encodeNil(forKey: .risk_level) }
         try container.encode(profile, forKey: .profile)
         try container.encode(context, forKey: .context)
         try container.encode(trace, forKey: .trace)
@@ -256,7 +251,6 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
         self.digests = parsedDigests
         self.signature = parsedSignature
         self.access = access
-        self.risk_level = object["risk_level"]?.stringValue
         self.profile = profile
         self.context = context
         self.trace = parsedTrace
@@ -283,7 +277,6 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
             "digests": digests.jsonValue,
             "signature": .object(signatureValue),
             "access": .string(access),
-            "risk_level": risk_level.map(KDNAJSONValue.string) ?? .null,
             "profile": .string(profile),
             "context": context,
             "trace": .object([
@@ -645,7 +638,6 @@ public enum KDNARuntimeCapsuleCore {
             digests: digests,
             signature: KDNARuntimeCapsuleSignature(state: signatureState, issuer: issuer),
             access: access,
-            risk_level: manifest["risk_level"] as? String,
             profile: profile,
             context: KDNAJSONValue(any: context),
             trace: KDNARuntimeCapsuleTrace(

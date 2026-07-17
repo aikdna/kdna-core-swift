@@ -64,7 +64,7 @@ print("Content digest:", result.contentDigest ?? "")
 ```
 
 `compatibility.min_loader_version` is a strict `x.y.z` loader package
-coordinate. `KDNALoaderCompatibility.currentVersion` is `0.19.0`; components
+coordinate. `KDNALoaderCompatibility.currentVersion` is `0.20.0`; components
 with leading zeros and coordinates with prefixes, prerelease suffixes, build
 metadata, missing components, or whitespace are invalid. A structurally valid
 asset that requires a newer loader is blocked before projection with

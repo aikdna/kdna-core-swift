@@ -28,7 +28,7 @@ public enum KDNARouteStatus: String, Codable {
     case rejectNegativeMatch = "REJECT_NEGATIVE_MATCH"
     case askAmbiguousDomain = "ASK_AMBIGUOUS_DOMAIN"
     case loadStrongFit = "LOAD_STRONG_FIT"
-    case blockTrustFailed = "BLOCK_TRUST_FAILED"
+    case blockPolicyFailed = "BLOCK_POLICY_FAILED"
 }
 
 public enum KDNARouteAction: String, Codable {
@@ -215,7 +215,7 @@ public class KDNARouter {
             let trust = verifyTrust(domain: selected.domain, url: selected.url)
             result.trust = trust
             if !trust.passed {
-                result.status = .blockTrustFailed
+                result.status = .blockPolicyFailed
                 result.action = .block
                 result.reason = "trust failed: \(trust.failures.joined(separator: ", "))"
             } else {
