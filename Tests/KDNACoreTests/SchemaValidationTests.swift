@@ -21,9 +21,28 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "a257b92345af57e6fb20215576bc976a5291b297"
+            "1e77e3e0d486c330fe9f9262b514ef24c859d469"
         )
-        for name in KDNACanonicalSchemas.expectedDigests.keys.sorted() {
+        let expectedNames = Set([
+            "agent-host-capabilities.schema.json",
+            "agent-host-receipt.schema.json",
+            "agent-host-request.schema.json",
+            "bundle-profile.schema.json",
+            "checksums.schema.json",
+            "consumption-plan.schema.json",
+            "digest-evidence.schema.json",
+            "external-grant-envelope.schema.json",
+            "external-key-grant.schema.json",
+            "judgment-trace.schema.json",
+            "load-contract.schema.json",
+            "load-plan.schema.json",
+            "manifest.schema.json",
+            "payload-profile.schema.json",
+            "runtime-capsule.schema.json",
+        ])
+        XCTAssertEqual(Set(KDNACanonicalSchemas.expectedDigests.keys), expectedNames)
+
+        for name in expectedNames.sorted() {
             _ = try KDNACanonicalSchemas.resourceData(named: name)
         }
 
@@ -51,7 +70,13 @@ final class SchemaValidationTests: XCTestCase {
             .appendingPathComponent("packages", isDirectory: true)
             .appendingPathComponent("kdna-core", isDirectory: true)
             .appendingPathComponent("schema", isDirectory: true)
-        for name in KDNACanonicalSchemas.expectedDigests.keys.sorted() {
+        let canonicalNames = try FileManager.default.contentsOfDirectory(
+            at: coreSchemaRoot,
+            includingPropertiesForKeys: nil
+        ).filter { $0.pathExtension == "json" }.map(\.lastPathComponent)
+        XCTAssertEqual(Set(canonicalNames), expectedNames)
+
+        for name in expectedNames.sorted() {
             let canonicalURL = coreSchemaRoot.appendingPathComponent(name, isDirectory: false)
             let values = try canonicalURL.resourceValues(
                 forKeys: [.isRegularFileKey, .isSymbolicLinkKey]

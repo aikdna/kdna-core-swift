@@ -27,7 +27,7 @@ raw manifest fields.
 Add to your Package.swift:
 
 ```
-.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.4.0")
+.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.20.0")
 ```
 
 Then add `KDNACore` to your target dependencies:
@@ -122,11 +122,12 @@ range; values outside that range fail closed before Swift integer conversion.
 
 LoadPlan, Runtime Capsule, digest evidence, ConsumptionPlan, Agent Host, and
 JudgmentTrace schemas are byte-for-byte resources pinned to
-`aikdna/kdna@a257b92345af57e6fb20215576bc976a5291b297`. SHA-256 resource locks
-make missing or drifted schemas fail closed. Date-time and URI formats follow
-the canonical Node validation boundaries. Manifest encryption declarations and
-the actual CBOR envelope must agree before authorization; encrypted payloads are
-schema validated after authorized in-memory decryption and before Runtime delivery.
+`aikdna/kdna@1e77e3e0d486c330fe9f9262b514ef24c859d469` (Core `0.20.0`).
+SHA-256 resource locks make missing or drifted schemas fail closed. Date-time
+and URI formats follow the canonical Node validation boundaries. Manifest
+encryption declarations and the actual CBOR envelope must agree before
+authorization; encrypted payloads are schema validated after authorized
+in-memory decryption and before Runtime delivery.
 
 ### Digest vocabulary
 

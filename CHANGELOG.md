@@ -1,16 +1,22 @@
 # Changelog
 
-## Unreleased
+## 0.20.0 (2026-07-18)
 
 - Enforce strict `compatibility.min_loader_version` coordinates in default
   Verify, LoadPlan, and Runtime load paths. Requirements above Swift Core
-  `0.19.0` now block before projection with
+  `0.20.0` now block before projection with
   `KDNA_LOADER_VERSION_UNSUPPORTED`; malformed coordinates remain schema
   failures, and arbitrary-size decimal components compare without overflow.
 - Execute one lower/equal/higher/huge/malformed vector set in both Swift and
-  the pinned Node Core, and advance embedded schemas, Runtime fixtures, digest
-  evidence, and the retired-token authority to Node commit `a257b923`.
-- Pin the canonical Node authority to Core 0.19.0 and reject missing,
+  the pinned Node Core, and advance the shared loader vectors to Core `0.20.0`
+  at Node commit `1e77e3e0`.
+- Pin the complete 15-schema Node Core `0.20.0` resource closure with exact
+  SHA-256 locks, including Bundle, LoadPlan, external-grant, Manifest, and
+  Runtime Capsule contracts; reject any byte drift in cross-language CI.
+- Remove `risk_level` from the current Runtime Capsule wire shape and refresh
+  the shared A/C/E/P, ConsumptionPlan, Agent Host, JudgmentTrace, and licensed
+  fixture evidence against the same Node authority.
+- Reject missing,
   malformed, unrelated, or envelope-mismatched encryption declarations before
   authorization in Verify, LoadPlan, and Runtime loading.
 - Reject the unsupported password-scrypt profile during Swift LoadPlan instead

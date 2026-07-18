@@ -4,26 +4,31 @@ import CoreFoundation
 
 /// JSON Schema resources used by the Swift loader are byte-for-byte copies of
 /// the canonical schemas at
-/// `aikdna/kdna@a257b92345af57e6fb20215576bc976a5291b297`. Validation fails closed if a bundled resource is
-/// missing or its digest changes without updating this lock. The evaluator
+/// `aikdna/kdna@1e77e3e0d486c330fe9f9262b514ef24c859d469`. Validation fails
+/// closed if a bundled resource is missing or its digest changes without
+/// updating this lock. The evaluator
 /// intentionally implements the complete set of JSON Schema keywords used by
 /// the pinned authoring and Runtime-contract schemas, including local/external
 /// refs.
 enum KDNACanonicalSchemas {
-    static let canonicalCommit = "a257b92345af57e6fb20215576bc976a5291b297"
+    static let canonicalCommit = "1e77e3e0d486c330fe9f9262b514ef24c859d469"
 
     static let expectedDigests = [
-        "manifest.schema.json": "c99fbbb379b711c9602915726adaaa16c176415773b1beda11a5fb556ac61827",
-        "payload-profile.schema.json": "1f15f00786628b619c6f06c8873ef09541e1d041b1572dd410c12c9bee291c32",
-        "load-contract.schema.json": "1b262a02f3c63ec25c72ae6dc79c4a472325414d4b06c6fa3f85f56998178ebb",
-        "checksums.schema.json": "7fd1f5d5a98a2f0a4d311a6ebba7d13d0e00253ab042098ac0aeec9e31c4d4e8",
-        "runtime-capsule.schema.json": "5ecabe3c02bc09e638c3391d8747c5d48b0f357776ca3b837bc2e03310dcc339",
-        "digest-evidence.schema.json": "294939c0a230639a1ae7b059a28d87310ead350ff03d9d6cf46e112acf3d9f75",
-        "consumption-plan.schema.json": "f73c52884c59e1566d4e6121e42b9e2dfed43ffbee6452b6239a56cf8262785f",
         "agent-host-capabilities.schema.json": "00ab3aeceffae5061faeecfdb82ac95afde4c60ad73faa796b2d7bd463e2e834",
-        "agent-host-request.schema.json": "e827bc2ca51937c31d9ff089b9ae9b37f154ae69836d778f0027480f0d2ee693",
         "agent-host-receipt.schema.json": "ecdac9d9b6670ead0cf94b3c307b7d9580e4eacdf0d1ce683d2b100b59a3f115",
+        "agent-host-request.schema.json": "e827bc2ca51937c31d9ff089b9ae9b37f154ae69836d778f0027480f0d2ee693",
+        "bundle-profile.schema.json": "45370bc73504df26a25d2e391cf543a468f872be835e57ac17ebc5c95d13f3ef",
+        "checksums.schema.json": "7fd1f5d5a98a2f0a4d311a6ebba7d13d0e00253ab042098ac0aeec9e31c4d4e8",
+        "consumption-plan.schema.json": "f73c52884c59e1566d4e6121e42b9e2dfed43ffbee6452b6239a56cf8262785f",
+        "digest-evidence.schema.json": "294939c0a230639a1ae7b059a28d87310ead350ff03d9d6cf46e112acf3d9f75",
+        "external-grant-envelope.schema.json": "245697c461cecf4fd68877d50d4489127f0375f99fda6f5ead41971d8776f6ca",
+        "external-key-grant.schema.json": "d0281a11ba405360bc45bd4894dcdfbed3a85664566af987b7147d5622ffb749",
         "judgment-trace.schema.json": "a260e5abbcc68bf8df11ba738b5d475901b2950668c4718e415355adc723c7b0",
+        "load-contract.schema.json": "1b262a02f3c63ec25c72ae6dc79c4a472325414d4b06c6fa3f85f56998178ebb",
+        "load-plan.schema.json": "18915f1d0fd6dc2b79e60f67e836359897beed8406625c7485c75aa2cd2b3e5a",
+        "manifest.schema.json": "91e570ff68f1b754ba61727e0bcfbb1e83ce1c4c89651bb00637f195646de5dc",
+        "payload-profile.schema.json": "1f15f00786628b619c6f06c8873ef09541e1d041b1572dd410c12c9bee291c32",
+        "runtime-capsule.schema.json": "0219870a83fffddee4fa869cd1976c7ee55bcfa5fd4a44dc4032e126500333db",
     ]
 
     static func validateManifest(_ instance: Any) -> [String] {
@@ -50,6 +55,22 @@ enum KDNACanonicalSchemas {
 
     static func validateLoadContract(_ instance: Any) -> [String] {
         validate(instance, against: "load-contract.schema.json")
+    }
+
+    static func validateLoadPlan(_ instance: Any) -> [String] {
+        validate(instance, against: "load-plan.schema.json")
+    }
+
+    static func validateBundleProfile(_ instance: Any) -> [String] {
+        validate(instance, against: "bundle-profile.schema.json")
+    }
+
+    static func validateExternalGrantEnvelope(_ instance: Any) -> [String] {
+        validate(instance, against: "external-grant-envelope.schema.json")
+    }
+
+    static func validateExternalKeyGrant(_ instance: Any) -> [String] {
+        validate(instance, against: "external-key-grant.schema.json")
     }
 
     static func validateChecksums(_ instance: Any) -> [String] {

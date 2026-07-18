@@ -2376,7 +2376,7 @@ final class KDNACoreTests: XCTestCase {
         let fixture = try fixtureURL("test_licensed_entry.kdna")
         XCTAssertEqual(
             sha256Hex(try Data(contentsOf: fixture)),
-            "662ec25e0481eac3bf22be875dd2b2e46b70d0152f056b42c5d522bdbf54a4b8"
+            "25d1258352701e31c8e94253170947d936f6f861af70aeb984d38769c600f4dc"
         )
         let reader = KDNAAssetReader()
         let asset = try reader.open(url: fixture)
