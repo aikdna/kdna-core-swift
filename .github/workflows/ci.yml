@@ -15,7 +15,7 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 30
     env:
-      KDNA_CONFORMANCE_COMMIT: 4c327e494e4cd95d328b2632e7c1de64509c8380
+      KDNA_CONFORMANCE_COMMIT: 644269e8971ed14e94e322b5d3bfc85e1ed69bb6
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38

@@ -21,7 +21,7 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "4c327e494e4cd95d328b2632e7c1de64509c8380"
+            "644269e8971ed14e94e322b5d3bfc85e1ed69bb6"
         )
         let expectedNames = Set([
             "agent-host-capabilities.schema.json",
@@ -298,6 +298,23 @@ final class SchemaValidationTests: XCTestCase {
         emptyCore["axioms"] = [] as [Any]
         emptyShell["core"] = emptyCore
         XCTAssertFalse(KDNACanonicalSchemas.validatePayload(emptyShell).isEmpty)
+
+        var fakeBoundary = payload
+        var fakeBoundaryCore = fakeBoundary["core"] as! [String: Any]
+        fakeBoundaryCore.removeValue(forKey: "highest_question")
+        fakeBoundaryCore["boundaries"] = [["internal_note": NSNull()]]
+        fakeBoundary["core"] = fakeBoundaryCore
+        XCTAssertFalse(KDNACanonicalSchemas.validatePayload(fakeBoundary).isEmpty)
+
+        var whitespaceApplicability = payload
+        var whitespaceCore = whitespaceApplicability["core"] as! [String: Any]
+        whitespaceCore.removeValue(forKey: "highest_question")
+        whitespaceCore["axioms"] = [[
+            "statement": "Whitespace is not an applicability boundary.",
+            "applies_when": ["   "],
+        ]]
+        whitespaceApplicability["core"] = whitespaceCore
+        XCTAssertFalse(KDNACanonicalSchemas.validatePayload(whitespaceApplicability).isEmpty)
 
         var badWorldview = payload
         var core = badWorldview["core"] as! [String: Any]
