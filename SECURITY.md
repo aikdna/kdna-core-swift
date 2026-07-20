@@ -15,14 +15,14 @@ chance to address it.
 
 ## Supported Versions
 
-`kdna-core-swift` is a public beta support surface for Apple platforms.
+`kdna-core-swift` is a public pre-release support surface for Apple platforms.
 
 | Component | Supported Versions |
 |-----------|-------------------|
 | KDNA Protocol | Latest tagged release in `aikdna/kdna` |
-| kdna-core-swift | Latest mainline beta release |
+| kdna-core-swift | Latest mainline pre-release |
 
-Older Swift beta versions may receive critical security patches on a
+Older Swift pre-release versions may receive critical security patches on a
 case-by-case basis.
 
 ## Security Model

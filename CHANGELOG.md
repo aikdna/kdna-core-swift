@@ -14,6 +14,8 @@
   cross-language wire-shape comparisons.
 - Keep the full Node/Swift authorization and loader-compatibility vectors on
   one exact Core source coordinate.
+- Describe the Apple runtime and its support policy as pre-release rather than
+  assigning Beta maturity.
 
 This is an unpublished Development Preview candidate. No tag or existing
 Swift package release is changed.

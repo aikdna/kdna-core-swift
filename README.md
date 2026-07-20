@@ -2,13 +2,13 @@
 
 [![CI](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml/badge.svg)](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
-Swift beta component of the KDNA toolchain for native Apple runtimes.
+Swift pre-release component of the KDNA toolchain for native Apple runtimes.
 
 KDNA Core is the official KDNA judgment-asset format and runtime loading
 contract. `.kdna` assets are created, inspected, validated, planned, loaded,
 and consumed through the official KDNA toolchain. This package implements the
 Swift runtime side for local `.kdna` files. JS Core is the current first-run
-public beta baseline; Swift Core is beta until shared conformance evidence is
+public pre-release baseline; Swift Core remains pre-release until shared conformance evidence is
 published.
 
 This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/kdna/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that need to plan-load, verify, and project local KDNA runtime files.
@@ -153,7 +153,7 @@ computation so malformed JSON fails closed.
   shapes as the JavaScript Core
 - **Validate** developer fixtures for conformance testing
 - **Format** loaded judgment context for native application integration
-- **Route / compose / match** through beta Swift APIs used by native experiments
+- **Route / compose / match** through pre-release Swift APIs used by native integrations
 
 ## Architecture
 
@@ -175,14 +175,14 @@ computation so malformed JSON fails closed.
 
 | Capability | Status |
 |------------|--------|
-| Open local `.kdna` runtime containers | Beta |
-| Verify local `.kdna` container digests | Beta |
-| LoadPlan authorization planning | Beta |
-| CBOR payload and encrypted-envelope decoding | Beta |
-| Current Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Beta; shared JavaScript golden vector |
-| A/C/E/P and Plan/Host/Trace parity | Beta; shared JavaScript contract fixtures |
-| RFC-0019 account/device external grant verification | Beta; shared JS golden vector |
-| `KDNAJudgmentProjection` rendering | Beta |
+| Open local `.kdna` runtime containers | Pre-release |
+| Verify local `.kdna` container digests | Pre-release |
+| LoadPlan authorization planning | Pre-release |
+| CBOR payload and encrypted-envelope decoding | Pre-release |
+| Current Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Pre-release; shared JavaScript golden vector |
+| A/C/E/P and Plan/Host/Trace parity | Pre-release; shared JavaScript contract fixtures |
+| RFC-0019 account/device external grant verification | Pre-release; shared JS golden vector |
+| `KDNAJudgmentProjection` rendering | Pre-release |
 | Developer fixture loading | Conformance-only |
 | Route / compose / match APIs | Experimental |
 | Complete JS parity | Not claimed; requires fixed shared conformance evidence |
