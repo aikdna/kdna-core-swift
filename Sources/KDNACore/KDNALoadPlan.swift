@@ -306,9 +306,15 @@ public enum KDNALoadPlanCore {
                 plan.access = nil
             }
             plan.issues.append(contentsOf: checks.problems.map {
-                let message = $0 == "schema: $.access: value is not in enum"
-                    ? "manifest: /access must be equal to one of the allowed values"
-                    : $0
+                let message: String
+                switch $0 {
+                case "schema: $.access: value is not in enum":
+                    message = "manifest: /access must be equal to one of the allowed values"
+                case "schema: $.entitlement.profile: value is not in enum":
+                    message = "manifest: /entitlement/profile must be equal to one of the allowed values"
+                default:
+                    message = $0
+                }
                 return KDNALoadPlanIssue(
                     code: validationProblemCode(message),
                     severity: "blocking",
@@ -419,12 +425,16 @@ public enum KDNALoadPlanCore {
             assetData: assetData,
             sourcePath: sourcePath,
             environment: KDNALoadEnvironment(
-                hasPassword: credential.password != nil,
+                hasPassword: !(credential.password?.isEmpty ?? true),
                 entitlementStatus: credential.entitlementStatus,
                 externalAuthorization: credential.externalAuthorization
             )
         )
-        guard plan.can_load_now else {
+        let loadMayVerifyPassword =
+            !(credential.password?.isEmpty ?? true) &&
+            plan.state == "needs_password" &&
+            plan.issues.contains { $0.code == "KDNA_AUTH_PASSWORD_UNVERIFIED" }
+        guard plan.can_load_now || loadMayVerifyPassword else {
             throw KDNALoadError.notAuthorized(plan)
         }
         guard let layout = readLayout(assetData: assetData, sourceKind: "file") else {
@@ -487,7 +497,15 @@ public enum KDNALoadPlanCore {
                 "payload.kdnab does not match kdna.payload.judgment/0.1.0: \(payloadIssues.joined(separator: "; "))"
             )
         }
-        return (plan, layout, payload)
+        var authorizedPlan = plan
+        if loadMayVerifyPassword {
+            authorizedPlan.state = "ready"
+            authorizedPlan.required_action = "load"
+            authorizedPlan.can_load_now = true
+            authorizedPlan.projection_policy = "minimal"
+            authorizedPlan.issues.removeAll { $0.code == "KDNA_AUTH_PASSWORD_UNVERIFIED" }
+        }
+        return (authorizedPlan, layout, payload)
     }
 
     static func profileContent(
@@ -528,7 +546,7 @@ public enum KDNALoadPlanCore {
                 // keeps its established plural projection field.
                 "self_checks": preserveSelfCheckList(reasoning["self_check"]),
                 "failure_modes": normalizeCompactList(reasoning["failure_modes"]),
-                "patterns": Array(normalizeCompactList(payload["patterns"]).prefix(3))
+                "patterns": normalizeCompactList(payload["patterns"])
             ]
         case "scenario":
             return ["scenarios": payload["scenarios"] as? [Any] ?? []]
@@ -909,15 +927,15 @@ public enum KDNALoadPlanCore {
 
         if plan.entitlement_profile == "password" {
             if environment.hasPassword {
+                plan.state = "needs_password"
+                plan.required_action = "enter_password"
+                plan.can_load_now = false
+                plan.projection_policy = "none"
                 plan.issues.append(KDNALoadPlanIssue(
-                    code: "KDNA_AUTH_PASSWORD_DIAGNOSTIC",
-                    severity: "info",
-                    message: "hasPassword is a diagnostic credential-presence signal only; it does not verify the password."
+                    code: "KDNA_AUTH_PASSWORD_UNVERIFIED",
+                    severity: "blocking",
+                    message: "A password was provided but has not been verified. Only an authorized load may verify it by decrypting the protected payload."
                 ))
-                plan.state = "ready"
-                plan.required_action = "load"
-                plan.can_load_now = true
-                plan.projection_policy = "minimal"
             } else {
                 plan.state = "needs_password"
                 plan.required_action = "enter_password"

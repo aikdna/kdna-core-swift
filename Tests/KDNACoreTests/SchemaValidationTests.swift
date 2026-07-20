@@ -21,7 +21,7 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "1e77e3e0d486c330fe9f9262b514ef24c859d469"
+            "4c327e494e4cd95d328b2632e7c1de64509c8380"
         )
         let expectedNames = Set([
             "agent-host-capabilities.schema.json",
@@ -176,6 +176,44 @@ final class SchemaValidationTests: XCTestCase {
         var badAdditionalSchema = manifest
         badAdditionalSchema["dependencies"] = ["@aikdna/base": 7]
         XCTAssertFalse(KDNACanonicalSchemas.validateManifest(badAdditionalSchema).isEmpty)
+
+        for field in ["signature", "signatures"] {
+            var legacySignature = manifest
+            legacySignature[field] = field == "signature"
+                ? "ed25519:legacy"
+                : ["signatures/legacy.json"]
+            XCTAssertFalse(
+                KDNACanonicalSchemas.validateManifest(legacySignature).isEmpty,
+                "Legacy asset-signature field was accepted: \(field)"
+            )
+        }
+
+        for profile in ["password", "local_receipt", "account", "org"] {
+            var licensed = manifest
+            licensed["access"] = "licensed"
+            licensed["entitlement"] = [
+                "profile": profile,
+                "offline": profile != "account",
+                "revocable": profile != "password",
+            ] as [String: Any]
+            XCTAssertTrue(
+                KDNACanonicalSchemas.validateManifest(licensed).isEmpty,
+                "Supported entitlement profile was rejected: \(profile)"
+            )
+        }
+
+        var licensedWithoutEntitlement = manifest
+        licensedWithoutEntitlement["access"] = "licensed"
+        XCTAssertFalse(KDNACanonicalSchemas.validateManifest(licensedWithoutEntitlement).isEmpty)
+
+        var unknownEntitlement = manifest
+        unknownEntitlement["access"] = "licensed"
+        unknownEntitlement["entitlement"] = ["profile": "coupon_code"]
+        XCTAssertFalse(KDNACanonicalSchemas.validateManifest(unknownEntitlement).isEmpty)
+
+        var publicWithEntitlement = manifest
+        publicWithEntitlement["entitlement"] = ["profile": "password"]
+        XCTAssertFalse(KDNACanonicalSchemas.validateManifest(publicWithEntitlement).isEmpty)
     }
 
     func testManifestSchemaBindsEncryptedPayloadDeclarationExactly() {
@@ -240,13 +278,26 @@ final class SchemaValidationTests: XCTestCase {
             candidate.removeValue(forKey: key)
             XCTAssertFalse(KDNACanonicalSchemas.validatePayload(candidate).isEmpty)
         }
-        for key in ["highest_question", "axioms"] {
+        for key in ["axioms"] {
             var candidate = payload
             var core = candidate["core"] as! [String: Any]
             core.removeValue(forKey: key)
             candidate["core"] = core
             XCTAssertFalse(KDNACanonicalSchemas.validatePayload(candidate).isEmpty)
         }
+
+        var withoutHighestQuestion = payload
+        var scopedCore = withoutHighestQuestion["core"] as! [String: Any]
+        scopedCore.removeValue(forKey: "highest_question")
+        withoutHighestQuestion["core"] = scopedCore
+        XCTAssertTrue(KDNACanonicalSchemas.validatePayload(withoutHighestQuestion).isEmpty)
+
+        var emptyShell = payload
+        var emptyCore = emptyShell["core"] as! [String: Any]
+        emptyCore["highest_question"] = "   "
+        emptyCore["axioms"] = [] as [Any]
+        emptyShell["core"] = emptyCore
+        XCTAssertFalse(KDNACanonicalSchemas.validatePayload(emptyShell).isEmpty)
 
         var badWorldview = payload
         var core = badWorldview["core"] as! [String: Any]
@@ -336,6 +387,20 @@ final class SchemaValidationTests: XCTestCase {
         XCTAssertEqual(section.items, [textQuestion, structuredQuestion])
         XCTAssertTrue(projection.prompt.contains(textQuestion))
         XCTAssertTrue(projection.prompt.contains(structuredQuestion))
+    }
+
+    func testCompactRuntimeProfilePreservesEveryDeclaredPattern() throws {
+        let patterns = (1...5).map { ["type": "pattern", "text": "Pattern \($0)"] }
+        let bytes = try mutatedGolden { _, payload in
+            payload["patterns"] = patterns
+        }
+        let capsule = try KDNARuntime.load(
+            assetData: bytes,
+            loadedAt: "2026-07-15T00:00:00.000Z"
+        )
+        let projected = try XCTUnwrap(capsule.context["patterns"]?.arrayValue)
+        XCTAssertEqual(projected.count, 5)
+        XCTAssertEqual(capsule.context["patterns"], KDNAJSONValue(any: patterns))
     }
 
     func testLoadPlanAndRuntimeRejectDeprecatedPluralSelfChecks() throws {
@@ -509,7 +574,10 @@ final class SchemaValidationTests: XCTestCase {
             "core": [
                 "highest_question": "Does formal schema validation hold?",
                 "worldview": ["Validation is evidence."],
-                "axioms": [] as [Any],
+                "axioms": [[
+                    "statement": "Reject malformed assets before loading.",
+                    "applies_when": ["validating a packaged KDNA asset"],
+                ]] as [Any],
             ] as [String: Any],
             "reasoning": ["self_check": [["question": "Was every ref followed?"]]],
         ]

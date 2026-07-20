@@ -127,11 +127,9 @@ public struct KDNARuntimeCapsuleAsset: Codable, Equatable, Sendable {
 
 public struct KDNARuntimeCapsuleSignature: Codable, Equatable, Sendable {
     public let state: String
-    public let issuer: String?
 
-    public init(state: String, issuer: String? = nil) {
+    public init(state: String = "absent") {
         self.state = state
-        self.issuer = issuer
     }
 }
 
@@ -263,8 +261,6 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
     }
 
     public var jsonValue: KDNAJSONValue {
-        var signatureValue: [String: KDNAJSONValue] = ["state": .string(signature.state)]
-        if let issuer = signature.issuer { signatureValue["issuer"] = .string(issuer) }
         return .object([
             "type": .string(type),
             "contract_version": .string(contract_version),
@@ -275,7 +271,7 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
                 "judgment_version": .string(asset.judgment_version),
             ]),
             "digests": digests.jsonValue,
-            "signature": .object(signatureValue),
+            "signature": .object(["state": .string(signature.state)]),
             "access": .string(access),
             "profile": .string(profile),
             "context": context,
@@ -339,7 +335,7 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
 
     private static func parseSignature(_ object: [String: KDNAJSONValue]) -> KDNARuntimeCapsuleSignature? {
         guard let state = object["state"]?.stringValue else { return nil }
-        return KDNARuntimeCapsuleSignature(state: state, issuer: object["issuer"]?.stringValue)
+        return KDNARuntimeCapsuleSignature(state: state)
     }
 
     private static func parseTrace(_ object: [String: KDNAJSONValue]) -> KDNARuntimeCapsuleTrace? {
@@ -625,8 +621,7 @@ public enum KDNARuntimeCapsuleCore {
               let access = loaded.plan.access else {
             throw error("KDNA_RUNTIME_CAPSULE_BUILD_INVALID", "Runtime manifest identity is incomplete.")
         }
-        let issuer = (manifest["creator"] as? [String: Any])?["pubkey"] as? String
-        let signatureState = issuer == nil ? "absent" : "not_checked"
+        let signatureState = "absent"
         let timestamp = loadedAt ?? ISO8601DateFormatter().string(from: Date())
         let capsule = KDNARuntimeCapsule(
             asset: KDNARuntimeCapsuleAsset(
@@ -636,7 +631,7 @@ public enum KDNARuntimeCapsuleCore {
                 judgment_version: judgmentVersion
             ),
             digests: digests,
-            signature: KDNARuntimeCapsuleSignature(state: signatureState, issuer: issuer),
+            signature: KDNARuntimeCapsuleSignature(state: signatureState),
             access: access,
             profile: profile,
             context: KDNAJSONValue(any: context),
