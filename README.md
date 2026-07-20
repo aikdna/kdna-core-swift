@@ -124,7 +124,7 @@ range; values outside that range fail closed before Swift integer conversion.
 
 LoadPlan, Runtime Capsule, digest evidence, ConsumptionPlan, Agent Host, and
 JudgmentTrace schemas are byte-for-byte resources pinned to
-`aikdna/kdna@644269e8971ed14e94e322b5d3bfc85e1ed69bb6` (Core `0.21.0`
+`aikdna/kdna@5f7ccad07758b7766237590e5b9ba47301036f6b` (Core `0.21.0`
 Development Preview candidate).
 SHA-256 resource locks make missing or drifted schemas fail closed. Date-time
 and URI formats follow the canonical Node validation boundaries. Manifest

@@ -133,6 +133,43 @@ public struct KDNARuntimeCapsuleSignature: Codable, Equatable, Sendable {
     }
 }
 
+public struct KDNAProjectionOmission: Codable, Equatable, Sendable {
+    public let path: String
+    public let count: Int
+
+    public init(path: String, count: Int) {
+        self.path = path
+        self.count = count
+    }
+
+    var jsonValue: KDNAJSONValue {
+        .object([
+            "path": .string(path),
+            "count": .number(Double(count)),
+        ])
+    }
+}
+
+public struct KDNAProjectionReport: Codable, Equatable, Sendable {
+    public let status: String
+    public let omitted: [KDNAProjectionOmission]
+    public let omitted_total: Int
+
+    public init(status: String, omitted: [KDNAProjectionOmission], omitted_total: Int) {
+        self.status = status
+        self.omitted = omitted
+        self.omitted_total = omitted_total
+    }
+
+    var jsonValue: KDNAJSONValue {
+        .object([
+            "status": .string(status),
+            "omitted": .array(omitted.map(\.jsonValue)),
+            "omitted_total": .number(Double(omitted_total)),
+        ])
+    }
+}
+
 public struct KDNARuntimeCapsuleTrace: Codable, Equatable, Sendable {
     public let payload_encoding: String
     public let loaded_by: String
@@ -142,6 +179,7 @@ public struct KDNARuntimeCapsuleTrace: Codable, Equatable, Sendable {
     public let schema_valid: Bool
     public let signature_state: String
     public let profile: String
+    public let projection_report: KDNAProjectionReport?
 
     public init(
         payload_encoding: String = "cbor",
@@ -151,7 +189,8 @@ public struct KDNARuntimeCapsuleTrace: Codable, Equatable, Sendable {
         runtime_eligible: Bool = true,
         schema_valid: Bool = true,
         signature_state: String,
-        profile: String
+        profile: String,
+        projection_report: KDNAProjectionReport? = nil
     ) {
         self.payload_encoding = payload_encoding
         self.loaded_by = loaded_by
@@ -161,6 +200,7 @@ public struct KDNARuntimeCapsuleTrace: Codable, Equatable, Sendable {
         self.schema_valid = schema_valid
         self.signature_state = signature_state
         self.profile = profile
+        self.projection_report = projection_report
     }
 }
 
@@ -261,6 +301,19 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
     }
 
     public var jsonValue: KDNAJSONValue {
+        var traceValue: [String: KDNAJSONValue] = [
+            "payload_encoding": .string(trace.payload_encoding),
+            "loaded_by": .string(trace.loaded_by),
+            "loaded_at": .string(trace.loaded_at),
+            "input_kind": .string(trace.input_kind),
+            "runtime_eligible": .bool(trace.runtime_eligible),
+            "schema_valid": .bool(trace.schema_valid),
+            "signature_state": .string(trace.signature_state),
+            "profile": .string(trace.profile),
+        ]
+        if let projectionReport = trace.projection_report {
+            traceValue["projection_report"] = projectionReport.jsonValue
+        }
         return .object([
             "type": .string(type),
             "contract_version": .string(contract_version),
@@ -275,16 +328,7 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
             "access": .string(access),
             "profile": .string(profile),
             "context": context,
-            "trace": .object([
-                "payload_encoding": .string(trace.payload_encoding),
-                "loaded_by": .string(trace.loaded_by),
-                "loaded_at": .string(trace.loaded_at),
-                "input_kind": .string(trace.input_kind),
-                "runtime_eligible": .bool(trace.runtime_eligible),
-                "schema_valid": .bool(trace.schema_valid),
-                "signature_state": .string(trace.signature_state),
-                "profile": .string(trace.profile),
-            ]),
+            "trace": .object(traceValue),
         ])
     }
 
@@ -347,6 +391,13 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
               let schemaValid = object["schema_valid"]?.boolValue,
               let signatureState = object["signature_state"]?.stringValue,
               let profile = object["profile"]?.stringValue else { return nil }
+        let projectionReport: KDNAProjectionReport?
+        if let value = object["projection_report"] {
+            guard let parsed = parseProjectionReport(value) else { return nil }
+            projectionReport = parsed
+        } else {
+            projectionReport = nil
+        }
         return KDNARuntimeCapsuleTrace(
             payload_encoding: payloadEncoding,
             loaded_by: loadedBy,
@@ -355,8 +406,24 @@ public struct KDNARuntimeCapsule: Codable, Equatable, Sendable {
             runtime_eligible: runtimeEligible,
             schema_valid: schemaValid,
             signature_state: signatureState,
-            profile: profile
+            profile: profile,
+            projection_report: projectionReport
         )
+    }
+
+    private static func parseProjectionReport(_ value: KDNAJSONValue) -> KDNAProjectionReport? {
+        guard let object = value.objectValue,
+              let status = object["status"]?.stringValue,
+              let omittedValues = object["omitted"]?.arrayValue,
+              let omittedTotal = object["omitted_total"]?.intValue else { return nil }
+        let omitted = omittedValues.compactMap { item -> KDNAProjectionOmission? in
+            guard let entry = item.objectValue,
+                  let path = entry["path"]?.stringValue,
+                  let count = entry["count"]?.intValue else { return nil }
+            return KDNAProjectionOmission(path: path, count: count)
+        }
+        guard omitted.count == omittedValues.count else { return nil }
+        return KDNAProjectionReport(status: status, omitted: omitted, omitted_total: omittedTotal)
     }
 
     static func isSuccessful(_ capsule: KDNARuntimeCapsule) -> Bool {
@@ -614,6 +681,9 @@ public enum KDNARuntimeCapsuleCore {
             manifest: manifest,
             payload: loaded.payload
         )
+        let projectionReport = profile == "compact"
+            ? KDNALoadPlanCore.compactProjectionReport(payload: loaded.payload)
+            : nil
         guard let assetID = manifest["asset_id"] as? String,
               let assetUID = manifest["asset_uid"] as? String,
               let version = manifest["version"] as? String,
@@ -639,7 +709,8 @@ public enum KDNARuntimeCapsuleCore {
                 loaded_at: timestamp,
                 input_kind: inputKind,
                 signature_state: signatureState,
-                profile: profile
+                profile: profile,
+                projection_report: projectionReport
             )
         )
         let issues = KDNACanonicalSchemas.validateRuntimeCapsule(capsule.jsonValue.anyValue)

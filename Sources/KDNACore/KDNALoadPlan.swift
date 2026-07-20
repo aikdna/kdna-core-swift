@@ -113,8 +113,6 @@ public enum KDNAJSONValue: Codable, Equatable, Sendable {
         switch value {
         case is NSNull:
             self = .null
-        case let value as Bool:
-            self = .bool(value)
         case let value as String:
             self = .string(value)
         case let value as NSNumber:
@@ -123,6 +121,8 @@ public enum KDNAJSONValue: Codable, Equatable, Sendable {
             } else {
                 self = .number(value.doubleValue)
             }
+        case let value as Bool:
+            self = .bool(value)
         case let value as [Any]:
             self = .array(value.map(KDNAJSONValue.init(any:)))
         case let value as [String: Any]:
@@ -145,6 +145,15 @@ public enum KDNAJSONValue: Codable, Equatable, Sendable {
     public var arrayValue: [KDNAJSONValue]? {
         guard case .array(let value) = self else { return nil }
         return value
+    }
+
+    public var intValue: Int? {
+        guard case .number(let value) = self,
+              value.isFinite,
+              value.rounded(.towardZero) == value,
+              value >= Double(Int.min),
+              value <= Double(Int.max) else { return nil }
+        return Int(value)
     }
 
     public subscript(key: String) -> KDNAJSONValue? {
@@ -557,6 +566,89 @@ public enum KDNALoadPlanCore {
         }
     }
 
+    static func compactProjectionReport(payload: [String: Any]) -> KDNAProjectionReport {
+        let projectedCoreFields: Set<String> = [
+            "highest_question", "worldview", "value_order", "judgment_role", "axioms", "boundaries",
+        ]
+        let projectedReasoningFields: Set<String> = ["self_check", "failure_modes"]
+        let projectedAxiomFields: Set<String> = [
+            "id", "statement", "one_sentence", "applies_when", "does_not_apply_when", "failure_risk",
+        ]
+        let nonContentFields: Set<String> = ["profile", "profile_version"]
+        var entries: [KDNAProjectionOmission] = []
+
+        func pointerToken(_ value: String) -> String {
+            value.replacingOccurrences(of: "~", with: "~0")
+                .replacingOccurrences(of: "/", with: "~1")
+        }
+
+        func omissionCount(_ value: Any?) -> Int {
+            guard let value, !(value is NSNull) else { return 0 }
+            if let values = value as? [Any] { return values.count }
+            if let value = value as? String {
+                return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0 : 1
+            }
+            if let value = value as? [String: Any] { return value.isEmpty ? 0 : 1 }
+            return 1
+        }
+
+        func addOmittedValue(pointer: String, value: Any?) {
+            if let object = value as? [String: Any] {
+                for key in object.keys.sorted() {
+                    addOmittedValue(
+                        pointer: "\(pointer)/\(pointerToken(key))",
+                        value: object[key]
+                    )
+                }
+                return
+            }
+            let count = omissionCount(value)
+            if count > 0 {
+                entries.append(KDNAProjectionOmission(path: pointer, count: count))
+            }
+        }
+
+        let core = payload["core"] as? [String: Any] ?? [:]
+        for key in core.keys.sorted() where !projectedCoreFields.contains(key) {
+            addOmittedValue(pointer: "/core/\(pointerToken(key))", value: core[key])
+        }
+
+        var axiomCounts: [String: Int] = [:]
+        for value in core["axioms"] as? [Any] ?? [] {
+            guard let axiom = value as? [String: Any] else { continue }
+            for key in axiom.keys.sorted() where !projectedAxiomFields.contains(key) {
+                let count = omissionCount(axiom[key])
+                if count > 0 {
+                    let path = "/core/axioms/*/\(pointerToken(key))"
+                    axiomCounts[path, default: 0] += count
+                }
+            }
+        }
+        for path in axiomCounts.keys.sorted() {
+            entries.append(KDNAProjectionOmission(path: path, count: axiomCounts[path]!))
+        }
+
+        let reasoning = payload["reasoning"] as? [String: Any] ?? [:]
+        for key in reasoning.keys.sorted() where !projectedReasoningFields.contains(key) {
+            addOmittedValue(pointer: "/reasoning/\(pointerToken(key))", value: reasoning[key])
+        }
+
+        for key in payload.keys.sorted() {
+            if nonContentFields.contains(key) || ["core", "patterns", "reasoning"].contains(key) {
+                continue
+            }
+            addOmittedValue(pointer: "/\(pointerToken(key))", value: payload[key])
+        }
+
+        entries.sort { $0.path < $1.path }
+        let omittedTotal = entries.reduce(0) { $0 + $1.count }
+        return KDNAProjectionReport(
+            status: omittedTotal > 0 ? "partial" : "complete",
+            omitted: entries,
+            omitted_total: omittedTotal
+        )
+    }
+
     private static func normalizeCompactAxiom(_ value: Any) -> [String: Any]? {
         if let text = value as? String, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return [
@@ -580,7 +672,7 @@ public enum KDNALoadPlanCore {
         if let declaredOneSentence, !declaredOneSentence.hasPrefix("<TBD") {
             oneSentence = declaredOneSentence
         } else if let fullStatement, !fullStatement.isEmpty {
-            oneSentence = fullStatement.count > 120 ? String(fullStatement.prefix(120)) + "…" : fullStatement
+            oneSentence = fullStatement
         } else {
             oneSentence = statement
         }

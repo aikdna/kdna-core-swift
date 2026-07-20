@@ -25,7 +25,7 @@ final class RuntimeContractTests: XCTestCase {
         XCTAssertEqual(capsule.digests.runtime_entry_set.value, "sha256:a756e89ed89f625940086da3757d6a8ff3b8dbee0c54bcb37988e0c891da5b3c")
         XCTAssertEqual(
             try KDNARuntimeCapsuleCore.computeDeliveryDigest(capsule),
-            "sha256:189e6793d19e3676da911b271dff7164bf91f179a4390e52ecda1153c69c8ebf"
+            "sha256:0943491405673fc4fa6a18df7649e58c1d3e14e12583688240217ba9883b3288"
         )
         XCTAssertEqual(capsule.jsonValue, KDNAJSONValue(any: expectedCapsule))
 
@@ -36,7 +36,7 @@ final class RuntimeContractTests: XCTestCase {
     func testCurrentCrossLanguageCoverageMatrixIsPinnedToNodeAuthority() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "644269e8971ed14e94e322b5d3bfc85e1ed69bb6"
+            "5f7ccad07758b7766237590e5b9ba47301036f6b"
         )
 
         let capsule = try KDNARuntime.load(
@@ -64,7 +64,7 @@ final class RuntimeContractTests: XCTestCase {
         )
         XCTAssertEqual(
             try KDNARuntimeCapsuleCore.computeDeliveryDigest(capsule),
-            "sha256:189e6793d19e3676da911b271dff7164bf91f179a4390e52ecda1153c69c8ebf",
+            "sha256:0943491405673fc4fa6a18df7649e58c1d3e14e12583688240217ba9883b3288",
             "P must retain cross-language RFC 8785/JCS parity."
         )
 

@@ -21,7 +21,7 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "644269e8971ed14e94e322b5d3bfc85e1ed69bb6"
+            "5f7ccad07758b7766237590e5b9ba47301036f6b"
         )
         let expectedNames = Set([
             "agent-host-capabilities.schema.json",
@@ -418,6 +418,86 @@ final class SchemaValidationTests: XCTestCase {
         let projected = try XCTUnwrap(capsule.context["patterns"]?.arrayValue)
         XCTAssertEqual(projected.count, 5)
         XCTAssertEqual(capsule.context["patterns"], KDNAJSONValue(any: patterns))
+    }
+
+    func testCompactRuntimeProfileReportsOmittedPayloadPathsAndCounts() throws {
+        let bytes = try mutatedGolden { _, payload in
+            var core = payload["core"] as? [String: Any] ?? [:]
+            core["axioms"] = [[
+                "id": "axiom-1",
+                "one_sentence": "Prefer the declared recovery path.",
+                "full_statement": "Prefer the declared recovery path when rollback evidence is incomplete.",
+                "why": "A reversible path limits harm.",
+                "confidence": "high",
+                "applies_when": ["rollback evidence is incomplete"],
+                "does_not_apply_when": ["required checks failed"],
+                "failure_risk": "Expansion may outrun recovery.",
+            ]]
+            core["ontology"] = [["id": "concept-1"], ["id": "concept-2"]]
+            core["risk_model"] = ["risks": [["id": "risk-1"], ["id": "risk-2"]]]
+            payload["core"] = core
+
+            var reasoning = payload["reasoning"] as? [String: Any] ?? [:]
+            reasoning["reasoning_chains"] = [["id": "chain-1"]]
+            payload["reasoning"] = reasoning
+            payload["scenarios"] = [["id": "scenario-1"], ["id": "scenario-2"]]
+            payload["cases"] = [["id": "case-1"]]
+            payload["evolution"] = [
+                "changelog": [["version": "1.0.0"]],
+                "version_notes": ["note one", "note two"],
+            ]
+        }
+        let capsule = try KDNARuntime.load(
+            assetData: bytes,
+            loadedAt: "2026-07-15T00:00:00.000Z"
+        )
+        let report = try XCTUnwrap(capsule.trace.projection_report)
+        XCTAssertEqual(report.status, "partial")
+        XCTAssertEqual(Dictionary(uniqueKeysWithValues: report.omitted.map { ($0.path, $0.count) }), [
+            "/cases": 1,
+            "/core/axioms/*/confidence": 1,
+            "/core/axioms/*/full_statement": 1,
+            "/core/axioms/*/why": 1,
+            "/core/ontology": 2,
+            "/core/risk_model/risks": 2,
+            "/evolution/changelog": 1,
+            "/evolution/version_notes": 2,
+            "/reasoning/reasoning_chains": 1,
+            "/scenarios": 2,
+        ])
+        XCTAssertEqual(report.omitted_total, 14)
+    }
+
+    func testCompactRuntimeProfileDoesNotTrimFullStatementFallback() throws {
+        let fullStatement = "Keep every declared character " + String(repeating: "x", count: 180)
+        let bytes = try mutatedGolden { _, payload in
+            payload["core"] = [
+                "highest_question": "What must remain exact?",
+                "axioms": [[
+                    "full_statement": fullStatement,
+                    "applies_when": ["first condition", "second condition", "third condition"],
+                    "does_not_apply_when": ["first exclusion", "second exclusion", "third exclusion"],
+                ]],
+            ]
+            payload["patterns"] = []
+            payload["reasoning"] = ["self_check": [], "failure_modes": []]
+            payload["scenarios"] = []
+            payload["cases"] = []
+            payload["evolution"] = ["changelog": [], "version_notes": []]
+        }
+        let capsule = try KDNARuntime.load(
+            assetData: bytes,
+            loadedAt: "2026-07-15T00:00:00.000Z"
+        )
+        let axiom = try XCTUnwrap(capsule.context["axioms"]?.arrayValue?.first)
+        XCTAssertEqual(axiom["one_sentence"]?.stringValue, fullStatement)
+        XCTAssertEqual(axiom["applies_when"]?.arrayValue?.count, 3)
+        XCTAssertEqual(axiom["does_not_apply_when"]?.arrayValue?.count, 3)
+        XCTAssertEqual(capsule.trace.projection_report, KDNAProjectionReport(
+            status: "partial",
+            omitted: [KDNAProjectionOmission(path: "/core/axioms/*/full_statement", count: 1)],
+            omitted_total: 1
+        ))
     }
 
     func testLoadPlanAndRuntimeRejectDeprecatedPluralSelfChecks() throws {

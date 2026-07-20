@@ -7,7 +7,11 @@
   the password by decrypting the payload.
 - Adopt the author-neutral minimum judgment schema, explicit licensed
   entitlement profiles, optional checksums authority, withdrawn asset-signature
-  surface, and non-truncating compact projection contract.
+  surface, and non-truncating compact projection contract with explicit omitted
+  payload paths and counts in the Runtime Capsule trace.
+- Preserve every applicability item and full-statement fallback without
+  trimming, and keep JSON integer values distinct from bridged booleans in
+  cross-language wire-shape comparisons.
 - Keep the full Node/Swift authorization and loader-compatibility vectors on
   one exact Core source coordinate.
 
