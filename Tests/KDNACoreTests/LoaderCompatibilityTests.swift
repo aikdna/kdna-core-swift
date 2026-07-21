@@ -228,7 +228,9 @@ final class LoaderCompatibilityTests: XCTestCase {
             "profile_version": "0.1.0",
             "core": [
                 "highest_question": "Can this loader safely consume the asset?",
-                "axioms": [] as [Any],
+                "axioms": [
+                    "Reject assets that require a newer loader than the current implementation."
+                ] as [Any],
             ] as [String: Any],
         ] as [String: Any])
         let checksumsData = try JSONSerialization.data(withJSONObject: [

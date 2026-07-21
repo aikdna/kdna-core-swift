@@ -105,7 +105,9 @@ final class KDNACoreTests: XCTestCase {
             "profile_version": "0.1.0",
             "core": [
                 "highest_question": "Which checksum field names the entry set?",
-                "axioms": [] as [Any]
+                "axioms": [
+                    "Reject checksum declarations that do not bind the current runtime entry set."
+                ] as [Any]
             ] as [String: Any]
         ] as [String: Any])
         let combined = [
@@ -166,7 +168,9 @@ final class KDNACoreTests: XCTestCase {
             "profile_version": "0.1.0",
             "core": [
                 "highest_question": "Can the Swift reader accept a current Runtime container?",
-                "axioms": [] as [Any],
+                "axioms": [
+                    "Accept only a container that satisfies the current Runtime contract."
+                ] as [Any],
             ] as [String: Any],
         ] as [String: Any])
         let checksumsData = Data(#"{"algorithm":"sha256"}"#.utf8)
@@ -2030,9 +2034,34 @@ final class KDNACoreTests: XCTestCase {
         }
     }
 
+    func testPlanLoadDoesNotClaimPasswordReadyFromPresence() throws {
+        let fixtureURL = try packedAuthorizationFixture("password-valid")
+        defer { try? FileManager.default.removeItem(at: fixtureURL) }
+
+        let plan = KDNARuntime.planLoad(
+            assetURL: fixtureURL,
+            environment: KDNALoadEnvironment(hasPassword: true)
+        )
+        XCTAssertEqual(plan.state, "needs_password")
+        XCTAssertEqual(plan.required_action, "enter_password")
+        XCTAssertFalse(plan.can_load_now)
+        XCTAssertTrue(plan.input_fingerprint?.has_password_input == true)
+        XCTAssertTrue(plan.issues.contains { issue in
+            issue.code == "KDNA_AUTH_PASSWORD_UNVERIFIED" && issue.severity == "blocking"
+        })
+    }
+
     func testLoadWithCredentialDecryptsCurrentPasswordFixture() throws {
         let fixtureURL = try packedAuthorizationFixture("password-valid")
         defer { try? FileManager.default.removeItem(at: fixtureURL) }
+
+        let projection = try KDNARuntime.loadWithCredential(
+            assetURL: fixtureURL,
+            credential: KDNACredential(
+                password: "KDNA-AUTHORIZATION-CONFORMANCE-2026"
+            )
+        )
+        XCTAssertEqual(projection.projection_policy, "minimal")
 
         let capsule = try KDNARuntime.load(
             assetURL: fixtureURL,

@@ -113,8 +113,6 @@ public enum KDNAJSONValue: Codable, Equatable, Sendable {
         switch value {
         case is NSNull:
             self = .null
-        case let value as Bool:
-            self = .bool(value)
         case let value as String:
             self = .string(value)
         case let value as NSNumber:
@@ -123,6 +121,8 @@ public enum KDNAJSONValue: Codable, Equatable, Sendable {
             } else {
                 self = .number(value.doubleValue)
             }
+        case let value as Bool:
+            self = .bool(value)
         case let value as [Any]:
             self = .array(value.map(KDNAJSONValue.init(any:)))
         case let value as [String: Any]:
@@ -145,6 +145,15 @@ public enum KDNAJSONValue: Codable, Equatable, Sendable {
     public var arrayValue: [KDNAJSONValue]? {
         guard case .array(let value) = self else { return nil }
         return value
+    }
+
+    public var intValue: Int? {
+        guard case .number(let value) = self,
+              value.isFinite,
+              value.rounded(.towardZero) == value,
+              value >= Double(Int.min),
+              value <= Double(Int.max) else { return nil }
+        return Int(value)
     }
 
     public subscript(key: String) -> KDNAJSONValue? {
@@ -306,9 +315,15 @@ public enum KDNALoadPlanCore {
                 plan.access = nil
             }
             plan.issues.append(contentsOf: checks.problems.map {
-                let message = $0 == "schema: $.access: value is not in enum"
-                    ? "manifest: /access must be equal to one of the allowed values"
-                    : $0
+                let message: String
+                switch $0 {
+                case "schema: $.access: value is not in enum":
+                    message = "manifest: /access must be equal to one of the allowed values"
+                case "schema: $.entitlement.profile: value is not in enum":
+                    message = "manifest: /entitlement/profile must be equal to one of the allowed values"
+                default:
+                    message = $0
+                }
                 return KDNALoadPlanIssue(
                     code: validationProblemCode(message),
                     severity: "blocking",
@@ -419,12 +434,16 @@ public enum KDNALoadPlanCore {
             assetData: assetData,
             sourcePath: sourcePath,
             environment: KDNALoadEnvironment(
-                hasPassword: credential.password != nil,
+                hasPassword: !(credential.password?.isEmpty ?? true),
                 entitlementStatus: credential.entitlementStatus,
                 externalAuthorization: credential.externalAuthorization
             )
         )
-        guard plan.can_load_now else {
+        let loadMayVerifyPassword =
+            !(credential.password?.isEmpty ?? true) &&
+            plan.state == "needs_password" &&
+            plan.issues.contains { $0.code == "KDNA_AUTH_PASSWORD_UNVERIFIED" }
+        guard plan.can_load_now || loadMayVerifyPassword else {
             throw KDNALoadError.notAuthorized(plan)
         }
         guard let layout = readLayout(assetData: assetData, sourceKind: "file") else {
@@ -487,7 +506,15 @@ public enum KDNALoadPlanCore {
                 "payload.kdnab does not match kdna.payload.judgment/0.1.0: \(payloadIssues.joined(separator: "; "))"
             )
         }
-        return (plan, layout, payload)
+        var authorizedPlan = plan
+        if loadMayVerifyPassword {
+            authorizedPlan.state = "ready"
+            authorizedPlan.required_action = "load"
+            authorizedPlan.can_load_now = true
+            authorizedPlan.projection_policy = "minimal"
+            authorizedPlan.issues.removeAll { $0.code == "KDNA_AUTH_PASSWORD_UNVERIFIED" }
+        }
+        return (authorizedPlan, layout, payload)
     }
 
     static func profileContent(
@@ -528,7 +555,7 @@ public enum KDNALoadPlanCore {
                 // keeps its established plural projection field.
                 "self_checks": preserveSelfCheckList(reasoning["self_check"]),
                 "failure_modes": normalizeCompactList(reasoning["failure_modes"]),
-                "patterns": Array(normalizeCompactList(payload["patterns"]).prefix(3))
+                "patterns": normalizeCompactList(payload["patterns"])
             ]
         case "scenario":
             return ["scenarios": payload["scenarios"] as? [Any] ?? []]
@@ -537,6 +564,89 @@ public enum KDNALoadPlanCore {
         default:
             throw KDNALoadError.invalidPayload("unknown load profile: \(profile)")
         }
+    }
+
+    static func compactProjectionReport(payload: [String: Any]) -> KDNAProjectionReport {
+        let projectedCoreFields: Set<String> = [
+            "highest_question", "worldview", "value_order", "judgment_role", "axioms", "boundaries",
+        ]
+        let projectedReasoningFields: Set<String> = ["self_check", "failure_modes"]
+        let projectedAxiomFields: Set<String> = [
+            "id", "statement", "one_sentence", "applies_when", "does_not_apply_when", "failure_risk",
+        ]
+        let nonContentFields: Set<String> = ["profile", "profile_version"]
+        var entries: [KDNAProjectionOmission] = []
+
+        func pointerToken(_ value: String) -> String {
+            value.replacingOccurrences(of: "~", with: "~0")
+                .replacingOccurrences(of: "/", with: "~1")
+        }
+
+        func omissionCount(_ value: Any?) -> Int {
+            guard let value, !(value is NSNull) else { return 0 }
+            if let values = value as? [Any] { return values.count }
+            if let value = value as? String {
+                return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0 : 1
+            }
+            if let value = value as? [String: Any] { return value.isEmpty ? 0 : 1 }
+            return 1
+        }
+
+        func addOmittedValue(pointer: String, value: Any?) {
+            if let object = value as? [String: Any] {
+                for key in object.keys.sorted() {
+                    addOmittedValue(
+                        pointer: "\(pointer)/\(pointerToken(key))",
+                        value: object[key]
+                    )
+                }
+                return
+            }
+            let count = omissionCount(value)
+            if count > 0 {
+                entries.append(KDNAProjectionOmission(path: pointer, count: count))
+            }
+        }
+
+        let core = payload["core"] as? [String: Any] ?? [:]
+        for key in core.keys.sorted() where !projectedCoreFields.contains(key) {
+            addOmittedValue(pointer: "/core/\(pointerToken(key))", value: core[key])
+        }
+
+        var axiomCounts: [String: Int] = [:]
+        for value in core["axioms"] as? [Any] ?? [] {
+            guard let axiom = value as? [String: Any] else { continue }
+            for key in axiom.keys.sorted() where !projectedAxiomFields.contains(key) {
+                let count = omissionCount(axiom[key])
+                if count > 0 {
+                    let path = "/core/axioms/*/\(pointerToken(key))"
+                    axiomCounts[path, default: 0] += count
+                }
+            }
+        }
+        for path in axiomCounts.keys.sorted() {
+            entries.append(KDNAProjectionOmission(path: path, count: axiomCounts[path]!))
+        }
+
+        let reasoning = payload["reasoning"] as? [String: Any] ?? [:]
+        for key in reasoning.keys.sorted() where !projectedReasoningFields.contains(key) {
+            addOmittedValue(pointer: "/reasoning/\(pointerToken(key))", value: reasoning[key])
+        }
+
+        for key in payload.keys.sorted() {
+            if nonContentFields.contains(key) || ["core", "patterns", "reasoning"].contains(key) {
+                continue
+            }
+            addOmittedValue(pointer: "/\(pointerToken(key))", value: payload[key])
+        }
+
+        entries.sort { $0.path < $1.path }
+        let omittedTotal = entries.reduce(0) { $0 + $1.count }
+        return KDNAProjectionReport(
+            status: omittedTotal > 0 ? "partial" : "complete",
+            omitted: entries,
+            omitted_total: omittedTotal
+        )
     }
 
     private static func normalizeCompactAxiom(_ value: Any) -> [String: Any]? {
@@ -562,7 +672,7 @@ public enum KDNALoadPlanCore {
         if let declaredOneSentence, !declaredOneSentence.hasPrefix("<TBD") {
             oneSentence = declaredOneSentence
         } else if let fullStatement, !fullStatement.isEmpty {
-            oneSentence = fullStatement.count > 120 ? String(fullStatement.prefix(120)) + "…" : fullStatement
+            oneSentence = fullStatement
         } else {
             oneSentence = statement
         }
@@ -909,15 +1019,15 @@ public enum KDNALoadPlanCore {
 
         if plan.entitlement_profile == "password" {
             if environment.hasPassword {
+                plan.state = "needs_password"
+                plan.required_action = "enter_password"
+                plan.can_load_now = false
+                plan.projection_policy = "none"
                 plan.issues.append(KDNALoadPlanIssue(
-                    code: "KDNA_AUTH_PASSWORD_DIAGNOSTIC",
-                    severity: "info",
-                    message: "hasPassword is a diagnostic credential-presence signal only; it does not verify the password."
+                    code: "KDNA_AUTH_PASSWORD_UNVERIFIED",
+                    severity: "blocking",
+                    message: "A password was provided but has not been verified. Only an authorized load may verify it by decrypting the protected payload."
                 ))
-                plan.state = "ready"
-                plan.required_action = "load"
-                plan.can_load_now = true
-                plan.projection_policy = "minimal"
             } else {
                 plan.state = "needs_password"
                 plan.required_action = "enter_password"

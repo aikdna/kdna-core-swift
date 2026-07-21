@@ -2,13 +2,13 @@
 
 [![CI](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml/badge.svg)](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
-Swift beta component of the KDNA toolchain for native Apple runtimes.
+Swift pre-release component of the KDNA toolchain for native Apple runtimes.
 
 KDNA Core is the official KDNA judgment-asset format and runtime loading
 contract. `.kdna` assets are created, inspected, validated, planned, loaded,
 and consumed through the official KDNA toolchain. This package implements the
 Swift runtime side for local `.kdna` files. JS Core is the current first-run
-public beta baseline; Swift Core is beta until shared conformance evidence is
+public pre-release baseline; Swift Core remains pre-release until shared conformance evidence is
 published.
 
 This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/kdna/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that need to plan-load, verify, and project local KDNA runtime files.
@@ -64,7 +64,9 @@ print("Content digest:", result.contentDigest ?? "")
 ```
 
 `compatibility.min_loader_version` is a strict `x.y.z` loader package
-coordinate. `KDNALoaderCompatibility.currentVersion` is `0.20.0`; components
+coordinate. The current source candidate reports
+`KDNALoaderCompatibility.currentVersion` as `0.21.0`; the latest published
+Swift package release remains `0.20.0`. Components
 with leading zeros and coordinates with prefixes, prerelease suffixes, build
 metadata, missing components, or whitespace are invalid. A structurally valid
 asset that requires a newer loader is blocked before projection with
@@ -122,7 +124,8 @@ range; values outside that range fail closed before Swift integer conversion.
 
 LoadPlan, Runtime Capsule, digest evidence, ConsumptionPlan, Agent Host, and
 JudgmentTrace schemas are byte-for-byte resources pinned to
-`aikdna/kdna@1e77e3e0d486c330fe9f9262b514ef24c859d469` (Core `0.20.0`).
+`aikdna/kdna@3676ab0e4b54b83c4193eef3519b19cc6d0cd245` (Core `0.21.0`
+Development Preview candidate).
 SHA-256 resource locks make missing or drifted schemas fail closed. Date-time
 and URI formats follow the canonical Node validation boundaries. Manifest
 encryption declarations and the actual CBOR envelope must agree before
@@ -150,7 +153,7 @@ computation so malformed JSON fails closed.
   shapes as the JavaScript Core
 - **Validate** developer fixtures for conformance testing
 - **Format** loaded judgment context for native application integration
-- **Route / compose / match** through beta Swift APIs used by native experiments
+- **Route / compose / match** through pre-release Swift APIs used by native integrations
 
 ## Architecture
 
@@ -172,14 +175,14 @@ computation so malformed JSON fails closed.
 
 | Capability | Status |
 |------------|--------|
-| Open local `.kdna` runtime containers | Beta |
-| Verify local `.kdna` container digests | Beta |
-| LoadPlan authorization planning | Beta |
-| CBOR payload and encrypted-envelope decoding | Beta |
-| Current Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Beta; shared JavaScript golden vector |
-| A/C/E/P and Plan/Host/Trace parity | Beta; shared JavaScript contract fixtures |
-| RFC-0019 account/device external grant verification | Beta; shared JS golden vector |
-| `KDNAJudgmentProjection` rendering | Beta |
+| Open local `.kdna` runtime containers | Pre-release |
+| Verify local `.kdna` container digests | Pre-release |
+| LoadPlan authorization planning | Pre-release |
+| CBOR payload and encrypted-envelope decoding | Pre-release |
+| Current Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Pre-release; shared JavaScript golden vector |
+| A/C/E/P and Plan/Host/Trace parity | Pre-release; shared JavaScript contract fixtures |
+| RFC-0019 account/device external grant verification | Pre-release; shared JS golden vector |
+| `KDNAJudgmentProjection` rendering | Pre-release |
 | Developer fixture loading | Conformance-only |
 | Route / compose / match APIs | Experimental |
 | Complete JS parity | Not claimed; requires fixed shared conformance evidence |

@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.21.0 (2026-07-20)
+
+- Match JavaScript Core 0.21.0 password planning: credential presence remains
+  `needs_password` and cannot report `canLoadNow` until authorized load verifies
+  the password by decrypting the payload.
+- Adopt the author-neutral minimum judgment schema, explicit licensed
+  entitlement profiles, optional checksums authority, withdrawn asset-signature
+  surface, and non-truncating compact projection contract with explicit omitted
+  payload paths and counts in the Runtime Capsule trace.
+- Preserve every applicability item and full-statement fallback without
+  trimming, and keep JSON integer values distinct from bridged booleans in
+  cross-language wire-shape comparisons.
+- Keep the full Node/Swift authorization and loader-compatibility vectors on
+  one exact Core source coordinate.
+- Describe the Apple runtime and its support policy as pre-release rather than
+  assigning Beta maturity.
+
+This is an unpublished Development Preview candidate. No tag or existing
+Swift package release is changed.
+
 ## 0.20.0 (2026-07-18)
 
 - Enforce strict `compatibility.min_loader_version` coordinates in default
