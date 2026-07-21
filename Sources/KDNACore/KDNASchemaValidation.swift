@@ -4,14 +4,14 @@ import CoreFoundation
 
 /// JSON Schema resources used by the Swift loader are byte-for-byte copies of
 /// the canonical schemas at
-/// `aikdna/kdna@3676ab0e4b54b83c4193eef3519b19cc6d0cd245`. Validation fails
+/// `aikdna/kdna@4035f611d986541775e1b8c6eb990a33c73f8325`. Validation fails
 /// closed if a bundled resource is missing or its digest changes without
 /// updating this lock. The evaluator
 /// intentionally implements the complete set of JSON Schema keywords used by
 /// the pinned authoring and Runtime-contract schemas, including local/external
 /// refs.
 enum KDNACanonicalSchemas {
-    static let canonicalCommit = "3676ab0e4b54b83c4193eef3519b19cc6d0cd245"
+    static let canonicalCommit = "4035f611d986541775e1b8c6eb990a33c73f8325"
 
     static let expectedDigests = [
         "agent-host-capabilities.schema.json": "00ab3aeceffae5061faeecfdb82ac95afde4c60ad73faa796b2d7bd463e2e834",

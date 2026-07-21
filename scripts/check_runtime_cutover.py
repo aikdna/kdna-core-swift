@@ -19,7 +19,7 @@ AUTHORITY_COUNT = 73
 PACKAGE_SWIFT_SHA256 = "d6fc75029b8082fb0c391a057e2d42812b7ee5f28df2a8dcb8b7215f7d63867e"
 PACKAGE_RESOLVED_SHA256 = "d1bb9f640abe59cca6d731c8c5d17a39ba9859323703cce6826af472ff8b6ec0"
 LOADER_COMPATIBILITY_TEST_SHA256 = "f315173e5d8acdf4509feb8c76041b087b02a4f7edbf37e61ba459d1fcbcaa46"
-CI_WORKFLOW_SHA256 = "ee3e740f257719fcabe42816a59700c55e2ea69a5b01d4d43d8b843c6bddbf5d"
+CI_WORKFLOW_SHA256 = "0553ce30c32a52331c43eddc2df25d3054587180ce07c7d5afacc57c09b041b2"
 ARGON2KIT_DEPENDENCY = (
     b"https://github.com/rkreutz/Argon2Kit.git",
     b"from",
@@ -54,7 +54,7 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 30
     env:
-      KDNA_CONFORMANCE_COMMIT: 3676ab0e4b54b83c4193eef3519b19cc6d0cd245
+      KDNA_CONFORMANCE_COMMIT: 4035f611d986541775e1b8c6eb990a33c73f8325
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
