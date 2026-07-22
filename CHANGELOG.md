@@ -13,7 +13,8 @@
   trimming, and keep JSON integer values distinct from bridged booleans in
   cross-language wire-shape comparisons.
 - Keep the full Node/Swift authorization and loader-compatibility vectors on
-  one exact Core source coordinate.
+  one exact Core source coordinate, final KDNA `main`
+  `76bbc587ce05f7e575c2373832cc5c9eee9df98a`.
 - Describe the Apple runtime and its support policy as pre-release rather than
   assigning Beta maturity.
 
