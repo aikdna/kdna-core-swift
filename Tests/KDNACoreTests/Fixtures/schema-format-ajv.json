@@ -1,6 +1,6 @@
 {
   "generator": "scripts/generate_schema_format_fixture.js",
-  "canonical_commit": "4035f611d986541775e1b8c6eb990a33c73f8325",
+  "canonical_commit": "76bbc587ce05f7e575c2373832cc5c9eee9df98a",
   "ajv_formats": "3.0.1",
   "date-time": [
     {

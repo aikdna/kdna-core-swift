@@ -21,7 +21,7 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "4035f611d986541775e1b8c6eb990a33c73f8325"
+            "76bbc587ce05f7e575c2373832cc5c9eee9df98a"
         )
         let expectedNames = Set([
             "agent-host-capabilities.schema.json",
