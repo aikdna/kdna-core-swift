@@ -15,6 +15,7 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 30
     env:
+      # Public ecosystem acceptance remains anchored to 76bbc587ce05f7e575c2373832cc5c9eee9df98a until release promotion.
       KDNA_CONFORMANCE_COMMIT: 1b919605988eb514f2491195d6a77b96b17151c4
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
