@@ -21,7 +21,7 @@ final class SchemaValidationTests: XCTestCase {
     func testBundledCanonicalSchemasHonorDigestLocksAndPinnedNodeParity() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "76bbc587ce05f7e575c2373832cc5c9eee9df98a"
+            "1b919605988eb514f2491195d6a77b96b17151c4"
         )
         let expectedNames = Set([
             "agent-host-capabilities.schema.json",
@@ -418,6 +418,169 @@ final class SchemaValidationTests: XCTestCase {
         let projected = try XCTUnwrap(capsule.context["patterns"]?.arrayValue)
         XCTAssertEqual(projected.count, 5)
         XCTAssertEqual(capsule.context["patterns"], KDNAJSONValue(any: patterns))
+    }
+
+    func testCoreStructureSchemaAndLegacyDecoderFailClosed() throws {
+        let relations = [
+            [
+                "from": "judgment-primary",
+                "to": "judgment-secondary",
+                "via": "priority",
+                "applies_when": ["both judgments apply"],
+            ],
+            [
+                "from": "boundary-exception",
+                "to": "judgment-primary",
+                "via": "exception",
+                "does_not_apply_when": ["the exception is absent"],
+            ],
+        ] as [[String: Any]]
+        var payload = validPayload()
+        var payloadCore = payload["core"] as! [String: Any]
+        payloadCore["core_structure"] = relations
+        payload["core"] = payloadCore
+        XCTAssertTrue(KDNACanonicalSchemas.validatePayload(payload).isEmpty)
+
+        for invalidRelation in [
+            [
+                "from": "judgment-primary",
+                "to": "judgment-secondary",
+                "via": "support",
+            ],
+            [
+                "from": "judgment-primary",
+                "to": "judgment-secondary",
+                "via": "priority",
+                "private_creation_state": "must-not-leak",
+            ],
+        ] {
+            var invalidPayload = validPayload()
+            var invalidCore = invalidPayload["core"] as! [String: Any]
+            invalidCore["core_structure"] = [invalidRelation]
+            invalidPayload["core"] = invalidCore
+            XCTAssertFalse(KDNACanonicalSchemas.validatePayload(invalidPayload).isEmpty)
+        }
+
+        let legacyCore: [String: Any] = [
+            "meta": [
+                "version": "1.0.0",
+                "domain": "test",
+                "created": "2026-07-30T00:00:00Z",
+                "purpose": "Test relation decoding.",
+                "load_condition": "when testing",
+            ],
+            "core_structure": relations,
+        ]
+        let legacyData = try JSONSerialization.data(withJSONObject: legacyCore)
+        let decoded = try JSONDecoder().decode(KDNCoreData.self, from: legacyData)
+        XCTAssertEqual(decoded.core_structure?.map(\.via), ["priority", "exception"])
+
+        for invalidLegacyRelation in [
+            ["from": "a", "to": "b", "via": "support"],
+            ["from": "a", "to": "b", "via": "priority", "private_state": "forbidden"],
+        ] {
+            var invalidLegacyCore = legacyCore
+            invalidLegacyCore["core_structure"] = [invalidLegacyRelation]
+            let data = try JSONSerialization.data(withJSONObject: invalidLegacyCore)
+            XCTAssertThrowsError(try JSONDecoder().decode(KDNCoreData.self, from: data))
+        }
+
+        var stringLegacyCore = legacyCore
+        stringLegacyCore["core_structure"] = ["priority"]
+        let stringData = try JSONSerialization.data(withJSONObject: stringLegacyCore)
+        XCTAssertThrowsError(try JSONDecoder().decode(KDNCoreData.self, from: stringData))
+    }
+
+    func testCoreStructureSurvivesCompactFullAndPromptProjection() throws {
+        let relations = [
+            [
+                "from": "judgment-primary",
+                "to": "judgment-secondary",
+                "via": "priority",
+            ],
+            [
+                "from": "boundary-exception",
+                "to": "judgment-primary",
+                "via": "exception",
+            ],
+        ] as [[String: Any]]
+        let bytes = try mutatedGolden { _, payload in
+            var core = payload["core"] as? [String: Any] ?? [:]
+            core["core_structure"] = relations
+            payload["core"] = core
+        }
+
+        let compact = try KDNARuntime.load(
+            assetData: bytes,
+            loadedAt: "2026-07-30T00:00:00.000Z"
+        )
+        XCTAssertEqual(compact.context["core_structure"], KDNAJSONValue(any: relations))
+        XCTAssertFalse(compact.trace.projection_report?.omitted.contains {
+            $0.path.hasPrefix("/core/core_structure")
+        } ?? true)
+
+        let full = try KDNARuntime.load(
+            assetData: bytes,
+            profile: "full",
+            loadedAt: "2026-07-30T00:00:00.000Z"
+        )
+        XCTAssertEqual(
+            full.context["payload"]?["core"]?["core_structure"],
+            KDNAJSONValue(any: relations)
+        )
+
+        let assetURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("kdna-core-structure-\(UUID().uuidString).kdna")
+        defer { try? FileManager.default.removeItem(at: assetURL) }
+        try bytes.write(to: assetURL)
+        let projection = try KDNARuntime.loadWithCredential(assetURL: assetURL)
+        let section = try XCTUnwrap(projection.sections.first { $0.id == "core_structure" })
+        XCTAssertEqual(section.items, [
+            "judgment-primary --priority--> judgment-secondary",
+            "boundary-exception --exception--> judgment-primary",
+        ])
+        XCTAssertTrue(projection.prompt.contains("judgment-primary --priority--> judgment-secondary"))
+        XCTAssertTrue(projection.prompt.contains("boundary-exception --exception--> judgment-primary"))
+    }
+
+    func testNodeProducedExactAssetPreservesCoreStructureWhenRequested() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let assetPath = environment["KDNA_INTEROP_ASSET"],
+              let expectedPath = environment["KDNA_INTEROP_EXPECTED_RELATIONS"],
+              !assetPath.isEmpty,
+              !expectedPath.isEmpty else { return }
+
+        let assetURL = URL(fileURLWithPath: assetPath).standardizedFileURL
+        let assetValues = try assetURL.resourceValues(
+            forKeys: [.isRegularFileKey, .isSymbolicLinkKey]
+        )
+        XCTAssertEqual(assetValues.isRegularFile, true)
+        XCTAssertEqual(assetValues.isSymbolicLink, false)
+
+        let capsule = try KDNARuntime.load(
+            assetData: Data(contentsOf: assetURL),
+            profile: "full",
+            loadedAt: "2026-07-30T00:00:00.000Z"
+        )
+        let relations = try XCTUnwrap(
+            capsule.context["payload"]?["core"]?["core_structure"]
+        )
+        let expectedRelations = try JSONDecoder().decode(
+            KDNAJSONValue.self,
+            from: Data(contentsOf: URL(fileURLWithPath: expectedPath))
+        )
+        XCTAssertEqual(relations, expectedRelations)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let relationBytes = try encoder.encode(relations)
+        let expectedBytes = try encoder.encode(expectedRelations)
+        let digest = "sha256:" + SHA256.hash(data: relationBytes)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        let expectedDigest = "sha256:" + SHA256.hash(data: expectedBytes)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        XCTAssertEqual(digest, expectedDigest)
     }
 
     func testCompactRuntimeProfileReportsOmittedPayloadPathsAndCounts() throws {

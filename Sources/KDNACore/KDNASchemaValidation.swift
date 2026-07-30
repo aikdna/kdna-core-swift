@@ -4,14 +4,14 @@ import CoreFoundation
 
 /// JSON Schema resources used by the Swift loader are byte-for-byte copies of
 /// the canonical schemas at
-/// `aikdna/kdna@76bbc587ce05f7e575c2373832cc5c9eee9df98a`. Validation fails
+/// `aikdna/kdna@1b919605988eb514f2491195d6a77b96b17151c4`. Validation fails
 /// closed if a bundled resource is missing or its digest changes without
 /// updating this lock. The evaluator
 /// intentionally implements the complete set of JSON Schema keywords used by
 /// the pinned authoring and Runtime-contract schemas, including local/external
 /// refs.
 enum KDNACanonicalSchemas {
-    static let canonicalCommit = "76bbc587ce05f7e575c2373832cc5c9eee9df98a"
+    static let canonicalCommit = "1b919605988eb514f2491195d6a77b96b17151c4"
 
     static let expectedDigests = [
         "agent-host-capabilities.schema.json": "00ab3aeceffae5061faeecfdb82ac95afde4c60ad73faa796b2d7bd463e2e834",
@@ -27,7 +27,7 @@ enum KDNACanonicalSchemas {
         "load-contract.schema.json": "1b262a02f3c63ec25c72ae6dc79c4a472325414d4b06c6fa3f85f56998178ebb",
         "load-plan.schema.json": "18915f1d0fd6dc2b79e60f67e836359897beed8406625c7485c75aa2cd2b3e5a",
         "manifest.schema.json": "73a1c89fa617f0d13d17d69ad7a7070553a8fc74da2751819d640f6b8c0e92b6",
-        "payload-profile.schema.json": "c65afb38b47c115680d121838ec3640266455d5b2d472b3e0e8904f60d734012",
+        "payload-profile.schema.json": "117b86dbd9c0475669642323184c857f0337771cef0c79c606da81b9983baa41",
         "runtime-capsule.schema.json": "344e584a8b264ce381c2b754e69d46664d6dba049e6a2ffae8731df9ec05e6f6",
     ]
 
