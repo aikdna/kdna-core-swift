@@ -551,6 +551,7 @@ public enum KDNALoadPlanCore {
                     : NSNull(),
                 "axioms": (core["axioms"] as? [Any] ?? []).compactMap(normalizeCompactAxiom),
                 "boundaries": normalizeCompactList(core["boundaries"]),
+                "core_structure": core["core_structure"] as? [Any] ?? [],
                 // Canonical payload spelling is singular. Capsule context
                 // keeps its established plural projection field.
                 "self_checks": preserveSelfCheckList(reasoning["self_check"]),
@@ -569,6 +570,7 @@ public enum KDNALoadPlanCore {
     static func compactProjectionReport(payload: [String: Any]) -> KDNAProjectionReport {
         let projectedCoreFields: Set<String> = [
             "highest_question", "worldview", "value_order", "judgment_role", "axioms", "boundaries",
+            "core_structure",
         ]
         let projectedReasoningFields: Set<String> = ["self_check", "failure_modes"]
         let projectedAxiomFields: Set<String> = [
@@ -1202,6 +1204,22 @@ public enum KDNALoadPlanCore {
             }
             if !items.isEmpty {
                 sections.append(KDNAProjectionSection(id: "core", title: "Core Judgment", items: items))
+            }
+
+            let relationItems = (core["core_structure"] as? [[String: Any]] ?? []).compactMap { relation -> String? in
+                guard let from = relation["from"] as? String,
+                      let to = relation["to"] as? String,
+                      let via = relation["via"] as? String else {
+                    return nil
+                }
+                return "\(from) --\(via)--> \(to)"
+            }
+            if !relationItems.isEmpty {
+                sections.append(KDNAProjectionSection(
+                    id: "core_structure",
+                    title: "Judgment Relations",
+                    items: relationItems
+                ))
             }
         }
 

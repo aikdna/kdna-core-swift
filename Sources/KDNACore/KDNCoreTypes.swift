@@ -23,7 +23,7 @@ public struct KDNCoreData: Codable {
     public let axioms: [KDNAAxiom]?
     public let ontology: [KDNAConcept]?
     public let frameworks: [KDNAFramework]?
-    public let core_structure: [String]?
+    public let core_structure: [KDNACoreRelation]?
     public let trigger_signals: [String]?
 
     // Judgment governance fields
@@ -32,7 +32,7 @@ public struct KDNCoreData: Codable {
     public let judgment_role: KDNAJudgmentRole?
     public let value_order: [String]?
 
-    enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey, CaseIterable {
         case meta, stances, axioms, ontology, frameworks, core_structure, trigger_signals
         case highest_question, worldview, judgment_role, value_order
     }
@@ -44,13 +44,72 @@ public struct KDNCoreData: Codable {
         axioms = try container.decodeIfPresent([KDNAAxiom].self, forKey: .axioms)
         ontology = try container.decodeIfPresent([KDNAConcept].self, forKey: .ontology)
         frameworks = try container.decodeIfPresent([KDNAFramework].self, forKey: .frameworks)
-        core_structure = try? container.decodeIfPresent([String].self, forKey: .core_structure)
+        core_structure = try container.decodeIfPresent([KDNACoreRelation].self, forKey: .core_structure)
         trigger_signals = try container.decodeIfPresent([String].self, forKey: .trigger_signals)
 
         highest_question = try container.decodeIfPresent(String.self, forKey: .highest_question)
         worldview = try container.decodeIfPresent([String].self, forKey: .worldview)
         judgment_role = try container.decodeIfPresent(KDNAJudgmentRole.self, forKey: .judgment_role)
         value_order = try container.decodeIfPresent([String].self, forKey: .value_order)
+    }
+}
+
+/// A closed public relation between two judgment units.
+///
+/// The current payload profile admits only priority and exception relations.
+/// Private Creation evidence and unknown relation values must fail decoding
+/// instead of being silently discarded.
+public struct KDNACoreRelation: Codable, Equatable, Sendable {
+    public let from: String
+    public let to: String
+    public let via: String
+    public let applies_when: [String]?
+    public let does_not_apply_when: [String]?
+
+    enum CodingKeys: String, CodingKey, CaseIterable {
+        case from, to, via, applies_when, does_not_apply_when
+    }
+
+    public init(
+        from: String,
+        to: String,
+        via: String,
+        applies_when: [String]? = nil,
+        does_not_apply_when: [String]? = nil
+    ) {
+        self.from = from
+        self.to = to
+        self.via = via
+        self.applies_when = applies_when
+        self.does_not_apply_when = does_not_apply_when
+    }
+
+    public init(from decoder: Decoder) throws {
+        try kdnaRejectUnknownKeys(
+            from: decoder,
+            allowed: Set(CodingKeys.allCases.map(\.rawValue)),
+            type: "KDNACoreRelation"
+        )
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        from = try container.decode(String.self, forKey: .from)
+        to = try container.decode(String.self, forKey: .to)
+        via = try container.decode(String.self, forKey: .via)
+        applies_when = try container.decodeIfPresent([String].self, forKey: .applies_when)
+        does_not_apply_when = try container.decodeIfPresent([String].self, forKey: .does_not_apply_when)
+
+        try kdnaRequire(!from.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, from: decoder, "KDNACoreRelation.from must be non-empty.")
+        try kdnaRequire(!to.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, from: decoder, "KDNACoreRelation.to must be non-empty.")
+        try kdnaRequire(["priority", "exception"].contains(via), from: decoder, "KDNACoreRelation.via must be priority or exception.")
+        try kdnaRequire(
+            (applies_when ?? []).allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty },
+            from: decoder,
+            "KDNACoreRelation.applies_when must contain only non-empty strings."
+        )
+        try kdnaRequire(
+            (does_not_apply_when ?? []).allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty },
+            from: decoder,
+            "KDNACoreRelation.does_not_apply_when must contain only non-empty strings."
+        )
     }
 }
 
