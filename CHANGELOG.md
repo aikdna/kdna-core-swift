@@ -2,6 +2,8 @@
 
 ## 0.21.0 (2026-07-20)
 
+- Remove an internal sprint label from the bundled public Manifest schema
+  without changing its validation contract.
 - Match JavaScript Core 0.21.0 password planning: credential presence remains
   `needs_password` and cannot report `canLoadNow` until authorized load verifies
   the password by decrypting the payload.

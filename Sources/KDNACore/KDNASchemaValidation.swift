@@ -26,7 +26,7 @@ enum KDNACanonicalSchemas {
         "judgment-trace.schema.json": "a260e5abbcc68bf8df11ba738b5d475901b2950668c4718e415355adc723c7b0",
         "load-contract.schema.json": "1b262a02f3c63ec25c72ae6dc79c4a472325414d4b06c6fa3f85f56998178ebb",
         "load-plan.schema.json": "18915f1d0fd6dc2b79e60f67e836359897beed8406625c7485c75aa2cd2b3e5a",
-        "manifest.schema.json": "73a1c89fa617f0d13d17d69ad7a7070553a8fc74da2751819d640f6b8c0e92b6",
+        "manifest.schema.json": "9abe3d36250f177d3772520245d4fc471b01baf179a5fc0cf1e22553114b88b0",
         "payload-profile.schema.json": "117b86dbd9c0475669642323184c857f0337771cef0c79c606da81b9983baa41",
         "runtime-capsule.schema.json": "344e584a8b264ce381c2b754e69d46664d6dba049e6a2ffae8731df9ec05e6f6",
     ]
