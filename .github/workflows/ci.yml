@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 30
     env:
       # Public ecosystem acceptance remains anchored to 76bbc587ce05f7e575c2373832cc5c9eee9df98a until release promotion.
-      KDNA_CONFORMANCE_COMMIT: 1b919605988eb514f2491195d6a77b96b17151c4
+      KDNA_CONFORMANCE_COMMIT: 1f7570e7b8fdb42d83a46a65c62b0a04f3b2b0f6
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
