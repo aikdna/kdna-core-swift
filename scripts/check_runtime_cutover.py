@@ -19,7 +19,7 @@ AUTHORITY_COUNT = 73
 PACKAGE_SWIFT_SHA256 = "d6fc75029b8082fb0c391a057e2d42812b7ee5f28df2a8dcb8b7215f7d63867e"
 PACKAGE_RESOLVED_SHA256 = "d1bb9f640abe59cca6d731c8c5d17a39ba9859323703cce6826af472ff8b6ec0"
 LOADER_COMPATIBILITY_TEST_SHA256 = "f315173e5d8acdf4509feb8c76041b087b02a4f7edbf37e61ba459d1fcbcaa46"
-CI_WORKFLOW_SHA256 = "db4ac74d928f43ff0b09a101e1ae0f46b69400b3d23df4f2de5ae870436dcd10"
+CI_WORKFLOW_SHA256 = "88522d5ce6e0cbe8182534fbc1d10c3eb22943a9633ee44a63ace6d7b5eac019"
 ARGON2KIT_DEPENDENCY = (
     b"https://github.com/rkreutz/Argon2Kit.git",
     b"from",
@@ -54,10 +54,8 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 30
     env:
-      # Anchored to the kdna commit that carries the RFC-0020 minimal profile
-      # schema (aikdna/kdna#254). Re-anchor to the promoted kdna main SHA once
-      # that change lands on kdna main.
-      KDNA_CONFORMANCE_COMMIT: 6fdc6a53134fb99cf28cb752549d27f65587477d
+      # Public ecosystem acceptance remains anchored to 32aa3ff8e633291d4bb9e01de5a70181c8415d93 until release promotion.
+      KDNA_CONFORMANCE_COMMIT: 32aa3ff8e633291d4bb9e01de5a70181c8415d93
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
