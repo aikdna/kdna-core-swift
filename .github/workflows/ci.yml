@@ -15,8 +15,10 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 30
     env:
-      # Public ecosystem acceptance remains anchored to 32aa3ff8e633291d4bb9e01de5a70181c8415d93 until release promotion.
-      KDNA_CONFORMANCE_COMMIT: 32aa3ff8e633291d4bb9e01de5a70181c8415d93
+      # Anchored to the kdna commit that carries the RFC-0020 minimal profile
+      # schema (aikdna/kdna#254). Re-anchor to the promoted kdna main SHA once
+      # that change lands on kdna main.
+      KDNA_CONFORMANCE_COMMIT: 6fdc6a53134fb99cf28cb752549d27f65587477d
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
