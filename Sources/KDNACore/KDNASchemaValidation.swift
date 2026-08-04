@@ -24,11 +24,11 @@ enum KDNACanonicalSchemas {
         "external-grant-envelope.schema.json": "245697c461cecf4fd68877d50d4489127f0375f99fda6f5ead41971d8776f6ca",
         "external-key-grant.schema.json": "d0281a11ba405360bc45bd4894dcdfbed3a85664566af987b7147d5622ffb749",
         "judgment-trace.schema.json": "a260e5abbcc68bf8df11ba738b5d475901b2950668c4718e415355adc723c7b0",
-        "load-contract.schema.json": "1b262a02f3c63ec25c72ae6dc79c4a472325414d4b06c6fa3f85f56998178ebb",
+        "load-contract.schema.json": "775c04c0b62bf46a4b831bfb47b0b08f319364a190cdd3baa0721a6791466c0b",
         "load-plan.schema.json": "18915f1d0fd6dc2b79e60f67e836359897beed8406625c7485c75aa2cd2b3e5a",
         "manifest.schema.json": "9abe3d36250f177d3772520245d4fc471b01baf179a5fc0cf1e22553114b88b0",
         "payload-profile.schema.json": "117b86dbd9c0475669642323184c857f0337771cef0c79c606da81b9983baa41",
-        "runtime-capsule.schema.json": "344e584a8b264ce381c2b754e69d46664d6dba049e6a2ffae8731df9ec05e6f6",
+        "runtime-capsule.schema.json": "0cc9c82c63a2f8f4822308c67ef774a543dc35d85c2a4505fcf5392bf5695f07",
     ]
 
     static func validateManifest(_ instance: Any) -> [String] {
