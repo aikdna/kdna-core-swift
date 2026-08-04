@@ -9,7 +9,7 @@
   "properties": {
     "default_profile": {
       "type": "string",
-      "enum": ["index", "compact", "scenario", "full", "minimal"]
+      "enum": ["index", "compact", "scenario", "full"]
     },
     "profiles": {
       "type": "object",
@@ -19,8 +19,7 @@
         "index": { "$ref": "#/$defs/profile" },
         "compact": { "$ref": "#/$defs/profile" },
         "scenario": { "$ref": "#/$defs/profile" },
-        "full": { "$ref": "#/$defs/profile" },
-        "minimal": { "$ref": "#/$defs/profile" }
+        "full": { "$ref": "#/$defs/profile" }
       }
     }
   },
