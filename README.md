@@ -27,7 +27,7 @@ raw manifest fields.
 Add to your Package.swift:
 
 ```
-.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.20.0")
+.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.21.0")
 ```
 
 Then add `KDNACore` to your target dependencies:
@@ -66,7 +66,7 @@ print("Content digest:", result.contentDigest ?? "")
 `compatibility.min_loader_version` is a strict `x.y.z` loader package
 coordinate. The current source candidate reports
 `KDNALoaderCompatibility.currentVersion` as `0.21.0`; the latest published
-Swift package release remains `0.20.0`. Components
+Swift package release is `0.21.0` (tag `v0.21.0`). Components
 with leading zeros and coordinates with prefixes, prerelease suffixes, build
 metadata, missing components, or whitespace are invalid. A structurally valid
 asset that requires a newer loader is blocked before projection with
