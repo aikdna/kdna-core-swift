@@ -36,7 +36,7 @@ final class RuntimeContractTests: XCTestCase {
     func testCurrentCrossLanguageCoverageMatrixIsPinnedToNodeAuthority() throws {
         XCTAssertEqual(
             KDNACanonicalSchemas.canonicalCommit,
-            "1b919605988eb514f2491195d6a77b96b17151c4"
+            "5d4b15fca0c3ad802c2ec6713fbe8bf15da61fd0"
         )
 
         let capsule = try KDNARuntime.load(

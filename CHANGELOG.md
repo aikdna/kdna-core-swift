@@ -16,7 +16,7 @@
   cross-language wire-shape comparisons.
 - Keep the full Node/Swift authorization and loader-compatibility vectors on
   one exact Core source coordinate, final KDNA `main`
-  `1b919605988eb514f2491195d6a77b96b17151c4`.
+  `5d4b15fca0c3ad802c2ec6713fbe8bf15da61fd0`.
 - Describe the Apple runtime and its support policy as pre-release rather than
   assigning Beta maturity.
 
