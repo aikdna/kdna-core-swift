@@ -20,9 +20,6 @@
 - Describe the Apple runtime and its support policy as pre-release rather than
   assigning Beta maturity.
 
-This is an unpublished Development Preview candidate. No tag or existing
-Swift package release is changed.
-
 ## 0.20.0 (2026-07-18)
 
 - Enforce strict `compatibility.min_loader_version` coordinates in default
