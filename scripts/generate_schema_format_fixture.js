@@ -45,7 +45,7 @@ const ajv = new Ajv({ strict: true });
 addFormats(ajv);
 const output = {
   generator: 'scripts/generate_schema_format_fixture.js',
-  canonical_commit: '5d4b15fca0c3ad802c2ec6713fbe8bf15da61fd0',
+  canonical_commit: 'a0edd85970a2b0a559528d40dcca9eff35f8a481',
   ajv_formats: '3.0.1',
 };
 for (const [format, values] of Object.entries(candidates)) {
