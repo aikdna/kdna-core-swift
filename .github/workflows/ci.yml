@@ -18,7 +18,7 @@ jobs:
       # Anchored to the kdna commit that carries the RFC-0020 minimal profile
       # schema (aikdna/kdna#254). Re-anchor to the promoted kdna main SHA once
       # that change lands on kdna main.
-      KDNA_CONFORMANCE_COMMIT: f7d44dc44857e01c8d9aa43bc3cd0689ef7f0d0c
+      KDNA_CONFORMANCE_COMMIT: f7d44dc7c62920079247fce1be54a3fb8512a331
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
