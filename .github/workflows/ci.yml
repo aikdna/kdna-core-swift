@@ -15,10 +15,9 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 30
     env:
-      # Anchored to the kdna commit that carries the RFC-0020 minimal profile
-      # schema (aikdna/kdna#254). Re-anchor to the promoted kdna main SHA once
-      # that change lands on kdna main.
-      KDNA_CONFORMANCE_COMMIT: f7d44dc7c62920079247fce1be54a3fb8512a331
+      # Anchored to the published 0.22.0 kdna main commit (a0edd85), which
+      # carries RFC-0021 M1 signatures and the RFC-0020 minimal profile.
+      KDNA_CONFORMANCE_COMMIT: a0edd85970a2b0a559528d40dcca9eff35f8a481
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
