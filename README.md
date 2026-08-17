@@ -258,6 +258,14 @@ defining independent trust or promotion rules.
 
 Apache 2.0 — see [LICENSE](LICENSE).
 
+## Official packages
+
+Official KDNA packages are published under the `@aikdna` npm scope and the
+`aikdna` name on PyPI. The unscoped npm package `kdna` is not affiliated with
+the KDNA project. This repository (`aikdna/kdna-core-swift`) is the official
+Swift Core; install it only through the Swift Package Manager coordinate shown
+in this README.
+
 ## Related
 
 - [KDNA Core](https://github.com/aikdna/kdna) — Format, JS core library, and launch truth
