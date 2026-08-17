@@ -1,6 +1,6 @@
 {
   "canonical_commit": "5d4b15fca0c3ad802c2ec6713fbe8bf15da61fd0",
-  "loader_version": "0.21.0",
+  "loader_version": "0.22.0",
   "vectors": [
     {
       "required": "0.18.999999999999999999999999999999",
@@ -17,11 +17,23 @@
     {
       "required": "0.21.0",
       "valid": true,
-      "comparison": 0,
+      "comparison": -1,
       "compatible": true
     },
     {
       "required": "0.21.1",
+      "valid": true,
+      "comparison": -1,
+      "compatible": true
+    },
+    {
+      "required": "0.22.0",
+      "valid": true,
+      "comparison": 0,
+      "compatible": true
+    },
+    {
+      "required": "0.22.1",
       "valid": true,
       "comparison": 1,
       "compatible": false
