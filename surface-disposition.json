@@ -100,7 +100,8 @@
       "original_path": "NOTICE",
       "entry_sha256": "e41b3512e6f58aa6d5824ad99ed01d42b1629190a8c9754f92648ee731d6a81a",
       "disposition": "retained_byte_identical",
-      "current_path": "NOTICE"
+      "current_path": "NOTICE",
+      "original_bytes_preserved_at": "retired/NOTICE"
     },
     {
       "original_path": "Package.resolved",

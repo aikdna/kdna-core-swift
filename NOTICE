@@ -4,9 +4,10 @@ Copyright 2026 KDNA Authors
 This product includes software developed at
 https://github.com/aikdna/kdna-core-swift
 
-kdna-core-swift is the Swift beta runtime bridge for loading,
-validating, planning, and projecting `.kdna` judgment assets on Apple
-platforms through the KDNA toolchain.
+kdna-core-swift provides native Core admission and public Read for `.kdna`
+judgment assets on macOS and iOS. Read requires the embedding's explicit
+trusted control and Host providers; technical admission grants no action
+authority.
 
 See LICENSE for the full Apache 2.0 license text. See README.md for the
-Swift runtime guide and beta API surface.
+current Swift Core/Read guide and supported API surface.
