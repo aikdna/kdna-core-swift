@@ -17,6 +17,13 @@ chance to address it.
 
 `kdna-core-swift` is a pre-release Core and Read implementation for Apple platforms.
 
+Security support continues to cover the latest tagged KDNA Protocol release
+in `aikdna/kdna` and the latest mainline pre-release of `kdna-core-swift`.
+Older Swift pre-release versions may receive critical security patches on a
+case-by-case basis.
+
+## Current dependency inputs
+
 | Component | Current contract |
 |-----------|------------------|
 | Swift implementation | Candidate coordinate in `public-contract-binding.json` |
@@ -24,8 +31,7 @@ chance to address it.
 
 The exact binding governs this implementation; a newer protocol repository
 commit does not automatically change its accepted contract. No candidate tag or
-registry release is implied. Older Swift pre-release versions may receive
-critical security patches on a case-by-case basis.
+registry release is implied.
 
 ## Security Model
 
@@ -45,3 +51,7 @@ Report an admission, disclosure, identity or authority-boundary failure through
 the private channels above. Include the exact commit and binding coordinate,
 platform/toolchain, and a minimal synthetic reproduction without private keys
 or user data.
+
+For the KDNA Protocol security architecture, see
+[GOVERNANCE.md](https://github.com/aikdna/kdna/blob/main/docs/GOVERNANCE.md)
+in the main protocol repository.
