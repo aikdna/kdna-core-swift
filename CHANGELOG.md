@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- Adopt the native Core and Read contract at candidate coordinate
+  `0.4.0-rc.component-semantics.1`, with bundled schemas, strict JSON and
+  component interpretation, and explicit trusted Read embedding.
+- Export the dependency-free `KDNACore` product and preserve the previous loader
+  implementation, tests and documentation under `retired/` outside current targets.
+- Add exact source/fixture inventory checks, mutation checks, full native tests,
+  an independent public-API consumer and a generic iOS compilation to CI.
+- Keep Plan admission/execution and unsupported container capabilities explicitly
+  unavailable. No tag or registry release is asserted for this candidate.
+
+Older entries below describe the previous loader API.
+
 ## 0.21.0 (2026-07-20)
 
 - Remove an internal sprint label from the bundled public Manifest schema

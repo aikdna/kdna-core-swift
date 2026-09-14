@@ -2,3 +2,5 @@
 DerivedData/
 *.xcodeproj
 xcuserdata/
+
+__pycache__/

@@ -1,0 +1,1074 @@
+{
+  "format": "kdna.swift-public-inputs/1",
+  "scope": "Current package, native implementation, generated resources and complete XCTest fixture graph. SHA-256 hashes cover file bytes.",
+  "files": [
+    {
+      "path": "Package.swift",
+      "sha256": "2aad36520bedb833e7f37c00cb8c0d6fb8f8aa924f0a1d2fa5728549bf2f7c30"
+    },
+    {
+      "path": "Sources/KDNACore/PublicComponents.swift",
+      "sha256": "242621299f600933f34a4bc5cd8548697edbc5ca00b88fac61d985132ca1c8d1"
+    },
+    {
+      "path": "Sources/KDNACore/PublicContainer.swift",
+      "sha256": "5d6fa2951016203ee54221747bad4bebf647fac68b75b8e7283bf6e32cb2caa1"
+    },
+    {
+      "path": "Sources/KDNACore/PublicCore.swift",
+      "sha256": "18cf428ebf3dbee6608b972f44538a627525680484d3c15f0d2f109fae9b7cab"
+    },
+    {
+      "path": "Sources/KDNACore/PublicDigests.swift",
+      "sha256": "7c51d2b109c694f4e28a3f0ad9be885ac94dbfeee77bee2224e98f6b62cd019a"
+    },
+    {
+      "path": "Sources/KDNACore/PublicIR.swift",
+      "sha256": "512d78602148824491323d46f5c6659a6f297403e7d7fa40b8a40d551eb81f1e"
+    },
+    {
+      "path": "Sources/KDNACore/PublicRead.swift",
+      "sha256": "43bc75fc8f0dc1658542d62e2cc0322d02ac510ef87350381a9d33c296323c39"
+    },
+    {
+      "path": "Sources/KDNACore/PublicSchema.swift",
+      "sha256": "2a145fbfb8d2a077fc1b92a3287e6c317bddd7347b99fed6365bc2466c08e12f"
+    },
+    {
+      "path": "Sources/KDNACore/PublicValues.swift",
+      "sha256": "9fa51c0ae7f52166e54965f08ac91afdac855385c815fcb91f96e260d6052dfb"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/agent-host-capabilities.schema.json",
+      "sha256": "00ab3aeceffae5061faeecfdb82ac95afde4c60ad73faa796b2d7bd463e2e834"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/agent-host-receipt.schema.json",
+      "sha256": "ecdac9d9b6670ead0cf94b3c307b7d9580e4eacdf0d1ce683d2b100b59a3f115"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/agent-host-request.schema.json",
+      "sha256": "e827bc2ca51937c31d9ff089b9ae9b37f154ae69836d778f0027480f0d2ee693"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/bundle-profile.schema.json",
+      "sha256": "45370bc73504df26a25d2e391cf543a468f872be835e57ac17ebc5c95d13f3ef"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/canonical-ir-0.1.schema.json",
+      "sha256": "f66c98f60f7f318ec72dc982006752237e8d1f6c0181e953d22aacc8953b5dfb"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/canonical-ir-0.2.schema.json",
+      "sha256": "9ba2ea3a86bd722f076d4218238bfdf34d53355601c226a419a29a0edf9a6a79"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/checksums.schema.json",
+      "sha256": "7fd1f5d5a98a2f0a4d311a6ebba7d13d0e00253ab042098ac0aeec9e31c4d4e8"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/consumption-plan.schema.json",
+      "sha256": "f73c52884c59e1566d4e6121e42b9e2dfed43ffbee6452b6239a56cf8262785f"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/digest-evidence.schema.json",
+      "sha256": "294939c0a230639a1ae7b059a28d87310ead350ff03d9d6cf46e112acf3d9f75"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/external-grant-envelope.schema.json",
+      "sha256": "245697c461cecf4fd68877d50d4489127f0375f99fda6f5ead41971d8776f6ca"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/external-key-grant.schema.json",
+      "sha256": "d0281a11ba405360bc45bd4894dcdfbed3a85664566af987b7147d5622ffb749"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/generated-contract.json",
+      "sha256": "ec8a2616a768f5523e8852487e757f6f9560d1933ea3a9ee90ead69fe1120f4d"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/judgment-trace.schema.json",
+      "sha256": "a260e5abbcc68bf8df11ba738b5d475901b2950668c4718e415355adc723c7b0"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/load-contract.schema.json",
+      "sha256": "775c04c0b62bf46a4b831bfb47b0b08f319364a190cdd3baa0721a6791466c0b"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/load-plan.schema.json",
+      "sha256": "9325256f7967419ca1ed6f37afe28d616474aa26c778d1e2853afefe033e452a"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/manifest-0.2.schema.json",
+      "sha256": "5d0be457f4a59f8debf6f1c2e4b16adfb468b1024abd71da92fc2f652acd2cea"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/manifest.schema.json",
+      "sha256": "9abe3d36250f177d3772520245d4fc471b01baf179a5fc0cf1e22553114b88b0"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/payload-profile-0.2.schema.json",
+      "sha256": "388dbf1104737e6859cc86d448761136b252a672fa4a5cac91d3ea32e50f4182"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/payload-profile.schema.json",
+      "sha256": "117b86dbd9c0475669642323184c857f0337771cef0c79c606da81b9983baa41"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/public-diagnostics.json",
+      "sha256": "9739063ea50d59e519e38826fa81613c04719f86fd13ea09897c294cab22372d"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/public-vocabulary.json",
+      "sha256": "ced620d18015887fe352f3309e4fb059cf92799cb1c5c0a7f8ff51d56ba70a2b"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/read-contract-0.1.schema.json",
+      "sha256": "8eaa3649bfd2a5697579cb5852ef6118344ca63b1c357ed8bdda185981e9f481"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/read-contract-0.2.schema.json",
+      "sha256": "47517ef119fa778c43820c8b6507fdd5a36e8a493bdc03dde1c9bbb92aa8ba30"
+    },
+    {
+      "path": "Sources/KDNACore/Resources/Schemas/runtime-capsule.schema.json",
+      "sha256": "50eea6b7b89e31080901e3462c35e5fb0fbdfd1278763d6af09928c56ffe0036"
+    },
+    {
+      "path": "Tests/PublicCoreTests/ComponentTests.swift",
+      "sha256": "2096cd72421c8e3a924dcdb447f76022a991d1094885c08223fea0a9c9939669"
+    },
+    {
+      "path": "Tests/PublicCoreTests/CoreTests.swift",
+      "sha256": "f9f06e66055fca08f39b1df78718a656ae1450434760676b6fc1ba3c8940dc76"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-all-profiles.kdna",
+      "sha256": "0ff648582550229794442bc2667d055912cafbb15269d6b86bacf9f962ee0d82"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-binding-digest.kdna",
+      "sha256": "f68a47ad9991f18f1679e86320ac40d8da2e0fdb0510fc44f90d65a4b0cd8d77"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-content-trim.kdna",
+      "sha256": "d001bcefe9e874ff0223006451d8546ed062784fa85b810916b8305870561f9c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-cycle.kdna",
+      "sha256": "a006e30488d45a36e5677362266c9d3678b8c312d1f02c9d7c725b23e585da43"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-dangling.kdna",
+      "sha256": "0df502d2265d53ac01f12d91c045a3453ca6649770a5b924f451426116782a5b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-depth-64.kdna",
+      "sha256": "4a4e0e228cb543fb6f1e47b52c419528dde2f6ec39daa3295feb1b7664bcfca5"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-depth-65.kdna",
+      "sha256": "fa1d5ac7c820b2726cc1c26bda219244a6f52deb5aecc65bf40a0aedc1080599"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-duplicate-fields.kdna",
+      "sha256": "b78a724bcf5479d3b5d905c2bc477ca10083f2e9b4f32f42ab3328ee28d45c2e"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-mechanical-statement.kdna",
+      "sha256": "8bd36011488ceba8328581ad2b7cfaa21c4fac77f2671708b27e1a2b08f463f8"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-native-required.kdna",
+      "sha256": "70fae4d271a5fc7ed6a7603f887a197be9b0f85b4593f8aaea8d2e55a27b8ba6"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-no-adoption.kdna",
+      "sha256": "2416cba359013574511499a8b3b5fa7ea0379eb09d070a771420aeca2f1a2ee5"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-node-oracles.json",
+      "sha256": "b3a49d01e1ef546a46cc7d8c81064f4b77d6d24e32e4f6e22a010ca5b8b3bcc4"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-noncritical-carrier.kdna",
+      "sha256": "7a294d02a13a5b8886fbb2e707a174f3fd24a088455a83ace504e2820481f2a9"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-opaque-false.kdna",
+      "sha256": "38db460a8a27fa65500225260e307a00069f61c746166f41cdaf7ab056da2e13"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-opaque-true.kdna",
+      "sha256": "e034d9f65a6b4e2f2b84ffbe18592c4b5885c30996d1c75cb88b2a12c5e30a46"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-presence-declared.kdna",
+      "sha256": "50a8382fc467efb8a6cfab3a72de6dcd6e742dbe11b84ebc6c2a80bff95370d1"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-presence-no-method.kdna",
+      "sha256": "7762f646aa40b6bcb56b3cbb470b4b7548d3549166245a61a02698845fe771cf"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-presence-undeclared.kdna",
+      "sha256": "4eff4f5ce21f9c4ffc86b030d935050550ea04d51135a2bed824f7551bffd5b0"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-too-many-items.kdna",
+      "sha256": "9a090c32bd46fae9d01fba2f0a6ddca31c9833b2a17bb5cdbc5c3fb4869180b5"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-undeclared.kdna",
+      "sha256": "3776828a254ef5f00ca8755bf605bdc97094b4a2999cb51711854786fb8a9b7e"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-utf8-256.kdna",
+      "sha256": "2c507d7f052741317b6d3fc4731180b5a882c85118570449459e9540c8511e9c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-utf8-257.kdna",
+      "sha256": "439effe570dee02c895bb9d43e27b527cac872b8976df2f2a21f24ea4d5b69ee"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/component-wrong-position.kdna",
+      "sha256": "0705141e994b8c1ccd0e02f4a337aaccf4811e16e1868e6485d6b51fc3c6c1a3"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/current-fresh-node-core.json",
+      "sha256": "99e140e5b08837d1057f39d177fecf55fb51a88f9cba14c97357fe9d04a064da"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/current-json-admission-node-frozen.json",
+      "sha256": "cddafd5964b8a03b5f6884d0f6ff238da9f048b2916073f0060f3ebd272e6048"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/current-node-read.json",
+      "sha256": "160c45286c99ec92214af1a9a072f0161b866c7fedab2f1769fa7a9238c51e1d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/current-scenario-node.jsonl",
+      "sha256": "eb85fa25619e6ec15dc87f7e44c0406aa5df426a1c8bf797126387628adcec16"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/fresh-node-core.json",
+      "sha256": "ba86b423192b06b0d590069206a9768998d28fc9b5e836cef559c5e65db763d9"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-asset.kdna",
+      "sha256": "489c0d8e15c12fc08bf5d8132a8b6174ffade35ed6e28a63cbb03655e575b554"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-cross.kdna",
+      "sha256": "f0ad03241ecf263c26402cef52467f3ab276a0e20ce669a44b22b385f01620c2"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-cycle.kdna",
+      "sha256": "67e238e2479e34b786c2996f506cf8f87e4752ccf25298924f699d8fc753ff8a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-dedup-support.kdna",
+      "sha256": "f50dbe62d81a3b35e666fb90c095ba087f3c54f98a263e74392bc2b4743f6067"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-expand-support.kdna",
+      "sha256": "2edd37bb6ff1e91c56b8532950c5f793e6d97783bb9a9df5f7259b88286c18de"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-method.kdna",
+      "sha256": "4d375b3764319de9f989f32c0c04ddff372ef0ea8824328e61fd344c8be32e6c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-missing-actor.kdna",
+      "sha256": "1edbeb145480c6817fd7067b3ba74d9a1c3caecc299b25ddebd88e790499cda1"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-missing-boundary.kdna",
+      "sha256": "5cea3b2da89f20685217a2f14ceaf9d33935861cb9a0a8bc6b19d94359fbba02"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-null.kdna",
+      "sha256": "813501a0efbe18574865adcf7e6beae55f7e8a637c199d0ecb1520fb362f8b90"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-required-producer.kdna",
+      "sha256": "593faff9a619668ab4a4d912c9024122b8136c55c59c6353e70d2fdda2ad86f0"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-same.kdna",
+      "sha256": "9de1f6b0752e29703e9c7b3de28cf3df21ccbd1ddef9c2189e2e312824dcf23b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/graph-wrong-role.kdna",
+      "sha256": "06cb3e8787330ad0d99ed6a3ea0d3ce9f2335d9a744ee307c5c3e46355211be0"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-attachment-json-jcs-numbers.kdna",
+      "sha256": "32790cd4f3fb83540ccca76b7fa2acac7fc2dd400bf103f69a8168ce0da02db3"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-attachment-json-nested-duplicate.kdna",
+      "sha256": "ed2ee3389751023fbaf0c131936dff184af0990e510ac6a94a9f47f97351865d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-attachment-json-nonfinite.kdna",
+      "sha256": "58b9b15adbeeebbe81dc0620b216f841fbf048a20f745120ed81b25da88143e3"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-attachment-json-object-order.kdna",
+      "sha256": "e6245d3e55c969732db70b522c1398ca65fdabb5b004afb6feddba234ccde8d0"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-attachment-json-unicode-keys.kdna",
+      "sha256": "325e7a2c2be78f58817f6d40097a0b4b5cdb0d27463d5e915a89ae4c04fec14f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-bad-entry-name.kdna",
+      "sha256": "70df55318b020f6b00d9d68af749e00f5ca377bbe332a417943927beac7f6868"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor-binary.kdna",
+      "sha256": "7975361573d66c5892e9d41b7a48ff943a485244cbe401a9e0fd223327d81cbf"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor-duplicate-key.kdna",
+      "sha256": "2e13353272e1a81635db4e42c6f314e711cdf1f740499e275456cef32aba6db3"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor-indefinite.kdna",
+      "sha256": "b447e0fd0e471d685b827748d53aaf8d76760723b8bfc6a2ec48e1636daac525"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor-infinity.kdna",
+      "sha256": "c570e9197a5a49e74575c9ee372ae642a8c69a4305577c7813ddacc7d1bd007d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor-nan.kdna",
+      "sha256": "660367e37a5015d18c036bf1b5b42bc2f6462e868b90859c8b9c5206dc790679"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor-tag.kdna",
+      "sha256": "9ec4c7127be4c99cdca8b45ae26d2f70c8c3ac9d47b46414299c07b93bdef682"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor64-exact-53.kdna",
+      "sha256": "02c9eaa069afd091bd7f7f99c30d5acf5f2a8fb999e4aba1977175d3d6273f8a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor64-exact-63.kdna",
+      "sha256": "1323959fcea62cb246c64f7ea31a8fb2436b662f031e20983977e6814d107c2c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor64-inexact-53.kdna",
+      "sha256": "b4a45921f6ae10cb59ed9733bc65dd2e3fea9b4492462634cade91f2cb85624a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor64-safe.kdna",
+      "sha256": "761dcde9f8b97673443a4989f7cd7d522bc92eec942d7e346f3f9736bb9565a3"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-cbor64-uint32-plus.kdna",
+      "sha256": "70fb12508becd4497aa8d95749bcaac85908c7ac08924505e2e87fc1a5782df4"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-critical-extension.kdna",
+      "sha256": "5483068f392fd13988b4f2f97d71f896fe0b4a4dcb8b6c42e955c5e18099f360"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-deflated.kdna",
+      "sha256": "b797c621f714b16c42fd57dd5d29c0e1f1c61ac602079c8e2e509832fa970c78"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-duplicate-judgment.kdna",
+      "sha256": "bde3aa40eab20a06814fbd0174812b8747a4bbdec07ad358dc1dcea6f2fc94bb"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-empty-attachment.kdna",
+      "sha256": "fe0549d00a34810771b44621182a525e78d2df8b0598a30dba0b96922dc05706"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-forbidden-extra.kdna",
+      "sha256": "001b94e1eb6f81334acd13f5920145aaf0d1fc4bea3e832120d15fd6669aae3f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-identifier-astral.kdna",
+      "sha256": "a8743e61f9d141e353624b2443f5c3baf98c28d95ecb2816ea1bd86bfb39c8be"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-identifier-control.kdna",
+      "sha256": "4920e539577c8247cc7b3106f7ba56819c8e46a0de2e2a26f93104e90f44788b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-identifier-max-byte.kdna",
+      "sha256": "a5a2961a83cec63b018569229d3b4d82bd5bf6d389bc334a47e02cef4c967d07"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-identifier-nel.kdna",
+      "sha256": "9a404a7b1e2ab985f58da9971a353a736b64773e9a96662a26bbcaa61ac9fac3"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-identifier-space.kdna",
+      "sha256": "9b3bc5d47ed0789d01f69fc4b118234933b3e6b37546219a2cc811dccfd33772"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-identifier-too-long.kdna",
+      "sha256": "b715b7befff5358dec3681653fe89a923120ee4cf35453baf1f67b1996a9490b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-identifiers-nfc-distinct.kdna",
+      "sha256": "e1c50e39ed0abee4a5c2d68c17ba98fea8449bf7cd3a01a77b4090c8c2d09008"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-json-duplicate.kdna",
+      "sha256": "d48016e219a4e7cb4aa1a653f62dd0ae78c081c9b3668f104f7afd219880a276"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-json-invalid-utf8.kdna",
+      "sha256": "426b532ce06dcb52c63a6f1aedf649cf022d84233d363b6af0175cff81ce748c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-json-syntax.kdna",
+      "sha256": "c5418c431de9fb93e00abe22a22fe2bd116da250e9047640afcfa00430eb4ddc"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-mandatory-duplicate.kdna",
+      "sha256": "2b4024fa61d1eeb9ebde14dc664ef20bf7c9ce5528f9be633091c3dae9eb71b9"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-mandatory-mimetype.kdna",
+      "sha256": "2f045038ed402de8a6bbc4ca481429976d34c773cbbb91e5055d5a8bd0d0a50b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-mandatory-missing.kdna",
+      "sha256": "bc932f19b4f84e005d031b3f07fb5e988b686e7a8b869f68229a3f7a00a2b53f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-missing-actor.kdna",
+      "sha256": "d6a69a7dcbd4c644d34a989230ba8f37426ed483e675a289606281456e59e42d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-mixed-payload.kdna",
+      "sha256": "5d410dd1e2f6244770b0b8fd4af2c8ebaf700832c9ef900887eb6bb8584c1ab1"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-noncritical-extension.kdna",
+      "sha256": "9b07fa65bce306787f083b7fe73e707aa404c72370c2bd946f4ff78d12c764a1"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-old-container.kdna",
+      "sha256": "b90393a84c3975367f7ddbe6fb8049b3b98f9d1f77498af0a9360f91842a0d52"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-old-payload.kdna",
+      "sha256": "5d410dd1e2f6244770b0b8fd4af2c8ebaf700832c9ef900887eb6bb8584c1ab1"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-raw-runtime-field.kdna",
+      "sha256": "3b2b30403d1a7989eeb6679739f4af69fc8206545ee63a5f55fb212fb296efbe"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-resource-missing.kdna",
+      "sha256": "b4873a9419a3c83b187912f0340bf3adc4f035192d1d8262afa51d6c4ade1880"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-resource-valid.kdna",
+      "sha256": "aa64d1dea36f20fff69361a70712174ed46a40c7c08eb2f3bc1902030565f7b1"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-resource-wrong-digest.kdna",
+      "sha256": "9de0bea9d759fdd0f471cc8860a9630ad5232ef523ffc5ef17ea3eaae2c5b9b0"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-result-bounds.kdna",
+      "sha256": "f5797c35e2c325c4f1c2ecfb584fe5a5cd1323b719567aa11530cfded78a4fc9"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-result-contract-mismatch.kdna",
+      "sha256": "b6d2d81a8d7cc8cca50e57def7df8ba9d9c3434d7f0225f62c534a5fad0af90a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-result-type-mismatch.kdna",
+      "sha256": "0c64fc15ee00aa1d62498b8fb57e3ca6f9b4c29afa3ed4e0b847c75599ee207d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-stored.kdna",
+      "sha256": "38d9af6810315f26df62647e86ef5cb300f61b4218cc01a5b72c89c1a8fb7e24"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-text-astral.kdna",
+      "sha256": "d13d53a47080a3fc68d67aa93ff1bd0b426a498190835918053dce6e965a1c7b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-text-bom.kdna",
+      "sha256": "9da7af8fabe3cc6ff9defb88173d4fa2850c3114913fa511a85e46800c601fb7"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-text-combining.kdna",
+      "sha256": "f46baa1c263f696f208e60eeb697fb91bb0bad631bdd5f0d6b4a94d52cfd41f4"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-text-lone-surrogate.kdna",
+      "sha256": "0030bfd24af81178c1721ac47f2d455e144cc966ea569726c972ff87ac02e5a7"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-text-nbsp.kdna",
+      "sha256": "be57eea603d7c27f70b8f73d88a187fbd063ce0585e362512c3a433bfd5d4b82"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-text-nel.kdna",
+      "sha256": "10a0e17770cd847149c5d4a10ce5418adf0e870d4cace252b2b1525f454422c4"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-text-nfc.kdna",
+      "sha256": "a3a8d5b629efc67d9affb6988c5cc47b62b2080b220ae60207a7cd9de8c29cac"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-timestamp-invalid-leap.kdna",
+      "sha256": "fa7c15c066318ee56fa525596d768c02cc59efe7e8348d1fb3ea113cbc50871b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-timestamp-leap-second.kdna",
+      "sha256": "f12b24c874513bc44aa7776cde5ffe12ec28d6a712bfe5627cc3c90f727eb770"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-timestamp-offset.kdna",
+      "sha256": "de3de334f524659aa94c3397c1d854f92fe73ae099c26e415a420fdb6a6f9368"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-timestamp-valid-leap.kdna",
+      "sha256": "5a677e87c184b6903ee6864b0c0713893c90641905bd1012be2d7b1270ef08f6"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-timestamp-year-zero.kdna",
+      "sha256": "2dddfa14535441aa92b16ed91dad500d595c712554b9d10132a648f2f3d8ec3e"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-unknown-manifest.kdna",
+      "sha256": "2d8854a4aca003c77c5d95f9b70e231473dd544d8e68b3726a0bbac814e87eed"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-unknown-payload.kdna",
+      "sha256": "a056666dc856e5fd7d7d27093c66576df5d19862e546c712ac5a94fd85b7e710"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-unsupported-checksums.kdna",
+      "sha256": "6ce830cda12010ee4380f87d9ae5af3c5110f223acd2b023348939b154c64d91"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-unsupported-signature.kdna",
+      "sha256": "80ee9d6309ff5b7cf9df88e687f61d59e5f22350854af59645c5da3cc59460bf"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-zip-crc.kdna",
+      "sha256": "a61f0e29ae97a873472929ccbcb47ab00e199b2dd6580b10fb7f36100e86e63a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-zip-entry-count.kdna",
+      "sha256": "53bb9e7ed471661e5393ce70cf1627463cc607e98176cb172161b1c39a6eab57"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-zip-entry-limit.kdna",
+      "sha256": "ec8852bc1f01b9d93679b1a4f4ff4bcf97f86fcb0ff06586e286ccdfa09d19a3"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-zip-trailing.kdna",
+      "sha256": "e88e76684da0b5e85ed68d74e06fe75abb0825ec7b699f73d0902e0a615ec7f6"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/hostile-zip-truncated.kdna",
+      "sha256": "6362e702030ec42cc0cf319737320399b9480fb1ca3943a9991cb733a71a0de8"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-array-limit.kdna",
+      "sha256": "6044ff3be4c2ac6bb80f2da48f3c3e7106436dd3625cc836cfdc1870d9f74c58"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-astral.kdna",
+      "sha256": "b001495c046893e9d68c1690a3cf260cd7c2efc02fb03883a4c8d3451be4c084"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-beyond-safe-number-wrong-manifest.kdna",
+      "sha256": "fc826aac63e622c80e10a6bb8a98f27a206b71f9ef428b071d61502ccdbe6449"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-beyond-unicode-after-prefix.kdna",
+      "sha256": "bc6619af847bb3d23a38d1881ffd7b6fe0c5dea01fe350886c37893318adc115"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-beyond-unicode-start.kdna",
+      "sha256": "21b267b9e505194ca15de580adfdd26ad9caf280092e114709e567a14d9c33b4"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-beyond-unicode-string.kdna",
+      "sha256": "127fbc2de0b0cfef8119761f4aed47809f391b19c537cade7e467aa0bc788e2f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-continuation-after-prefix.kdna",
+      "sha256": "aed1272887e6108d7dcf239029e91c383e582a48c43fdc1873cad1041847415a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-continuation-start.kdna",
+      "sha256": "ff09387dd00c71f2c9496c9cd90850c713e0ec22e9f8b3e89d3b965fa08b7ea0"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-continuation-string.kdna",
+      "sha256": "7590d1f7cba98e6bd035f0dd4845afe1a258048edc79843653945f23c471e984"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-decimal-truncated.kdna",
+      "sha256": "e85e4fac0891cd7d4912cce9fb40d4bd1a027c3399ae075ddd90e23dbe408cf8"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-depth-limit.kdna",
+      "sha256": "a2cbe2b454a157cf72c305b8d9025618f7e99bca53b188f9b20c99ea00943d65"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-distinct-scalars.kdna",
+      "sha256": "7b82973d74a3c6ac36cea88519e9f7067cdf4641da925724598d08292a717265"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-duplicate.kdna",
+      "sha256": "fde15adbac18811fc8fa7adc120d6ae593e8e2074896ba2ce34e1ba47b72f5d2"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-encoding-before-grammar.kdna",
+      "sha256": "933817587ba14165389c35b69c5656ee163d39fbeb5a04857bdf291a949eaf9c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-escaped-duplicate.kdna",
+      "sha256": "4a89d42247c6e74a9d779d8b67d96af9d947e398b5047efa5882013adc23d6f2"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-exponent-truncated.kdna",
+      "sha256": "6619a1f35fa4fd883219ad0e0a4d910f9609a926674e11b7103e73de70d4a1ad"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-ff-after-prefix.kdna",
+      "sha256": "b5b9f9c7e9a5a7c0eda0c142d3fc20725890ee25815415c79bace9bba1fe64b2"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-ff-start.kdna",
+      "sha256": "52de56732458ee0a4090ee49968dcce9e06a94ac0b7304dabf80dcde99e58e38"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-ff-string.kdna",
+      "sha256": "c122c6df4ac192ab1d9870f046b84dbabe5e3a950590d04658017dd0de3fc811"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-high-surrogate.kdna",
+      "sha256": "228e44b74ec37236af50f3f8bcc8556969b3aa9dbac6c70af2a6dbc1e35a2240"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-illegal-lead-after-prefix.kdna",
+      "sha256": "e963fd9915b025588d86643c84bec73e532bb0785ebb51c049e7084b8b284aeb"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-illegal-lead-start.kdna",
+      "sha256": "ec0532aaa0db318a6223d3089fa561f8f0e70f7398c918c04ca7c6674f822ca1"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-illegal-lead-string.kdna",
+      "sha256": "9ce7508a8298fae2624e023a90ff5aa1f40c079ac7c0a165dc0533e8a550ee4f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-invalid-escape.kdna",
+      "sha256": "0181c2e687a5fe48f9b8c954de7019ec0395a9aac5c88166b95f967c365582b8"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-invalid-hex.kdna",
+      "sha256": "5bca56aadea41e6873ebbe4f5222172870001944cb43e6736c69c1b26d032024"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-leading-bom.kdna",
+      "sha256": "d5d273459e407b2422d52d11e6228bc4ae83f49ebd7ab452381bb4f6d6496279"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-leading-zero.kdna",
+      "sha256": "5017b3a31169167e49ecf5a6c3f331d0c5d4a0297c5a4bf462887b385449a000"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-legal-controls.kdna",
+      "sha256": "f3d6eb25cd85e8c97c16bd00cbe83bc8d5a9fff4548eca08d57f870e0e8fe058"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-low-surrogate.kdna",
+      "sha256": "7812afa6460e8daf1147db71892320b30edd703a35f3dfbffa8634e7c6e70519"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-missing-colon.kdna",
+      "sha256": "5416e5ffe294d8d3b9eddb69f3ee641839c7fe47aa3fa31f89754b1c9f7fa142"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-multibyte.kdna",
+      "sha256": "a7bef5329f10d45d6bdf8f5bac2243279aaa1a9a265e699a22eef773c7f96d6b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-nan.kdna",
+      "sha256": "4ae8ebfd613664fe43d969cc734254942711308a730554e7e083d872e3116053"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-node-frozen.json",
+      "sha256": "c0947373a0841739f1f26ac4b3dc0f86ebe2c6d87e39228c65023f92d7f7ca68"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-open-array.kdna",
+      "sha256": "41577af484c38c8472163fc8af23de6eb67776ae996b8d71d054cf263b1da290"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-open-object.kdna",
+      "sha256": "ebe136363095d4857ca0c0eff218c7c2a8a87c167329a62367a64d33b84c6efc"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-original-ff.kdna",
+      "sha256": "6ebf384e08608f756d28472ddc2169bf4949f3daffee961f6979afa80c6d1d7b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-original-syntax.kdna",
+      "sha256": "ebe136363095d4857ca0c0eff218c7c2a8a87c167329a62367a64d33b84c6efc"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overflow.kdna",
+      "sha256": "7d6f11db604a6bc03a43b5563d81677b915ed332d43e9b83722ed090a04ef637"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overlong-four-after-prefix.kdna",
+      "sha256": "e1919356e35f6bb945eae1425a618bfc2cbfc6e7763dc24493bc6b9802061e12"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overlong-four-start.kdna",
+      "sha256": "b33eca6973fb78a6bf19d37bf8d384f89077ad8810a6e6a02c86dadf578d087d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overlong-four-string.kdna",
+      "sha256": "f6d6506b5a2ceacd924aba18abf97a9152345f55cc7039ab1e3fa67ffeaa2ea9"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overlong-three-after-prefix.kdna",
+      "sha256": "80272a11ebc1d0aed986a5e375633f63d93aef5484ee33094f05ccc2d1cbb53a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overlong-three-start.kdna",
+      "sha256": "f509bb56b5548ca7fb31809dba5a31d9ce8c2029e4f2984b34eddb001193cb10"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overlong-three-string.kdna",
+      "sha256": "96221ac04607ad65de9bfe5e14526a973bcd4183856c88f99bb745c6e6bf8d1d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overlong-two-after-prefix.kdna",
+      "sha256": "286014ca5ac826b33fd1250783b04bb3f6846d63edaed4bc3d11dbbe85e5917f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overlong-two-start.kdna",
+      "sha256": "4cafbc11de354195a7e5546ae76baea8966bf7450ab15dfe09a00bb2ce1d193f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-overlong-two-string.kdna",
+      "sha256": "b56c8e02c51087c3bef2ed841fc194b96652bc03058323f983400025bd9b4e8f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-proto-key.kdna",
+      "sha256": "10593324a75de3ee365642c37a25a1a7eadb84a26923184bcce4af7106dda17b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-raw-newline.kdna",
+      "sha256": "7e2d96179650190c8bb095ff40c677f62c05c5180065d518435964876c51f4a1"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-safe-number-wrong-manifest.kdna",
+      "sha256": "5a32d6b07ae542aec5863a9de9a7e351a15dab6147e35010008b49c550002762"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-short-hex.kdna",
+      "sha256": "458a49b516556cd65cfcc548df43605ab906d364cf4d0630a8cbfd1e559cb96d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-string-limit.kdna",
+      "sha256": "68ec2099bc9c0c9d9f6d6f57d60676fa784baf65e7cdbcfaa57b7d3a146a7fc8"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-surrogate-after-prefix.kdna",
+      "sha256": "cd1b987fc0bf6110b8e2d478bc9aef120fee91f300e30196465113cde97ec67a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-surrogate-start.kdna",
+      "sha256": "7c98d63ee68a33402909b3f88c0af9edacd49c6b5d274c133ebd252c966b219a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-surrogate-string.kdna",
+      "sha256": "7164b6030bfa1aa6491ed93475e08be2eda098cf5c1326440c17d44a037b0d7f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-trailing-bom.kdna",
+      "sha256": "09908ed59dab001fc5145854e483ce1f44f9eb4f68011778122bdfbfdfeb5679"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-trailing-comma.kdna",
+      "sha256": "cf054b2b7ae9255ad336f3585a0dea6ad289e0d3f458c3503327fb2f509d3a9e"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-trailing-token.kdna",
+      "sha256": "7d9745aa9d0dbf3c0be594939498f3879de5070a8c7ab9b4c90145d5eb060b96"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-truncated-four-after-prefix.kdna",
+      "sha256": "2e22a54211fdadcdec68e87ee96b2e1f5bb2ff5efba36de440952f0f5fecebe3"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-truncated-four-start.kdna",
+      "sha256": "bdf8b691685328ad438ce3a548a151ede65eaf351156b039fa0bf33fd1910f5c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-truncated-four-string.kdna",
+      "sha256": "8ca38dc824bce90aa0666a7d95838179f8cbabc89341996d1f52c799ff361cc4"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-truncated-three-after-prefix.kdna",
+      "sha256": "f0d9352ff693fd5b4e7d7d69b8554bcd83878eae5f6f8a20bed97049e1bc5ba2"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-truncated-three-start.kdna",
+      "sha256": "9062b4fdd2c48a18a11d77c19d260cb11446af626620664af677e0b6e065328e"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-truncated-three-string.kdna",
+      "sha256": "4d7fff375dea94659e9d266da0ea277066cea5b590b4cbf1b8f928b9f66cc382"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-truncated-two-after-prefix.kdna",
+      "sha256": "90bf9f0174f295196c84f9928c7b35da3705dee820537f3140959d13b737d6ad"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-truncated-two-start.kdna",
+      "sha256": "8df0a65bf7711ca84baf78a18dd5807e18114e1c0f23e4fae79623b6ec747fd2"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-truncated-two-string.kdna",
+      "sha256": "ff9f95324eb949bcce3956d1302eadc0263dcc1c816a13bcd634b60a2694905d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-unterminated.kdna",
+      "sha256": "9fe413b468a62b513588207f9b5be31377e403eb699b17a7223e560cd4ce6287"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-valid-surrogate-pair-wrong-manifest.kdna",
+      "sha256": "393a5d089f1abf38ad5d779bc0307d178bc241e2d3cb3b526256d3db7e96c23b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/json-admission-wrong-surrogate-pair.kdna",
+      "sha256": "ee82e528ec27ce00f731df2b833a963ce46f35ffa771d370ef9163784b598071"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/minimal-float64.kdna",
+      "sha256": "190f03c467c05b75d43b2892528a5e3365767365f25086efc9427fb4a0698740"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/minimal-uint64.kdna",
+      "sha256": "5db8060c755a84c0c05c9fd2ba7a377b4b86477271ea1922fc032bc5f54d2d66"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/node-read.json",
+      "sha256": "ba1a6b79270ea56434433460b3686b66c3f276d404f178a3d978abd0cb529be4"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-0-float.kdna",
+      "sha256": "dec182c6168b6aafd25b8b82e5a767d470f4ad0c53d34e2659502f53dca46900"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-0-integer.kdna",
+      "sha256": "6a97d5e5d3ac90d525056cbccaf1923019e8ce64ca7891abdb05be31d49c6dcb"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-1-float.kdna",
+      "sha256": "c190edb27828629f2e9004a296a8fbf90d77855ebc52cf1ae53ae8fc720ac5be"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-1-integer.kdna",
+      "sha256": "ac4f2fdbe53d65519ef86be5d60441261cbf4b60d43b98d94abd55c88d43739a"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-10-float.kdna",
+      "sha256": "66cfae6ee526ce0824385f2c0acd81ba7ae3a8cb6a3e208ce70641374124a3c6"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-10-integer.kdna",
+      "sha256": "6fc345e608ce972800f7d585ff38b6004e2cb3fda1873d2500b7fe23b059c07c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-11-float.kdna",
+      "sha256": "65c6e7e1cc1cc0590e9e5f267752ead5bec49fe3298f08f107a16c0f5ba7cadc"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-11-integer.kdna",
+      "sha256": "8d87015466919401502b0484bc632fe2d19a98d0d2d5092cc9cfdf44b846dc4d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-12-float.kdna",
+      "sha256": "6aa0f2a7ce017b00c5f1f2d506da60dd6fcecde194bccff249b0ecd4f5c664d4"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-12-integer.kdna",
+      "sha256": "e60edfca126af993a32acb77067b009aafa8a52bd5ae43fa2b5de80d23289c02"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-13-float.kdna",
+      "sha256": "5887821e262756a99f9285093abb477aaecb8bcaf4a7768c3268346b6c6cc3a9"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-13-integer.kdna",
+      "sha256": "8a35c43d0f5f2e7b1a56714350cf1a4b560f56bba634d8adfc0cb23018a52861"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-2-float.kdna",
+      "sha256": "afdaec07c4e6ef265bc063f77c13e0fec22fbc12f53f822b771640d107d6cf28"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-2-integer.kdna",
+      "sha256": "68a637a8279b6eb20b3664005ca9af9fdf4e512323b4df10e44e4c8f14a619ca"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-3-float.kdna",
+      "sha256": "7612135aae661443c20a6a187069cb24828a56c7cae8bba3c242c45f06f891ff"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-3-integer.kdna",
+      "sha256": "a97efd7fe1627f5f4f6f612aea91f36e772b0571c890dc32c6539910cace553e"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-4-float.kdna",
+      "sha256": "7aab916c9b87be25891405e9570118735fa69921e78986187d3bc8fa68b36dc5"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-4-integer.kdna",
+      "sha256": "62c8ef678c4eb7c75ca9f5099c1e21890fee363a729d338409a3e3bac74ae742"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-5-float.kdna",
+      "sha256": "d13a253fa231ecfd626f823931196fd49ed4b5c515462a9b260b814027e00774"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-5-integer.kdna",
+      "sha256": "57f12a5476bc7df5959db387bd0ec3ebdf309588e35cae7925735be987513d9f"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-6-float.kdna",
+      "sha256": "1bf302d36ab34403917712769082286e18aa520b80648e4422d0f0348b7fa2b4"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-6-integer.kdna",
+      "sha256": "bbb8bcb6364310512c1c64197d0d1db14914faa7259fab3a04d2b4ed9bdc0b72"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-7-float.kdna",
+      "sha256": "13dd43d9324b7e7d78768512dc043a33b3c78b61ca0b5afa0d61d36597ac0ee7"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-7-integer.kdna",
+      "sha256": "27b0d0c3756ec3fe09b3013ca8a5e96796b8b63443ec8cd8c40c3d2f77547086"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-8-float.kdna",
+      "sha256": "d6bc1c9b3a327318cea503378234bb28a08b025c2c3857b9358a1c3e0ed839ff"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-8-integer.kdna",
+      "sha256": "8c44195b8f2bb9728cba26d19e43381b0ed0434c449734c8742a5972f712c874"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-9-float.kdna",
+      "sha256": "55039c1727db8c7025ddd2932ff5bb3216f9c0f273c6ba1cc752103fec9b1251"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-exact-9-integer.kdna",
+      "sha256": "75831fe0d7dd80c3e6689c2358ade02d5dad63bf1397ce0572dd13385d9b287d"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-inexact-0.kdna",
+      "sha256": "f230bfe02d95033fd9373352b35167085336d3e54b6366959784999ff06f8117"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-inexact-1.kdna",
+      "sha256": "a9abfa81cbb4295b739d514b9b7f346ef5246a21833294a5403cfb7fb49c1603"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-inexact-2.kdna",
+      "sha256": "fa1ae210293a87cc370986687f8283cad0ce36a11e369cca81fc970c0624fe92"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-inexact-3.kdna",
+      "sha256": "870a381db6fb8fd1b7b4fd749dc53497b6e8cea7184f3caaba1a44f1c566e12b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-inexact-4.kdna",
+      "sha256": "e70bf9b28fb0f11eb7f1b33c9f25035faf5387f7eaa169ab04ca68bd541e3c95"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-inexact-5.kdna",
+      "sha256": "e2eb577853099614cb1e838682d874235a2d85abab8150c99e3127bb395c0d36"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-uint-beyond-safe.kdna",
+      "sha256": "035fe76005328f39531f56824aa43c489b1957cfec026724d49addae588da785"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-uint-negative.kdna",
+      "sha256": "b9136005b14fc573b8e20c2897af856907f0e2e74dd066bf08965803fbc8f761"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-uint-safe-max.kdna",
+      "sha256": "b4ac8110f1d94af79e0852d83ce22cc54d762a6456a1f1f47b36873646ab7fe0"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-admission-uint-zero.kdna",
+      "sha256": "c4b3efadc0c7b6c23ed29e6afe0b05f355423932828f3ef7d691a0d229f24d38"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/number-oracle.json",
+      "sha256": "0300aaa0e5147c470f3405bff257714482dbaece8b8957f8750c90d0685d2d68"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/read-scenarios.json",
+      "sha256": "516acd2c75cc5cf607f99367d2298325240abe603e10b15310b78a31ec8eecc1"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/scale-1.kdna",
+      "sha256": "38d9af6810315f26df62647e86ef5cb300f61b4218cc01a5b72c89c1a8fb7e24"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/scale-100.kdna",
+      "sha256": "0267d07715d4f1a9b972e586795675980f13304192d390040b2bfcb7fcd4d431"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/scale-20.kdna",
+      "sha256": "4e4a4b1f6ccda6469f5d52819b28f8490839082968b7e947ec4ac097fc41220c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/Fixtures/scenario-node.jsonl",
+      "sha256": "1ca6caaea376086f23ed27fdc53b43974e872c98ca7c00dd0323e640eebc046c"
+    },
+    {
+      "path": "Tests/PublicCoreTests/JSONAdmissionTests.swift",
+      "sha256": "1463f8b6dc1a171fb50198df95325dade750bee738fb17abf16381f181c0d8c3"
+    },
+    {
+      "path": "Tests/PublicCoreTests/NumberTests.swift",
+      "sha256": "c5bfc390432dd8c6817fa1facf35c3eac2304680ca1e9e86f909dd17ae0fdca7"
+    },
+    {
+      "path": "Tests/PublicCoreTests/ParityTests.swift",
+      "sha256": "39a820400b3b0ef3bc6a080019d5728389c635132375f23e389659dc75cfdf1b"
+    },
+    {
+      "path": "Tests/PublicCoreTests/ReadTests.swift",
+      "sha256": "695ad9f45acbf60250d482d1f29b8265c71c49ce3e0a8c38324058d62fbcb2e7"
+    },
+    {
+      "path": "Tests/PublicCoreTests/ZReadScenarioTests.swift",
+      "sha256": "35775bcda55cbb66b87f15c26a7d4f2d1e2f3ce47ccbc43223c17c614a8eebdc"
+    },
+    {
+      "path": "public-contract-binding.json",
+      "sha256": "e334a825924a4212601bb3fd05401a8a95b85a5e31aaaf6dc79f08554ff1e556"
+    }
+  ]
+}

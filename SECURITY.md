@@ -15,22 +15,33 @@ chance to address it.
 
 ## Supported Versions
 
-`kdna-core-swift` is a public pre-release support surface for Apple platforms.
+`kdna-core-swift` is a pre-release Core and Read implementation for Apple platforms.
 
-| Component | Supported Versions |
-|-----------|-------------------|
-| KDNA Protocol | Latest tagged release in `aikdna/kdna` |
-| kdna-core-swift | Latest mainline pre-release |
+| Component | Current contract |
+|-----------|------------------|
+| Swift implementation | Candidate coordinate in `public-contract-binding.json` |
+| Core / canonical IR / Read | `kdna.core/0.3.0` / `kdna.canonical-ir/0.2.0` / `kdna.read/0.2.0` |
 
-Older Swift pre-release versions may receive critical security patches on a
-case-by-case basis.
+The exact binding governs this implementation; a newer protocol repository
+commit does not automatically change its accepted contract. No candidate tag or
+registry release is implied. Older Swift pre-release versions may receive
+critical security patches on a case-by-case basis.
 
 ## Security Model
 
-`kdna-core-swift` is a Swift runtime bridge. It must follow the protocol,
-crypto profile, LoadPlan, and projection contracts defined by the main
-`aikdna/kdna` repository.
+Core admission establishes technical validity of captured bytes. It does not
+establish authorship, content quality, Creation acceptance, read permission or
+action authorization. Read disclosure requires explicit trusted control and
+Host providers, with observed scope, identity, timing and policy. Serialized
+snapshot or handle data cannot recreate process-local authority. Projection
+alone does not grant permission.
 
-For the KDNA Protocol security architecture, see
-[GOVERNANCE.md](https://github.com/aikdna/kdna/blob/main/docs/GOVERNANCE.md)
-in the main protocol repository.
+Encrypted, signed and checksum-bearing containers remain unavailable where
+the current Core rejects those capabilities. Plan admission and execution are
+unavailable. The previous loader and its crypto dependencies are preserved
+under `retired/` and are outside the current package graph.
+
+Report an admission, disclosure, identity or authority-boundary failure through
+the private channels above. Include the exact commit and binding coordinate,
+platform/toolchain, and a minimal synthetic reproduction without private keys
+or user data.

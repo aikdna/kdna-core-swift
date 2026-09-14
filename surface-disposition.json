@@ -1,0 +1,541 @@
+{
+  "format": "kdna.implementation-surface-disposition/1",
+  "scope": "swift",
+  "authority": "Current root README, declared package exports and generated exact binding only; no new public semantics",
+  "retired_test_status": "Not run; incompatible historical contract tests are not current conformance. Their original bytes remain under retired.",
+  "excluded_runtime_roots": [
+    "retired",
+    "Tests",
+    ".github",
+    "docs",
+    "scripts",
+    "node_modules",
+    ".build"
+  ],
+  "original_files": [
+    {
+      "original_path": ".github/CODEOWNERS",
+      "entry_sha256": "e7622c273294710bf60bf264a76bd7fc0ffa29eadcd76a1ae52ae60b8d1240ef",
+      "disposition": "retained_byte_identical",
+      "current_path": ".github/CODEOWNERS"
+    },
+    {
+      "original_path": ".github/ISSUE_TEMPLATE/bug_report.md",
+      "entry_sha256": "90ab5f515eb14ff2c5755be2c3ec74084a4d9e7b20785a5c0f730ba361c2b54e",
+      "disposition": "retained_byte_identical",
+      "current_path": ".github/ISSUE_TEMPLATE/bug_report.md"
+    },
+    {
+      "original_path": ".github/ISSUE_TEMPLATE/feature_request.md",
+      "entry_sha256": "5847c1beffdd083eaf9d90dc13534a35e6341c0503d93bccee7b0065222c883c",
+      "disposition": "retained_byte_identical",
+      "current_path": ".github/ISSUE_TEMPLATE/feature_request.md"
+    },
+    {
+      "original_path": ".github/dependabot.yml",
+      "entry_sha256": "d31e7d412635f775a9cf6e9e9f871ae58e8e0d24ef84dcc9de50905d5035e045",
+      "disposition": "retained_byte_identical",
+      "current_path": ".github/dependabot.yml"
+    },
+    {
+      "original_path": ".github/pull_request_template.md",
+      "entry_sha256": "8e278b07f11d6b016d9654f70b3181975381c57b6c8e8a7cebee50c62298e0a3",
+      "disposition": "retained_byte_identical",
+      "current_path": ".github/pull_request_template.md"
+    },
+    {
+      "original_path": ".github/workflows/ci.yml",
+      "entry_sha256": "69227037ef480eda050ed9087b33ebd488c7a14f4b2bb0a56bf08437ba15b79e",
+      "disposition": "replaced_current_surface",
+      "current_path": ".github/workflows/ci.yml",
+      "original_bytes_preserved_at": "retired/.github/workflows/ci.yml"
+    },
+    {
+      "original_path": ".github/workflows/codeql-swift.yml",
+      "entry_sha256": "b1a0e07379d1d075e2014c17fb2b88ce143d1ba1b1984c7bf59128dceecc6f73",
+      "disposition": "replaced_current_surface",
+      "current_path": ".github/workflows/codeql-swift.yml",
+      "original_bytes_preserved_at": "retired/.github/workflows/codeql-swift.yml"
+    },
+    {
+      "original_path": ".github/workflows/stale.yml",
+      "entry_sha256": "3738a8e373df4feaea0fa210d7d3eb7bdd99bada7af91418d70bb7feec5068e3",
+      "disposition": "retained_byte_identical",
+      "current_path": ".github/workflows/stale.yml"
+    },
+    {
+      "original_path": ".gitignore",
+      "entry_sha256": "9f6da996563c2513ae54129a629f63dd807a3f411e3b85857a6843ff53d59609",
+      "disposition": "replaced_current_surface",
+      "current_path": ".gitignore",
+      "original_bytes_preserved_at": "retired/.gitignore"
+    },
+    {
+      "original_path": "CHANGELOG.md",
+      "entry_sha256": "96f69bcf04db7897243599d734d9aa98e7f0beffd7fef5c761abdf340739b126",
+      "disposition": "replaced_current_surface",
+      "current_path": "CHANGELOG.md",
+      "original_bytes_preserved_at": "retired/CHANGELOG.md"
+    },
+    {
+      "original_path": "CODE_OF_CONDUCT.md",
+      "entry_sha256": "e65a18e9fbda1c18ffd21cea0a65a3610be749e99d3a3e70aa924e685949ca76",
+      "disposition": "retained_byte_identical",
+      "current_path": "CODE_OF_CONDUCT.md"
+    },
+    {
+      "original_path": "CONTRIBUTING.md",
+      "entry_sha256": "cb64755f8e9bcdab65f3ce90b106e8d1a26167c2dd02a6db087b00a4ec9cd595",
+      "disposition": "replaced_current_surface",
+      "current_path": "CONTRIBUTING.md",
+      "original_bytes_preserved_at": "retired/CONTRIBUTING.md"
+    },
+    {
+      "original_path": "LICENSE",
+      "entry_sha256": "699a9bdd9d3fb95f2146586a5fb1d7a6a6197a43422914f86869fed84c34222c",
+      "disposition": "retained_byte_identical",
+      "current_path": "LICENSE"
+    },
+    {
+      "original_path": "NOTICE",
+      "entry_sha256": "e41b3512e6f58aa6d5824ad99ed01d42b1629190a8c9754f92648ee731d6a81a",
+      "disposition": "retained_byte_identical",
+      "current_path": "NOTICE"
+    },
+    {
+      "original_path": "Package.resolved",
+      "entry_sha256": "d1bb9f640abe59cca6d731c8c5d17a39ba9859323703cce6826af472ff8b6ec0",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Package.resolved",
+      "original_bytes_preserved_at": "retired/Package.resolved"
+    },
+    {
+      "original_path": "Package.swift",
+      "entry_sha256": "d6fc75029b8082fb0c391a057e2d42812b7ee5f28df2a8dcb8b7215f7d63867e",
+      "disposition": "replaced_current_surface",
+      "current_path": "Package.swift",
+      "original_bytes_preserved_at": "retired/Package.swift"
+    },
+    {
+      "original_path": "README.md",
+      "entry_sha256": "2c6bab8b54ec640fc9ce4fa9b0df2116fb1339a8b9356e98028bfc6c79a22b32",
+      "disposition": "replaced_current_surface",
+      "current_path": "README.md",
+      "original_bytes_preserved_at": "retired/README.md"
+    },
+    {
+      "original_path": "SECURITY.md",
+      "entry_sha256": "f56bce8b1ec82f084ccc32fa0e74f7bee35256c6297a160e5f8885d022a78ec1",
+      "disposition": "replaced_current_surface",
+      "current_path": "SECURITY.md",
+      "original_bytes_preserved_at": "retired/SECURITY.md"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNAAssetReader.swift",
+      "entry_sha256": "a121b85f681f2667fa1de6d44d21124d5a9171f7e63f6c9744f75f9c5c1ed07d",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNAAssetReader.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNAAssetReader.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNACBOR.swift",
+      "entry_sha256": "2940986b71e328e602b940cb04fe0dcc4d171d7885a10a6c031e92233def4842",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNACBOR.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNACBOR.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNAChecksumDigests.swift",
+      "entry_sha256": "16c22b948d2ec7a0ba2fac32d932bca66927054296292660893a522461039bfe",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNAChecksumDigests.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNAChecksumDigests.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNAComposer.swift",
+      "entry_sha256": "376c86713c47d3096ac04669bb3d8fadbadf2b2b923af5254843d0cb930d17a5",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNAComposer.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNAComposer.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNAContentDigest.swift",
+      "entry_sha256": "da7aec9886d5db3def1e1451e70d9b2bee7f35bd432808ab78983cc720a9d059",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNAContentDigest.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNAContentDigest.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNACrypto.swift",
+      "entry_sha256": "e93383ae60bd94d76dab697b3b837334540d68fd9a32bce274a630f9bb3df12d",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNACrypto.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNACrypto.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNADomainLoader.swift",
+      "entry_sha256": "84f884e0a800415c0fa204c44ac0aecbad033e16c13c39afd9f8b145c8a475d3",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNADomainLoader.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNADomainLoader.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNADomainValidator.swift",
+      "entry_sha256": "d117c9dde0466c7a216d3bbd6a43867a35cd221ef28111931cbb5e8036543a8f",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNADomainValidator.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNADomainValidator.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNAEncryptedPayloadContract.swift",
+      "entry_sha256": "710eb5fecd82f8465484e917b3de57bc972c8e7e9f8de90d3f5f7be58bca1e37",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNAEncryptedPayloadContract.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNAEncryptedPayloadContract.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNAExternalKeyGrant.swift",
+      "entry_sha256": "f9fe1d9e188635b02bf45cc732deffeb62289ffdc87b63e2073ff5e634db1a27",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNAExternalKeyGrant.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNAExternalKeyGrant.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNALicenseTypes.swift",
+      "entry_sha256": "67e97d22935d7074ab29c7c17abcea3efcec14e7deb90a75b954e352c4ace000",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNALicenseTypes.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNALicenseTypes.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNALicensedEntryDecryptor.swift",
+      "entry_sha256": "f3a1c6e212fb05dc4fb61fa67c1a95f4dce3fc9b68e4b0803a8a7eb22af25753",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNALicensedEntryDecryptor.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNALicensedEntryDecryptor.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNALoadPlan.swift",
+      "entry_sha256": "502ca6ae8f738561bd9c6c972b40be5b7b9c393461e62540ca03334d091af91f",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNALoadPlan.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNALoadPlan.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNALoaderCompatibility.swift",
+      "entry_sha256": "08184fcf4b3934f50c1475e97c7f2054077e7fa72674ebac4a227502087823bf",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNALoaderCompatibility.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNALoaderCompatibility.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNAProtectedCrypto.swift",
+      "entry_sha256": "0242aa3e1505d71c8bba366e9b61b88c3a81ed48ccd5aeda2d6c52ed41227e5e",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNAProtectedCrypto.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNAProtectedCrypto.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNARouter.swift",
+      "entry_sha256": "ebe9da348218e0faaf3cc631aa4e683a58d9db5d6aeaa284367eba3afc0dcb9e",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNARouter.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNARouter.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNARuntimeCapsule.swift",
+      "entry_sha256": "bd6e0804add012d049faff767c038ee0232f9474e2620131afd883cdb1a83097",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNARuntimeCapsule.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNARuntimeCapsule.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNARuntimeContracts.swift",
+      "entry_sha256": "c66ba7480bbce9e129273b51da2111353a0bdb8b842d7317554310dccc90fe2f",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNARuntimeContracts.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNARuntimeContracts.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNASchemaValidation.swift",
+      "entry_sha256": "cdd72683f18ed4f6f2c3bae815de1b58b4ddd7a03047c8cec24d64a9d4a9b8a9",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNASchemaValidation.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNASchemaValidation.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNAStrictCodable.swift",
+      "entry_sha256": "672b577800631f3d6c8243c876351e4e225acee47eae65ea3df4824af0b512a9",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNAStrictCodable.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNAStrictCodable.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNATrust.swift",
+      "entry_sha256": "053d45b0dbc8684151b0cf24f7102324acd82ca26c72c25595eac70c95a427d9",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNATrust.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNATrust.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNCoreTypes.swift",
+      "entry_sha256": "114a8983ca0ea84ab34a74da798c6ae077c47e3d1614afba0e33b728fbbd9d05",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNCoreTypes.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNCoreTypes.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/KDNJudgmentPipeline.swift",
+      "entry_sha256": "288585a7d69d31435f1125b6e0c68af17d74865dcbb73ee27b5521454b23c66b",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/KDNJudgmentPipeline.swift",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/KDNJudgmentPipeline.swift"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/agent-host-capabilities.schema.json",
+      "entry_sha256": "00ab3aeceffae5061faeecfdb82ac95afde4c60ad73faa796b2d7bd463e2e834",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/agent-host-capabilities.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/agent-host-capabilities.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/agent-host-receipt.schema.json",
+      "entry_sha256": "ecdac9d9b6670ead0cf94b3c307b7d9580e4eacdf0d1ce683d2b100b59a3f115",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/agent-host-receipt.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/agent-host-receipt.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/agent-host-request.schema.json",
+      "entry_sha256": "e827bc2ca51937c31d9ff089b9ae9b37f154ae69836d778f0027480f0d2ee693",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/agent-host-request.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/agent-host-request.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/bundle-profile.schema.json",
+      "entry_sha256": "45370bc73504df26a25d2e391cf543a468f872be835e57ac17ebc5c95d13f3ef",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/bundle-profile.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/bundle-profile.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/checksums.schema.json",
+      "entry_sha256": "7fd1f5d5a98a2f0a4d311a6ebba7d13d0e00253ab042098ac0aeec9e31c4d4e8",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/checksums.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/checksums.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/consumption-plan.schema.json",
+      "entry_sha256": "f73c52884c59e1566d4e6121e42b9e2dfed43ffbee6452b6239a56cf8262785f",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/consumption-plan.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/consumption-plan.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/digest-evidence.schema.json",
+      "entry_sha256": "294939c0a230639a1ae7b059a28d87310ead350ff03d9d6cf46e112acf3d9f75",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/digest-evidence.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/digest-evidence.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/external-grant-envelope.schema.json",
+      "entry_sha256": "245697c461cecf4fd68877d50d4489127f0375f99fda6f5ead41971d8776f6ca",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/external-grant-envelope.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/external-grant-envelope.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/external-key-grant.schema.json",
+      "entry_sha256": "d0281a11ba405360bc45bd4894dcdfbed3a85664566af987b7147d5622ffb749",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/external-key-grant.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/external-key-grant.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/judgment-trace.schema.json",
+      "entry_sha256": "a260e5abbcc68bf8df11ba738b5d475901b2950668c4718e415355adc723c7b0",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/judgment-trace.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/judgment-trace.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/load-contract.schema.json",
+      "entry_sha256": "775c04c0b62bf46a4b831bfb47b0b08f319364a190cdd3baa0721a6791466c0b",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/load-contract.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/load-contract.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/load-plan.schema.json",
+      "entry_sha256": "9325256f7967419ca1ed6f37afe28d616474aa26c778d1e2853afefe033e452a",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/load-plan.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/load-plan.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/manifest.schema.json",
+      "entry_sha256": "9abe3d36250f177d3772520245d4fc471b01baf179a5fc0cf1e22553114b88b0",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/manifest.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/manifest.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/payload-profile.schema.json",
+      "entry_sha256": "117b86dbd9c0475669642323184c857f0337771cef0c79c606da81b9983baa41",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/payload-profile.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/payload-profile.schema.json"
+    },
+    {
+      "original_path": "Sources/KDNACore/Resources/Schemas/runtime-capsule.schema.json",
+      "entry_sha256": "50eea6b7b89e31080901e3462c35e5fb0fbdfd1278763d6af09928c56ffe0036",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Sources/KDNACore/Resources/Schemas/runtime-capsule.schema.json",
+      "original_bytes_preserved_at": "retired/Sources/KDNACore/Resources/Schemas/runtime-capsule.schema.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/ExternalKeyGrantTests.swift",
+      "entry_sha256": "d951ff3e354c1402af170467517d50eb0565c28d6c4472f82334ea9c080f56d0",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/ExternalKeyGrantTests.swift",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/ExternalKeyGrantTests.swift"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/content-digest-binary.json",
+      "entry_sha256": "30b5b1d89aab0144511e00a12bdd9c67386a05df73e75d0cca654848546e2ab2",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/content-digest-binary.json",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/content-digest-binary.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/external-grant.json",
+      "entry_sha256": "c78ebe56777c6209cdc9d894a17214a1953ee025c24967e7fd102a0e1c56182a",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/external-grant.json",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/external-grant.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/loader-compatibility-vectors.json",
+      "entry_sha256": "0c87a983a0d4d82806b42282cf3f974de625fac47e14d52123a2591cdf9e7db5",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/loader-compatibility-vectors.json",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/loader-compatibility-vectors.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/runtime-capsule-minimal.kdna.b64",
+      "entry_sha256": "6deb0e1c1e7cddaa179cef8cfe3b22f45b93dde0361efb448ecea59cb425f1f8",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/runtime-capsule-minimal.kdna.b64",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/runtime-capsule-minimal.kdna.b64"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/runtime-contract-golden.json",
+      "entry_sha256": "f88a92d0641f55d1ff1bf0b51fee2a7f4932b727fd312c07c4f7b5d0d2db5884",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/runtime-contract-golden.json",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/runtime-contract-golden.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/runtime-trace-blocked.json",
+      "entry_sha256": "f16428cc7f251a2da2b9ae4e464d40d553355d3843969b140fd463562cea711b",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/runtime-trace-blocked.json",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/runtime-trace-blocked.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/runtime-trace-cancelled.json",
+      "entry_sha256": "936a66a804a06c0836853bc8392b6c69d918c36a53637198d6526a165cc4ab44",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/runtime-trace-cancelled.json",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/runtime-trace-cancelled.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/runtime-trace-execution-failed.json",
+      "entry_sha256": "17d6c588ecbaea32dfadef0845fbeaa57ca66b0145dafa78c17d6f0478d72510",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/runtime-trace-execution-failed.json",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/runtime-trace-execution-failed.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/runtime-trace-timed-out.json",
+      "entry_sha256": "4ec66fed10298e92b2cd656c02e1ba02b162423580ff5bc885548bbeef386664",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/runtime-trace-timed-out.json",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/runtime-trace-timed-out.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/Fixtures/schema-format-ajv.json",
+      "entry_sha256": "eeae7b7d0dcb0846e3e1ae452aa0829a13c8bab7dda13b67ba3bbb342a835916",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/Fixtures/schema-format-ajv.json",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/Fixtures/schema-format-ajv.json"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/KDNACoreTests.swift",
+      "entry_sha256": "a8c43dd53add0c60f5973a583ed690b3604d518d1226c78ebfaa4c71541ea73e",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/KDNACoreTests.swift",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/KDNACoreTests.swift"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/LoaderCompatibilityTests.swift",
+      "entry_sha256": "f315173e5d8acdf4509feb8c76041b087b02a4f7edbf37e61ba459d1fcbcaa46",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/LoaderCompatibilityTests.swift",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/LoaderCompatibilityTests.swift"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/RuntimeContractTests.swift",
+      "entry_sha256": "7608da0f8518b27c2018f9643905963e08804bb57ea219a713bf29fdc5d9b36a",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/RuntimeContractTests.swift",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/RuntimeContractTests.swift"
+    },
+    {
+      "original_path": "Tests/KDNACoreTests/SchemaValidationTests.swift",
+      "entry_sha256": "125861dd10eec675b59bc84735fd58d69211e27321d3a54fd846347d347ba5c9",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/Tests/KDNACoreTests/SchemaValidationTests.swift",
+      "original_bytes_preserved_at": "retired/Tests/KDNACoreTests/SchemaValidationTests.swift"
+    },
+    {
+      "original_path": "scripts/check_public_surface.py",
+      "entry_sha256": "8bc95afff9256f93b08cdc5e5fd76b0ab1c4bc52c14a1e0a6247f4f45d6c39f4",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/scripts/check_public_surface.py",
+      "original_bytes_preserved_at": "retired/scripts/check_public_surface.py"
+    },
+    {
+      "original_path": "scripts/check_runtime_cutover.py",
+      "entry_sha256": "ae44e1cd848b8604f121fe8a210d0ee4493379badfb607c207543308d22ea1f7",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/scripts/check_runtime_cutover.py",
+      "original_bytes_preserved_at": "retired/scripts/check_runtime_cutover.py"
+    },
+    {
+      "original_path": "scripts/generate_schema_format_fixture.js",
+      "entry_sha256": "3325de7b49a8ef83658b6483c02f21c4ffe30349c1db177a42d33d7e60bdd88d",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/scripts/generate_schema_format_fixture.js",
+      "original_bytes_preserved_at": "retired/scripts/generate_schema_format_fixture.js"
+    },
+    {
+      "original_path": "scripts/post-cutover-token-authority.json",
+      "entry_sha256": "3d810cd1c8cabe83e4b9d5ec0a2c74473d93b94968a332ac98ef0077022298b9",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/scripts/post-cutover-token-authority.json",
+      "original_bytes_preserved_at": "retired/scripts/post-cutover-token-authority.json"
+    },
+    {
+      "original_path": "scripts/test_runtime_cutover_hostile.py",
+      "entry_sha256": "a977ae2f15c88285971c098a1698d15249e345ec88f353707ca4a0b26693a478",
+      "disposition": "retired_excluded_from_build_and_distribution",
+      "current_path": "retired/scripts/test_runtime_cutover_hostile.py",
+      "original_bytes_preserved_at": "retired/scripts/test_runtime_cutover_hostile.py"
+    }
+  ],
+  "hosted_ci_status": "Hosted results are reported by GitHub checks for the exact commit; local native verification does not establish a hosted result."
+}

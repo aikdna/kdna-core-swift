@@ -1,273 +1,63 @@
-# KDNA Core Swift
+# KDNA Swift Core and Read
 
-[![CI](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml/badge.svg)](https://github.com/aikdna/kdna-core-swift/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+A Swift-native implementation of the pinned public Core and Read contract, at candidate coordinate `0.4.0-rc.component-semantics.1`. The Swift package exposes the `KDNACore` library. It uses Foundation, CryptoKit, Darwin and platform zlib with no external package dependencies. SwiftPM declares macOS 13 and iOS 16 deployment targets. CI runs macOS tests and a generic iOS device compilation; the iOS leg does not exercise device runtime behavior. Linux, Windows, Tauri and WKWebView are not verified.
 
-Swift pre-release component of the KDNA toolchain for native Apple runtimes.
+## Core admission
 
-KDNA Core is the official KDNA judgment-asset format and runtime loading
-contract. `.kdna` assets are created, inspected, validated, planned, loaded,
-and consumed through the official KDNA toolchain. This package implements the
-Swift runtime side for local `.kdna` files. JS Core is the current first-run
-public pre-release baseline; Swift Core remains pre-release until shared conformance evidence is
-published.
+```swift
+import Foundation
+import KDNACore
 
-This package is the Swift counterpart to [`@aikdna/kdna-core`](https://github.com/aikdna/kdna/tree/main/packages/kdna-core) (JavaScript). It is the foundation for native macOS and iOS applications that need to plan-load, verify, and project local KDNA runtime files.
-
-Authorization and runtime-load planning are defined in `aikdna/kdna`, not in
-app repositories. Native apps should render authorization UI from
-`KDNARuntime.planLoad(...)` and should not infer load permission directly from
-raw manifest fields.
-
-
-
-## Install
-
-### Swift Package Manager
-
-Add to your Package.swift:
-
-```
-.package(url: "https://github.com/aikdna/kdna-core-swift.git", from: "0.21.0")
+let result = KDNACore.admitFile(URL(fileURLWithPath: "asset.kdna"))
+if let snapshot = result.snapshot {
+    let view = snapshot.inspect()
+    let bytes = try KDNAJSON.canonical(view)
+    print(String(decoding: bytes, as: UTF8.self))
+} else {
+    print(result.result)
+}
 ```
 
-Then add `KDNACore` to your target dependencies:
+`admitBytes(Data)` captures and validates a container. `KDNASnapshot` has no public initializer and returns a value copy from `inspect()`. `KDNAValue` represents the JSON domain; `KDNAKey` compares exact scalar bytes, so canonically equivalent Unicode spellings remain distinct. Complete-input UTF-8 validity is checked before strict JSON grammar. `versionTuple()` exposes the pinned contract; `planCapability()` explicitly reports unavailable admission/execution authority.
 
-```
+## Read embedding
+
+`KDNARead` provides admission, projection and async read operations. `KDNATrustedReadControlProvider` and `KDNATrustedHostReadProvider` are explicit embedding boundaries. The Host observer supplies the exact public Host decision, including snapshot/digest identity, scope and valid timing. Its optional async delivery callback confirms delivery only by returning `true`. Scope and policy are observed again before disclosure. Use the same snapshot and Host provider for stable expansion; serialized data cannot instantiate an attested snapshot or issuing Host registry. Projection alone does not grant permission.
+
+## Package consumption and verification
+
+Check out the exact Git revision you intend to consume and use a SwiftPM path dependency. Select the `KDNACore` product in your application target:
+
+```swift
+.package(path: "../kdna-core-swift")
+// In the application's target dependencies:
 .product(name: "KDNACore", package: "kdna-core-swift")
 ```
 
-### Quick Start
+No public tag or registry release is asserted for this candidate. `public-contract-binding.json` records its contract and reference coordinates; `public-inputs.json` records the exact current source, resource and test bytes.
 
-```swift
-import KDNACore
-
-// Open a .kdna asset
-let reader = KDNAAssetReader()
-let asset = try reader.open(url: fileURL)
-let manifest = try reader.readManifest(asset: asset)
-
-// Plan authorization before loading
-let plan = KDNARuntime.planLoad(assetURL: fileURL)
-if plan.can_load_now {
-    // Agents consume the verified Runtime Capsule, never raw asset entries.
-    let capsule = try KDNARuntime.load(assetURL: fileURL)
-    print(capsule.context)
-} else {
-    print("Required action:", plan.required_action)
-}
-
-// Verify integrity
-let result = reader.verifySync(asset)
-print("Content digest:", result.contentDigest ?? "")
-
-// Developer fixture APIs are separate from the packaged Runtime path above.
+```sh
+python3 scripts/check_public_surface.py
+python3 scripts/test_public_surface.py
+python3 scripts/verify_native.py --work-dir ../kdna-swift-check --ios
 ```
 
-`compatibility.min_loader_version` is a strict `x.y.z` loader package
-coordinate. The current source candidate reports
-`KDNALoaderCompatibility.currentVersion` as `0.21.0`; the latest published
-Swift package release is `0.21.0`. Components
-with leading zeros and coordinates with prefixes, prerelease suffixes, build
-metadata, missing components, or whitespace are invalid. A structurally valid
-asset that requires a newer loader is blocked before projection with
-`KDNA_LOADER_VERSION_UNSUPPORTED`. `verifySync`, `planLoad`, and both Runtime
-load entry points enforce the same decision.
+The last command requires a new directory outside the checkout. It builds the release library, runs the full XCTest suite, builds and runs an independent package that imports the public API, and compiles for a generic iOS device. Omit `--ios` for a macOS-only check. For development, `swift build` and `swift test` also work directly.
 
-### Current Runtime contract
+Tests include real containers, frozen Node reference observations, malformed UTF-8/JSON, canonical number spelling, mandatory support closure and Host/handle/budget/delivery scenarios. They use the bundled fixtures without a Node checkout. Run `swift test --filter ZReadScenarioTests` alone when collecting exact per-process receipt/handle IDs against its fixed Node observations; the normal suite checks semantic expectations without treating earlier test receipt counters as failures.
 
-`KDNARuntime.load(...)` returns the sole current `KDNARuntimeCapsule`. The
-Capsule wire type is `kdna.runtime-capsule` and its contract version is
-`0.1.0`. There is no generation selector or adapter in the public Runtime API.
+## Contract and authority
 
-```swift
-let capsule = try KDNARuntime.load(
-    assetURL: fileURL,
-    expected: KDNAExpectedDigests(
-        asset: KDNAExpectedDigest(
-            value: receiptAssetDigest,
-            source: "install_receipt"
-        )
-    )
-)
-let deliveryDigest = try KDNARuntimeCapsuleCore.computeDeliveryDigest(capsule)
-```
+The candidate binding identifies `kdna.core/0.3.0`, `kdna.canonical-ir/0.2.0` and `kdna.read/0.2.0`. Container and Payload remain 0.2.0; A/C/E/P digest profiles are unchanged. The exact public source, generated resources and reference package archives are recorded in `public-contract-binding.json`. A local candidate or reference binding does not establish independent acceptance or registry availability.
 
-The Runtime snapshots the packaged file once and emits explicit digest
-evidence:
+`KDNACore.componentSemanticsContract()` returns the fixed public component descriptor. Method IR values contain `declaration`, `declaration_presence` and `component_interpretations`. Explicitly adopted taxonomy, candidate-set and discriminator-set content is interpreted under the pinned public definition; undeclared component content remains undeclared, and absent authored arrays remain distinguishable from declared empty arrays. Known critical carriers are valid only at their designated typed extension positions. Unknown critical extensions block interpretation; data inside an opaque extension value is not recursively treated as an extension.
 
-- A uses `kdna.digest-basis.container-bytes` for the exact packaged bytes.
-- C uses `kdna.digest-basis.content-tree` for the canonical content tree.
-- E uses `kdna.digest-basis.runtime-entry-set` for `kdna.json` and
-  `payload.kdnab`.
-- P uses `kdna.canonicalization.runtime-capsule-jcs` over strict RFC 8785 JCS
-  bytes of the delivered Capsule.
+Component failures expose the public reason, nullable judgment/component references, no body, and `core: valid` / `interpretation: blocked`. Structural Core failures remain distinct. Static adoption fields and their recomputable digests establish consistency only; they do not recreate a live creation context, authenticate a human or Agent, or authorize actions.
 
-A mismatch blocks delivery. Required-but-nullable fields must be present,
-closed objects reject unknown properties, and non-finite numbers are rejected
-instead of being rewritten. The public Capsule graph is `Sendable`.
+Core admission establishes technical validity. It does not establish authorship, content quality, Creation acceptance, reading permission, or action authorization. Read disclosure requires a trusted embedding provider with explicit scope, identity, time and policy observations. A caller-supplied serialized snapshot or handle does not establish authority. Expansion handles are usable only with the original process-local snapshot and issuing Host provider; reopen creates a different snapshot.
 
-The same authority defines the execution chain:
+Encrypted, signed and checksum-bearing containers remain capability-unavailable where the accepted Core rejects them. Plan admission and execution are unavailable. There is no legacy loader, raw-payload fallback, asset migration or action executor. Historical files under `retired/` are kept in Git for reference, excluded from current SwiftPM targets and not bundled as runtime resources. The current README, contribution guide and security policy describe this API; dated changelog entries describe the previous loader API.
 
-```text
-ConsumptionPlan
-→ Agent Host capability negotiation
-→ correlated Host request and receipt
-→ terminal JudgmentTrace
-```
+## Source and license
 
-Swift validates the Plan digest, task and asset identity, Capsule contract,
-A/C/E/P evidence, projected-character budget, request/receipt correlation,
-terminal status, and exact budget evidence. Host completion is recorded
-separately from semantic consumption or behavioral influence. Budget limits
-and observed integer usage must remain within JavaScript's exact safe integer
-range; values outside that range fail closed before Swift integer conversion.
-
-LoadPlan, Runtime Capsule, digest evidence, ConsumptionPlan, Agent Host, and
-JudgmentTrace schemas are byte-for-byte resources pinned to
-`aikdna/kdna@5d4b15fca0c3ad802c2ec6713fbe8bf15da61fd0` (Core `0.21.0`
-Development Preview candidate).
-SHA-256 resource locks make missing or drifted schemas fail closed. Date-time
-and URI formats follow the canonical Node validation boundaries. Manifest
-encryption declarations and the actual CBOR envelope must agree before
-authorization; encrypted payloads are schema validated after authorized
-in-memory decryption and before Runtime delivery.
-
-### Digest vocabulary
-
-- `KDNAAsset.assetDigest` is the SHA-256 digest of the complete `.kdna` bytes.
-- `VerifyResult.contentDigest` is the canonical content-tree digest; binary
-  entries are hashed as their original bytes.
-- `checksums.json.entry_set_digest` covers exactly `kdna.json` and
-  `payload.kdnab` under `kdna.digest-basis.runtime-entry-set` version `0.1.0`.
-- External grants bind the exact packaged asset digest and the declared
-  payload entry path as well as asset identity and version.
-
-Use `KDNAContentDigest.computeValidated(asset:reader:)` for direct digest
-computation so malformed JSON fails closed.
-
-## What It Does
-
-- **Open and verify** local `.kdna` runtime files
-- **Plan runtime loading** through LoadPlan before emitting judgment context
-- **Emit authorized Runtime Capsules** with the same profile-specific context
-  shapes as the JavaScript Core
-- **Validate** developer fixtures for conformance testing
-- **Format** loaded judgment context for native application integration
-- **Route / compose / match** through pre-release Swift APIs used by native integrations
-
-## Architecture
-
-| File | Description |
-|------|-------------|
-| `KDNCoreTypes.swift` | Codable structs for all KDNA domain types (Domain, Axiom, Ontology, Framework, Misunderstanding, SelfCheck, etc.) |
-| `KDNADomainLoader.swift` | Domain loading, scanning, task classification, context formatting |
-| `KDNADomainValidator.swift` | Structural lint, cross-file validation, ID uniqueness |
-| `KDNAExternalKeyGrant.swift` | RFC-0019 signature/binding verification, X25519 unwrap, and in-memory decryption |
-| `KDNARuntimeCapsule.swift` | Current Runtime Capsule, A/C/E evidence, and strict RFC 8785 JCS/P |
-| `KDNARuntimeContracts.swift` | ConsumptionPlan, Agent Host negotiation/request/receipt, budget evidence, and JudgmentTrace validation |
-| `KDNAStrictCodable.swift` | Shared fail-closed Capsule decoding helpers |
-| `KDNJudgmentPipeline.swift` | Pre-filtering, system prompt construction, post-validation of agent outputs |
-| `KDNARouter.swift` | **7-State Domain Router** — full routing pipeline (Intent Gate → Negative Match → Domain Fit → Trust Gate → Ambiguity Gate) |
-| `KDNAComposer.swift` | **Multi-Domain Composer** — combines primary + constraint domains with conflict detection |
-| `KDNATrust.swift` | **Trust Verifier** — signature, yank, and license verification |
-
-### Compatibility Status
-
-| Capability | Status |
-|------------|--------|
-| Open local `.kdna` runtime containers | Pre-release |
-| Verify local `.kdna` container digests | Pre-release |
-| LoadPlan authorization planning | Pre-release |
-| CBOR payload and encrypted-envelope decoding | Pre-release |
-| Current Runtime Capsule (`index` / `compact` / `scenario` / `full`) | Pre-release; shared JavaScript golden vector |
-| A/C/E/P and Plan/Host/Trace parity | Pre-release; shared JavaScript contract fixtures |
-| RFC-0019 account/device external grant verification | Pre-release; shared JS golden vector |
-| `KDNAJudgmentProjection` rendering | Pre-release |
-| Developer fixture loading | Conformance-only |
-| Route / compose / match APIs | Experimental |
-| Complete JS parity | Not claimed; requires fixed shared conformance evidence |
-
-RFC-0019 callers persist the highest verified `status_version` and verified
-wall-clock value in the platform SecretStore, then pass them as
-`minimumStatusVersion` and `minimumVerifiedTime`. Rollback fails closed. Call
-`dispose()` when a verified authorization is no longer needed to clear its
-in-memory CEK eagerly.
-
-## Runtime Authorization Contract
-
-The source of truth is `aikdna/kdna`:
-
-- `specs/kdna-authorization-contract.md`
-- `schema/load-plan.schema.json`
-- `conformance/authorization/cases.json`
-- `conformance/authorization/goldens/*.loadplan.json`
-
-Swift Core consumes that contract through `KDNARuntime.planLoad(assetURL:environment:)`
-and `KDNARuntime.load(assetURL:credential:profile:)`. The current
-implementation covers developer fixtures and packed `.kdna` runtime
-containers, and is tested against the shared authorization conformance goldens.
-Product code should use the returned `KDNALoadPlan.state`, `required_action`,
-`can_load_now`, and `issues` fields as its UI/runtime source of truth.
-
-For an account/device asset, construct a `KDNAExternalGrantAuthorization` only
-through `authorize(...)`, passing issuer keys pinned by the application and the
-device agreement private key loaded from Keychain. The verifier checks the
-signature, time window, account, device, asset identity/version/digest, and
-encrypted entry before LoadPlan can become ready. Its initializer is private,
-so a plain status value cannot manufacture authorization. The CEK stays inside
-the in-memory authorization object and is cleared on deinitialization; account
-assets never fall back to password loading.
-
-`load` returns a `KDNARuntimeCapsule`, not the raw payload. Its context follows
-the selected `index`, `compact`, `scenario`, or `full` load profile.
-`loadWithCredential` is the native UI projection API; Agent consumption uses
-the Capsule path.
-
-Swift Core must not define access modes, entitlement profiles, issue codes, or
-fail-closed policy independently from `aikdna/kdna`.
-
-## Relationship to KDNA Ecosystem
-
-```
-┌──────────────────────────────────┐
-│     KDNA Asset Container          │  ← Judgment-asset contract
-├──────────────────────────────────┤
-│  kdna-core (JS)  │ kdna-core-swift│  ← Core libraries (Apache 2.0)
-├──────────────────────────────────┤
-│  kdna-cli · kdna-studio · apps   │  ← Tools and applications
-└──────────────────────────────────┘
-```
-
-This library is the Swift runtime bridge for products that need to inspect,
-validate, load, or format KDNA-compatible assets locally.
-
-## JudgmentTrace
-
-Applications record Runtime delivery through `KDNAJudgmentTrace`, the strict
-schema-backed trace shared with the Node authority. Validation binds the trace
-to the exact ConsumptionPlan, Capsule, Agent Host request and receipt,
-negotiated capabilities, terminal status, and observed budget evidence. It is
-an execution record, not a second asset format or a claim that the model
-semantically followed the delivered judgment.
-
-Use the CLI and `@aikdna/kdna-eval` as the reference for route, compose, and
-replay policy. Native clients consume the shared trace contract rather than
-defining independent trust or promotion rules.
-
-## License
-
-Apache 2.0 — see [LICENSE](LICENSE).
-
-## Official packages
-
-Official KDNA packages are published under the `@aikdna` npm scope and the
-`aikdna` name on PyPI. The unscoped npm package `kdna` is not affiliated with
-the KDNA project. This repository (`aikdna/kdna-core-swift`) is the official
-Swift Core; install it only through the Swift Package Manager coordinate shown
-in this README.
-
-## Related
-
-- [KDNA Core](https://github.com/aikdna/kdna) — Format, JS core library, and launch truth
-- [kdna-cli](https://github.com/aikdna/kdna-cli) — CLI tools
-- [aikdna.com](https://aikdna.com) — Website
+The official source is [aikdna/kdna-core-swift](https://github.com/aikdna/kdna-core-swift). Code is licensed under [Apache 2.0](LICENSE).
