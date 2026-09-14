@@ -12,13 +12,71 @@ ROOT = Path(__file__).resolve().parents[1]
 INTERNAL_ID = re.compile(r"\b[pP][dD]\d+\b")
 GENERATION = re.compile(r"(?<![A-Za-z0-9])[vV]\d+(?!\d|\.\d)")
 MACHINE_PATH = re.compile(r"/" + r"Users/[A-Za-z0-9._-]+/|/home/" + r"runner/work/[^\s]+|[A-Za-z]:\\Users\\[A-Za-z0-9._-]+\\")
+LOCAL_PATH_PATTERN = re.compile(
+    r"/" + r"Users/(?!<user>/|you/|username/)[^/\s]+/|/" + r"private/tmp/kdna",
+    re.IGNORECASE,
+)
+LEGACY_PATH_CHECKER = 'retired/scripts/check_public_surface.py'
+LEGACY_PATH_CHECKER_SHA256 = '8bc95afff9256f93b08cdc5e5fd76b0ab1c4bc52c14a1e0a6247f4f45d6c39f4'
 PRIVATE_COORDINATION = re.compile(r"(?:" + "kdna-" + "machine-recovery|" + "kdna-" + "open-lead|" + "commander-" + "work" + r")[-/]")
 PLACEHOLDER_IDENTITY = re.compile(r"[\w.+-]+@[\w.-]+\.invalid\b")
 TEXT_SUFFIXES = {'.swift', '.py', '.json', '.jsonl', '.md', '.yml', '.yaml', '.sh', '.txt', '.resolved'}
 
 
+FORBIDDEN_HASHES = {
+    '068c8b48752eba18baf46af3324f3ffb9306457c54b6624fade5792109af536b',
+    '0f89e837194f291beef89dcde345233adf1443f61763f05ee5cef5ad12d44c0a',
+    '32a183bfe17c2d785b66d5a328402623bc5ab674c86bd8ad29905a05c1a6319c',
+    '3ce236400925c24e9e5416bdc69abe5427b3183e2abe6f848b297334cfdeaa25',
+    '4c94af7ca105abc9c4e2c9c7dce3b778b4bde7e6445c9e68101a0d9eb59f97bd',
+    '5a02d80676cf1acf987c1787c1201a7648f8cc606b6014a29ecda4eed68e6315',
+    '5de109ce9d5d074259ce2b3757d33b0a68afaaf88ca599ed77d78a46797cfdb0',
+    '5f60fde8e355d8d81ffbb60095c2bb25a52f723940c4c01a77473badd3faa8cd',
+    '61e79d887fa6b41acfebaeee47c2ba816bc76c892b1f72a3c2ba3f34900a22f8',
+    '7206c17a81fdc22e097e4b78d33fee460804b0c5bf4c0e461adc7114d16d85ed',
+    'a1f44465ac220babc075de0f4489642440192302357a2fe90265fb2ad2c376e5',
+    'ad832a18658e09393a42c9966b94625c82effd30dfe8bc0a6d8c000fa8056222',
+    'e2f6321a5972a38700c02f6b4344c8b9deb52b523fceb7ce25a255fb44f0917c',
+}
+TOKEN_PATTERN = re.compile(
+    r"@[a-z][a-z0-9_-]*/[a-z][a-z0-9_-]*|"
+    r"[a-z][a-z0-9_-]*/[a-z][a-z0-9_-]*|"
+    r"[a-z][a-z0-9_-]*", re.IGNORECASE,
+)
+
+
+def private_name_present(text):
+    return any(hashlib.sha256(token.lower().encode("utf-8")).hexdigest() in FORBIDDEN_HASHES
+               for token in set(TOKEN_PATTERN.findall(text)))
+
+
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def legacy_path_pattern_spans(path, data, text):
+    """Recognize only the exact regex literal in the fixed historical checker."""
+    if path != LEGACY_PATH_CHECKER or digest(data) != LEGACY_PATH_CHECKER_SHA256:
+        return []
+    lines = text.splitlines(keepends=True)
+    for node in ast.parse(text).body:
+        if not (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == 'LOCAL_PATH_PATTERN'):
+            continue
+        call = node.value
+        if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute)
+                and isinstance(call.func.value, ast.Name) and call.func.value.id == 're'
+                and call.func.attr == 'compile' and call.args):
+            continue
+        literal = call.args[0]
+        if isinstance(literal, ast.Constant) and literal.value == LOCAL_PATH_PATTERN.pattern:
+            # AST columns count UTF-8 bytes. Convert them before comparing to
+            # regex character offsets, even though the fixed source is ASCII.
+            start = sum(map(len, lines[:literal.lineno - 1])) + len(lines[literal.lineno - 1].encode('utf8')[:literal.col_offset].decode('utf8'))
+            end = sum(map(len, lines[:literal.end_lineno - 1])) + len(lines[literal.end_lineno - 1].encode('utf8')[:literal.end_col_offset].decode('utf8'))
+            return [(start, end)]
+    return []
 
 
 def collect(root=ROOT):
@@ -51,6 +109,21 @@ def surface_errors(files):
             return {}
 
     for path, data in files.items():
+        require(not private_name_present(path) and not any(private_name_present(part) for part in Path(path).parts), f'private name in path: {path}')
+        require(not LOCAL_PATH_PATTERN.search(path) and not MACHINE_PATH.search(path)
+                and not PRIVATE_COORDINATION.search(path), f'private machine or coordination path in filename: {path}')
+        # Preserve the original all-text vocabulary and local-path boundary. File extensions
+        # and text size do not exempt non-NUL content. As in the historical
+        # checker, replacement decoding prevents a bad byte from hiding names
+        # or paths elsewhere in the file; known text suffixes also fail below
+        # when their UTF-8 is invalid.
+        if b'\0' not in data:
+            vocabulary_text = data.decode('utf8', errors='replace')
+            require(not private_name_present(vocabulary_text), f'private name in text: {path}')
+            spans = legacy_path_pattern_spans(path, data, vocabulary_text)
+            for match in LOCAL_PATH_PATTERN.finditer(vocabulary_text):
+                require(any(start <= match.start() and match.end() <= end for start, end in spans), f'private machine or coordination path: {path}')
+            require(not MACHINE_PATH.search(vocabulary_text) and not PRIVATE_COORDINATION.search(vocabulary_text), f'private machine or coordination path: {path}')
         require(Path(path).name not in {"AGENTS.md", "WORKLOG.md"}, f"private coordination file: {path}")
         require(not INTERNAL_ID.search(path), f'internal identifier in path: {path}')
         require(not GENERATION.search(path), f'generation label in path: {path}')
@@ -62,7 +135,6 @@ def surface_errors(files):
             errors.append(f'invalid UTF-8 public text: {path}')
             continue
         require(not INTERNAL_ID.search(text), f'internal identifier in text: {path}')
-        require(not MACHINE_PATH.search(text) and not PRIVATE_COORDINATION.search(text), f'private machine or coordination path: {path}')
         require(not PLACEHOLDER_IDENTITY.search(text), f'placeholder identity: {path}')
         spans = third_party_spans(path, text)
         for match in GENERATION.finditer(text):
