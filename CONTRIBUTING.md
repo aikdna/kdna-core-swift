@@ -1,107 +1,63 @@
 # Contributing to kdna-core-swift
 
-This is the Swift implementation of the KDNA Core specification. It mirrors the
-JavaScript `@aikdna/kdna-core` package, focusing on macOS-first consumption
-from the Studio Swift app and other Swift-based tools.
+This package implements the bounded Core and Read contracts described in the
+README and `public-contract-binding.json`. The current SwiftPM graph exports
+`KDNACore`, has no external package dependencies, and loads its own schema resources.
 
-## Prerequisites
+## Prerequisites and layout
 
-- **macOS 13+** (for CryptoKit and modern Swift Concurrency)
-- **Swift 5.9+** (check: `swift --version`)
-- **Xcode 15+** (for full development; command-line tools are sufficient for `swift build`)
-- **Git** (for submitting PRs)
+Use an Apple Swift toolchain that supports the Swift 5.9 package manifest.
+The package declares macOS 13 and iOS 16 deployment targets. Full verification
+also needs Xcode with an iOS SDK and Python 3. CI runs on macOS; Linux is not
+currently supported by the Darwin/CryptoKit implementation.
 
-> Cross-platform note: CI covers macOS tests and a generic iOS 16 device build.
-> Linux Swift is not currently covered.
+- `Sources/KDNACore/`: current native Core and Read implementation and schemas.
+- `Tests/PublicCoreTests/`: XCTest assertions, real containers and frozen reference observations.
+- `scripts/`: public-surface checks and native verification entry point.
+- `public-inputs.json`: SHA-256 inventory of current package, source and test inputs.
+- `retired/`: preserved previous implementation, fixtures and documentation, outside current targets.
 
-## Repository Layout
+## Reproduce CI locally
 
-```
-kdna-core-swift/
-├── Sources/
-│   └── KDNACore/         # Library code (mirrors @aikdna/kdna-core)
-├── Tests/
-│   └── KDNACoreTests/    # XCTest suite
-├── Package.swift         # SwiftPM manifest
-├── README.md
-├── SECURITY.md
-└── CHANGELOG.md
+```sh
+python3 scripts/check_public_surface.py
+python3 scripts/test_public_surface.py
+python3 scripts/verify_native.py --work-dir ../kdna-swift-check --ios
 ```
 
-## Developer Setup
+Use a new directory outside the checkout for each complete verification. The
+runner builds the release library, runs all XCTest cases, creates an independent
+SwiftPM consumer that imports only the public API, and compiles for a generic
+iOS device without signing. It keeps build and module caches in the supplied
+directory and propagates command failures. The iOS step checks compilation;
+it does not establish runtime behavior on a physical device.
 
-```bash
-git clone https://github.com/aikdna/kdna-core-swift.git
-cd kdna-core-swift
-swift build          # debug build
-swift test           # run XCTest suite
-swift build -c release
-```
+For a macOS-only check, omit `--ios`. During development, `swift build`,
+`swift build -c release`, and `swift test` remain available. Open `Package.swift`
+in Xcode to work with the library and test target.
 
-### Xcode
+## Contract changes
 
-Open `Package.swift` in Xcode. The `KDNACore` library and
-`KDNACoreTests` test target are auto-detected.
+The tests compare behavior to bundled reference observations at the exact
+coordinates in the binding. They do not fetch a moving reference checkout.
+The supported contract includes technical container admission, strict JSON,
+canonical IR and digests, component interpretation, and explicit trusted Read
+embedding. Admission and projection do not establish action authorization.
+Encrypted or signed capabilities, Plan admission/execution and the historical
+loader are unavailable where the current API reports them unavailable.
 
-## Available Commands
+Treat the binding, generated resources and current source/fixture inventory as
+one reviewable contract change. Do not regenerate expected results or relax a
+check merely to accept a divergence. Explain the supported behavior and its
+reference coordinate, reproduce the failure, and include a regression case.
+The public-surface gate verifies every inventory hash and the original bytes
+retained under `retired/`. Naming checks classify SwiftPM deployment constants
+and the historical Argon2 version by their third-party API syntax.
 
-| Command | Purpose |
-|---------|---------|
-| `swift build` | Debug build |
-| `swift build -c release` | Release build |
-| `swift test` | Run all XCTest cases |
-| `swift test --filter KDNACoreTests.testName` | Run a single test |
-| `swift package describe` | Inspect package metadata |
-| `xcodebuild -scheme kdna-core-swift -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build` | Build the iOS 16 library surface |
+Changes to CI must retain the required `test` and `Analyze (swift) (swift)`
+contexts, the complete native test entry point and the iOS compilation leg.
+The gate's mutation tests demonstrate rejection of missing fixtures, changed
+frozen bytes, a partial test suite and absent authority checks in the consumer.
 
-## Cross-Implementation Parity
-
-This package **must** stay behaviorally equivalent to `@aikdna/kdna-core`
-in the following areas:
-
-- Current LoadPlan states and transitions
-- Canonical container format
-- Current password, licensed-entry, and external-grant crypto profiles
-- Manifest schema validation
-
-Before opening a PR, run the Swift suite with `KDNA_CONFORMANCE_ROOT` pointed
-at the exact Node authority checkout used by CI. The suite consumes the
-canonical Runtime, authorization, digest, and cryptographic fixtures directly.
-If a divergence is intentional, document it in the PR description with
-rationale.
-
-## Contribution Types
-
-### 1. Crypto / Loader Fix
-
-If you find a divergence with the JS implementation, the JS repo is
-authoritative. Open a PR here with a test case demonstrating the
-divergence, then a fix.
-
-### 2. Platform Adaptation
-
-Improvements specific to macOS / iOS (e.g., Keychain integration,
-Secure Enclave use) belong here. They must not change wire formats.
-
-### 3. Performance / API Ergonomics
-
-Internal improvements are welcome. Public API must remain stable across
-minor versions; major API changes require coordination with the JS
-implementation.
-
-### 4. Documentation
-
-Improvements to README, SECURITY.md, or inline doc comments.
-
-## Quality Requirements
-
-All contributions must:
-- Pass `swift test` (no failing or skipped tests without explanation)
-- Maintain parity with the JavaScript reference where applicable
-- Follow Swift API Design Guidelines
-- Use Swift Concurrency (`async`/`await`) for new I/O code
-- Not add third-party packages without discussion
-
-## License
-
-- Code contributions: Apache 2.0
+Update README, CHANGELOG and security guidance when public behavior changes.
+Code contributions are licensed under Apache 2.0.

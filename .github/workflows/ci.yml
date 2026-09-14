@@ -1,80 +1,16 @@
-name: CI
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-
+name: Swift public contract
+on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
-
 jobs:
   test:
     runs-on: macos-14
     timeout-minutes: 30
-    env:
-      # Anchored to the published 0.22.0 kdna main commit (a0edd85), which
-      # carries RFC-0021 M1 signatures and the RFC-0020 minimal profile.
-      KDNA_CONFORMANCE_COMMIT: a0edd85970a2b0a559528d40dcca9eff35f8a481
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
-        with:
-          node-version: '22.23.1'
-          check-latest: false
-      - name: Bind exact Node executable
-        run: |
-          test "$(node --version)" = "v22.23.1"
-          node_path="$(command -v node)"
-          test -n "$node_path"
-          test "${node_path#/}" != "$node_path"
-          test -x "$node_path"
-          printf 'NODE=%s\n' "$node_path" >> "$GITHUB_ENV"
-      - name: Audit public surface
+      - name: Check public source, frozen inputs and preserved history
         run: python3 scripts/check_public_surface.py
-      - name: Audit Runtime cutover and workflow pins
-        run: |
-          python3 scripts/check_runtime_cutover.py
-          python3 scripts/test_runtime_cutover_hostile.py
-      - name: Checkout fixed kdna conformance fixtures
-        run: |
-          cd ..
-          git init kdna
-          cd kdna
-          git remote add origin https://github.com/aikdna/kdna.git
-          git fetch --depth 1 origin "$KDNA_CONFORMANCE_COMMIT"
-          git checkout --detach FETCH_HEAD
-      - name: Build
-        run: |
-          swift build \
-            --scratch-path "${{ runner.temp }}/kdna-core-swift-swiftpm-scratch" \
-            --cache-path "${{ runner.temp }}/kdna-core-swift-swiftpm-cache" \
-            --config-path "${{ runner.temp }}/kdna-core-swift-swiftpm-config" \
-            --security-path "${{ runner.temp }}/kdna-core-swift-swiftpm-security" \
-            --force-resolved-versions \
-            -Xcc -fmodules-cache-path="${{ runner.temp }}/kdna-core-swift-module-cache"
-      - name: Build iOS 16 generic library
-        run: |
-          xcodebuild \
-            -scheme kdna-core-swift \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath "${{ runner.temp }}/kdna-core-swift-ios-derived-data" \
-            -clonedSourcePackagesDirPath "${{ runner.temp }}/kdna-core-swift-ios-packages" \
-            -packageCachePath "${{ runner.temp }}/kdna-core-swift-ios-package-cache" \
-            -disableAutomaticPackageResolution \
-            -onlyUsePackageVersionsFromResolvedFile \
-            CODE_SIGNING_ALLOWED=NO \
-            build
-      - name: Test
-        env:
-          KDNA_CONFORMANCE_ROOT: ${{ github.workspace }}/../kdna
-        run: |
-          swift test \
-            --scratch-path "${{ runner.temp }}/kdna-core-swift-swiftpm-scratch" \
-            --cache-path "${{ runner.temp }}/kdna-core-swift-swiftpm-cache" \
-            --config-path "${{ runner.temp }}/kdna-core-swift-swiftpm-config" \
-            --security-path "${{ runner.temp }}/kdna-core-swift-swiftpm-security" \
-            --force-resolved-versions \
-            -Xcc -fmodules-cache-path="${{ runner.temp }}/kdna-core-swift-module-cache"
+      - name: Prove the public gate rejects regressions
+        run: python3 scripts/test_public_surface.py
+      - name: Build, test and consume the current Apple library
+        run: python3 scripts/verify_native.py --work-dir "${{ runner.temp }}/kdna-swift-native" --ios
