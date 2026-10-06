@@ -6,6 +6,15 @@
 > a byte-level study of the Node reference implementation; alignment points
 > with the open-line sessions (kdna-c0 / kdna-f2) are recorded at the end.
 
+> **Candidate-state mirroring (f2 early-alignment requirement):** the
+> sections chain is a candidate-only sub-surface inside the stable packages
+> (`contract.candidate_only: true`, module
+> `kdna.representation06.candidate-a15-05`). This port's public narration,
+> docs headers and contract identity fields MUST mirror that state — no
+> names, type names or prose may mint a "stable" feel for this surface.
+> Type names keep the `KDNA*` prefix; candidate status lives in doc
+> comments and identity fields, never in type names.
+
 ## 1. Why
 
 A real consumer needs it: CoachLettersAI (gvjl) ships the re-authored
@@ -36,6 +45,10 @@ the open line: the container/read semantics are ecosystem infrastructure.
   `kdna.representation06.candidate-a15-05`). Container 0.5.0 /
   `read 0.6.4` (the `admitNode` path) coexists in the same packages and is
   NOT the port target.
+- Contract identity fields carried by the port's decoded views must keep
+  the candidate module id (`kdna.representation06.candidate-a15-05`) and
+  the tuple verbatim; any public doc for the port repeats the
+  candidate-only state.
 - There is no standalone spec document and no conformance fixture for the
   sections chain in the open repo; the normative sources are
   `packages/kdna-core/src/public-contract/sections/contract.json`
@@ -161,6 +174,17 @@ stat key before/after every read as the Node fd capture does; the initial
 port may operate on in-memory bytes (the gvjl app loads bundle resources),
 which keeps the discipline trivially but must keep the same phase order.
 
+Confirmed surface decisions (f2 early-alignment, binding):
+
+- Naming: keep the `KDNA*` prefix; candidate state in docs/headers only.
+- Faces hang off the asset object (the §6 sketch shape), with the binding
+  requirement that phase order, the one-shot latch and stage observability
+  match the Node implementation point-by-point.
+- The retained/authorize callback is an explicit Swift closure that accepts
+  ONLY the literal `true` and is invoked before any pack body byte is read;
+  the document states plainly that observation is not authority
+  ("观测≠权威").
+
 Ordering rules that MUST NOT be unified: JCS key order = UTF-16 code-unit
 (ECMAScript); EntryName/node-id/table-key order = unsigned UTF-8 bytes.
 
@@ -222,13 +246,22 @@ Node literal-`true` rule. These are the items sent for early alignment.
 ## 7. Conformance and fixtures
 
 The Node repo has **no sections fixtures**; this port generates its own
-golden set from the Node chain (four coach bundles + synthetic hostile
-containers from `bytes-fixtures.cjs` techniques) and checks in, per
-fixture: the exact bytes, the Node-chain outputs (manifest view, A/C/E,
-IR digest, per-frame sha256, catalog), and the expected diagnostics for
-hostile mutations. Parity tests follow the package's existing
-`ParityTests.swift` tradition; the byte-equality obligation is on derived
-digests (A/C/E, digestCanonical), not on re-serialized UI structures.
+golden set and checks in, per fixture: the exact bytes, the Node-chain
+outputs (manifest view, A/C/E, IR digest, per-frame sha256, catalog), and
+the expected diagnostics for hostile mutations.
+
+**Privacy is a hard item (f2 requirement):** goldens entering this public
+repo must be synthetic content or an Owner-cleared public-safe subset —
+real coach material must never land here directly. Every fixture carries
+its **regeneration method**: the released-artifact versions used and the
+generation script, so reviewers can replay it. Hostile-mutation
+diagnostic-expectation sets are explicitly welcome.
+
+Byte-comparison obligation (confirmed): A/C/E and `digestCanonical` at the
+digest level, byte-exact against the Node chain **from the released
+artifacts in a scratch environment** — not against work-tree builds, and
+not on re-serialized UI structures. Parity tests follow the package's
+existing `ParityTests.swift` tradition.
 
 ## 8. Hardest bits (flagged early)
 
@@ -246,5 +279,12 @@ Local-first on this branch; push gated by the Owner (repo under the
 recovery-period seal; the open line has two unfreeze precedents to run
 jointly). Review flow agreed with the open line: early API sketch (this
 document's §6) → implementation → open-line review (c0 + f2) → Owner
-release gate. Plaintext sections containers byte-compare across runs;
+release gate.
+
+**Early alignment: PASSED** (f2, 2026-10-06) with four supplements now
+folded into this document: candidate-state mirroring (§ header, §2),
+fixture privacy + per-fixture regeneration method (§7), digest-level
+byte-comparison against the released artifacts in scratch (§7), and the
+confirmed surface decisions (§4). The difficulty list (§8) was judged
+accurate. Plaintext sections containers byte-compare across runs;
 protected artifacts (salted) must not (same-run triple consistency only).
