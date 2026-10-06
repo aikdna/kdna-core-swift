@@ -156,15 +156,51 @@ decode/re-added on encode; index range/id-missing dup checks
   verbatim in the implementation study; the port must carry them
   unchanged (named differences only, per the review discipline).
 
+### 3.6 Existing primitives inventory (recon of this repo, 2026-10-06)
+
+The package already carries, oracle-tested, most of the stack the port
+needs — the real delta is the 0.6 container/semantic layer:
+
+- `PublicCBOR` (PublicContainer.swift) already implements the strict CBOR
+  walk the 0.6 frames require: depth/item caps, exactly-representable
+  integers (incl. the -1-n 2^64 edge), byte-string rejection, text caps +
+  scalar checks, unique string keys, indefinite-length rejection, finite
+  floats (half/single/double), trailing-byte rejection. Frames can decode
+  through it unchanged (object key order is not load-bearing on the Swift
+  side: JCS sorts, the frame shapers check key sets, and there is no second
+  decoder to cross-check order against).
+- `KDNAJSON.canonical` + `numberText` (PublicValues.swift) implement JCS
+  with ECMAScript number spelling, covered by a 2066-row Node oracle
+  (`Fixtures/number-oracle.json`) — no duplicate JCS layer is needed (an
+  initial duplicate was written and removed on this branch).
+- `PublicContainer.parse` (strict ZIP subset with hand-rolled inflate +
+  CRC), `PublicDigests`, and the schema-admission machinery exist for the
+  0.2.0/0.5.0 lines; the 0.6 work is to parameterize the container rules
+  (entry allowlist incl. `sections/pack-N.kdnab`, stored-method rule for
+  packs, no `payload.kdnab`) and to add the sections layer on top.
+- Fixture tradition: per-key `.kdna` fixtures plus oracle JSON files under
+  `Tests/PublicCoreTests/Fixtures` (e.g. `component-node-oracles.json`,
+  `number-oracle.json`) — the sections goldens follow this pattern.
+
+Delta inventory for 0.6 (the actual port scope):
+1. Container rules variant (allowlist, pack stored-method, limits).
+2. `kdna.json` 0.6 manifest view + closed validation (payload descriptor,
+   representation_metadata pass-through).
+3. Frame graph: pack concatenation walk, xref/topic/volume/tables, the
+   identity graph and its closed `SECTION_*` codes.
+4. `node-order-index/1` metadata decode.
+5. Digests: A (same idea), C (same preimage strings; 0.6 exclusions +
+   kdna.json `content_digest`/`authoring.content_digest` deletion), E
+   (`observeE`, `0.3.0-candidate` variant), IR digest + `buildIR` cross-check.
+6. Faces: admission/snapshot/modes/bytes (+ retained faces) with the
+   opaque-token discipline.
+
 ## 4. Swift architecture
 
-New within `Sources/KDNACore` (additive; keep existing public surfaces):
-`Sections/SectionZIP.swift` (strict ZIP subset over the existing
-hand-rolled inflate), `Sections/StrictCBOR.swift` (the two-phase strict
-walk over a minimal CBOR reader — no dependency; `0xb9`/`0xfb` shapes
-pinned), `Sections/CanonicalJSON.swift` (JCS with **ECMAScript number
-formatting** — the acknowledged hardest piece),
-`Sections/SectionContainer.swift`, `Sections/FrameGraph.swift`,
+New within `Sources/KDNACore` (additive; keep existing public surfaces;
+reuse `PublicCBOR`, `KDNAJSON.canonical`, `PublicContainer` machinery):
+`Sections/SectionContainer.swift` (0.6 container rules variant),
+`Sections/FrameGraph.swift`,
 `Sections/MetadataCodec.swift`, `Sections/SectionDigests.swift` (A/C/E +
 IR), `Sections/SectionFaces.swift` (admission/snapshot/modes/bytes),
 `Sections/RetainedRead.swift`, `Sections/Diagnostics.swift` (closed code
