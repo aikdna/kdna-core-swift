@@ -80,6 +80,19 @@ public final class KDNASectionAsset {
     public func readExactSelection(_ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> SectionFaces.ReadOutcome {
         await SectionFaces.readExactSelection(bytes, admitted, authority)
     }
+    /// Expands a bound request (from a retained exact_selection or whole-read
+    /// snapshot): the closure runs over the bound target/scope.
+    public func readExpand(_ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> SectionFaces.ReadOutcome {
+        await SectionFaces.readExpand(bytes, admitted, authority)
+    }
+    /// Binds an expand request to a retained snapshot (the released
+    /// bindSectionExpansionRequest): the candidate carries the caller's
+    /// ExpansionHandle; failures are READ_HANDLE_* codes.
+    public static func bindExpansionRequest(_ snapshot: KDNASectionSnapshot, _ candidate: KDNAValue) throws -> KDNAAdmittedSectionRequest {
+        do { return try SectionFaces.bindExpansionRequest(snapshot, candidate) }
+        catch let failure as PublicFailure { throw KDNASectionError(code: failure.code) }
+        catch { throw KDNASectionError(code: "READ_CORE_CAPABILITY_UNAVAILABLE") }
+    }
     /// The canonical exact_selection request for this asset's contract tuple.
     public func admitExactSelectionRequest(requestId: String, budgetBytes: Int, assetId: String, assetVersion: String, judgmentIds: [String]) throws -> KDNAAdmittedSectionRequest {
         try admitSectionRequest(["request_id": .string(requestId), "tuple": tuple, "budget_bytes": .number(Double(budgetBytes)),

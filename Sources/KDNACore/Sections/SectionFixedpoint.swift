@@ -35,7 +35,7 @@ enum SectionFixedpoint {
         }
         return payload
     }
-    static func deriveMandatoryContext(_ capture: inout SectionFaces.Capture, _ layout: SectionLayout.Layout, _ manifest: J, _ structure: SectionStructure.Inspection, _ selectedIds: [String]) throws -> J {
+    static func deriveMandatoryContext(_ capture: inout SectionFaces.Capture, _ layout: SectionLayout.Layout, _ manifest: J, _ structure: SectionStructure.Inspection, _ selectedIds: [String], _ optionsTarget: J? = nil, _ optionsScope: [J]? = nil) throws -> J {
         let interpretation = try SectionLoadedValidation.readInterpretationInputs(&capture, layout, structure)
         var loadedRows = Set<String>(), loadedJudgments = Set<String>()
         var loadedJudgmentOrder: [String] = []
@@ -101,14 +101,19 @@ enum SectionFixedpoint {
                 let typedEntries = Dictionary(uniqueKeysWithValues: entries.map { (KDNAKey($0.key), Data($0.value)) })
                 let r = try R2Semantics.validateR2(manifest, payload, typedEntries, scope)
                 var seeds: [J] = [r.asset] + selectedIds.map { R2Registry.ref("judgment", $0) }
+                if let optionsTarget { seeds.append(optionsTarget) }
                 let closure = try R2Registry.closure(r, seeds)
                 var available = Set(closure.map { r.identity($0.target) })
-                for record in closure where record.target["kind"].text != "asset" {
-                    if let edges = r.edges[record.key] { for (key, _) in edges.entries { available.insert(key) } }
+                if optionsTarget == nil {
+                    for record in closure where record.target["kind"].text != "asset" {
+                        if let edges = r.edges[record.key] { for (key, _) in edges.entries { available.insert(key) } }
+                    }
                 }
                 var targetScopes: [(target: J, records: [R2Registry.Record])] = []
-                for record in r.ordered where available.contains(r.identity(record.target)) {
-                    targetScopes.append((record.target, try R2Registry.closure(r, seeds + [record.target])))
+                if optionsTarget == nil {
+                    for record in r.ordered where available.contains(r.identity(record.target)) {
+                        targetScopes.append((record.target, try R2Registry.closure(r, seeds + [record.target])))
+                    }
                 }
                 let proofRecords = closure + targetScopes.flatMap { $0.records }
                 var missing: [String] = []
@@ -137,18 +142,25 @@ enum SectionFixedpoint {
                 var materialized = try SectionScopedMaterialize.materializeScoped(r, payload, manifest, nodes, ordered, selectedIds, layout.meta, loadedJudgments)
                 var byKey: [String: J] = [:]
                 for node in nodes { byKey[r.identity(node["target"])] = node }
-                let anchorSelection: J = ["asset_id": payload["asset"]["asset_id"], "asset_version": payload["asset"]["asset_version"],
-                                          "judgment_ids": .array(selectedIds.map { J.string($0) })]
-                let anchor: J = ["kind": "selection_set", "selection": anchorSelection]
-                let expansionTargets: [J] = try targetScopes.map { targetScope -> J in
-                    let scopeIds: [J] = try targetScope.records.map { record -> J in
-                        guard let node = byKey[r.identity(record.target)] else { throw PublicFailure("READ_CORE_INVALID") }
-                        return node["id"]
+                if let optionsTarget {
+                    let orderedIds = Set(ordered.map { $0["id"].text })
+                    materialized["asset_index"] = .array(materialized["asset_index"].list.filter { orderedIds.contains($0["node_ref"].text) })
+                    _ = optionsTarget
+                    try demand(sha(try KDNAJSON.canonical(.array(ordered.map { $0["id"] }))) == sha(try KDNAJSON.canonical(.array(optionsScope ?? []))), "READ_HANDLE_SCOPE_MISMATCH")
+                } else {
+                    let anchorSelection: J = ["asset_id": payload["asset"]["asset_id"], "asset_version": payload["asset"]["asset_version"],
+                                              "judgment_ids": .array(selectedIds.map { J.string($0) })]
+                    let anchor: J = ["kind": "selection_set", "selection": anchorSelection]
+                    let expansionTargets: [J] = try targetScopes.map { targetScope -> J in
+                        let scopeIds: [J] = try targetScope.records.map { record -> J in
+                            guard let node = byKey[r.identity(record.target)] else { throw PublicFailure("READ_CORE_INVALID") }
+                            return node["id"]
+                        }
+                        let entry: J = ["anchor": anchor, "target": targetScope.target, "scope": .array(scopeIds)]
+                        return entry
                     }
-                    let entry: J = ["anchor": anchor, "target": targetScope.target, "scope": .array(scopeIds)]
-                    return entry
+                    materialized["expansion_targets"] = .array(expansionTargets)
                 }
-                materialized["expansion_targets"] = .array(expansionTargets)
                 let observation = try SectionLoadedValidation.validateLoadedInterpretation(payload, nodes, loadedJudgments, interpretation, manifest, capture.identity["capture_id"].text)
                 var result = materialized
                 result["interpretation_observation"] = observation

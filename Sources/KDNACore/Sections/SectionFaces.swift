@@ -28,6 +28,9 @@ public final class KDNASectionSnapshot {
 public final class KDNAAdmittedSectionRequest {
     let data: J
     let digest: String
+    /// The expansion binding a bindExpansionRequest token carries (nil on
+    /// ordinary admitted requests).
+    var expansion: SectionExpansion.Binding?
     fileprivate init(_ data: J, _ digest: String) { self.data = data; self.digest = digest }
 }
 public final class KDNASectionReadAuthority {
@@ -196,6 +199,13 @@ public enum SectionFaces {
                        manifestBytes: manifestBytes,
                        directory: directory, footerObservation: Array(bytes[end...]), identity: identity)
     }
+    static func bindExpansionRequest(_ snapshot: KDNASectionSnapshot, _ candidate: J) throws -> KDNAAdmittedSectionRequest {
+        _ = try SectionContract.validate("ReadRequest06Candidate", candidate)
+        let binding = try SectionExpansion.bind(snapshot, candidate)
+        let token = try admitSectionRequest(binding.request)
+        token.expansion = binding
+        return token
+    }
     static let unsupportedCodes = ["CONTAINER_COMMENT_CAPTURE_UNIMPLEMENTED", "PROTECTION_BINDING_UNIMPLEMENTED", "PARTIAL_SEMANTIC_PROOF_UNAVAILABLE", "EXPAND_INTEGRATION_UNIMPLEMENTED", "CHECKSUMS_PROFILE_UNSUPPORTED", "CHECKSUMS_SCOPED_PROOF_UNIMPLEMENTED", "SIGNATURE_PROFILE_UNSUPPORTED"]
     static func classify(_ code: String) -> String { unsupportedCodes.contains(code) ? "unsupported" : "rejected" }
     /// Accepted reads carry the opaque snapshot token beside the envelope;
@@ -288,8 +298,10 @@ public enum SectionFaces {
                            "asset": payload["asset"], "ir": derived, "runtime_entry_names": observations.E["member_names"],
                            "verification": verification]
             _ = try SectionContract.validate("WholeSectionSnapshotData06", data)
+            let snapshot = KDNASectionSnapshot(data)
+            SectionExpansion.retain(snapshot, data, capture)
             let envelope: J = ["status": "accepted", "io": .array([]), "input_byte_length": .number(Double(wholeBytes.count))]
-            return ReadOutcome(envelope: envelope, snapshot: KDNASectionSnapshot(data), normalizedRequest: nil)
+            return ReadOutcome(envelope: envelope, snapshot: snapshot, normalizedRequest: nil)
         } catch let failureValue as PublicFailure {
             return failure(classify(failureValue.code), failureValue.code, failureValue.field, failureValue.subject)
         } catch {
@@ -341,7 +353,7 @@ public enum SectionFaces {
             func unobserved(_ profile: String, _ claimed: J = .null) -> J {
                 ["profile": .string(profile), "status": "not_checked", "claimed_digest": claimed]
             }
-            let verification: J = ["checksum_integrity": scoped["checksum_integrity"], "signature_integrity": scoped["signature_integrity"],
+            var verification: J = ["checksum_integrity": scoped["checksum_integrity"], "signature_integrity": scoped["signature_integrity"],
                                    "runtime_entry_digest": scoped["runtime_entry_digest"],
                                    "capture": captureVerification, "request_digest": .string(requestDigest),
                                    "checked_sections": .array(layout.checkedSections),
@@ -371,28 +383,49 @@ public enum SectionFaces {
     /// scoped checksum/signature completion; accepted reads retain the
     /// expansion origin record for a later expand binding.
     public static func readExactSelection(_ bytes: [UInt8], _ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> ReadOutcome {
+        await readScoped(bytes, admitted, authority)
+    }
+    public static func readExpand(_ bytes: [UInt8], _ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> ReadOutcome {
+        await readScoped(bytes, admitted, authority)
+    }
+    /// The scoped read flow shared by exact_selection and expand
+    /// (admitPartialSectionNode). An expand request needs the binding token
+    /// from bindExpansionRequest (READ_HANDLE_UNTRUSTED otherwise); its
+    /// selection is optional and its closure runs with the bound
+    /// target/scope. Only exact_selection retains an expansion origin.
+    static func readScoped(_ bytes: [UInt8], _ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> ReadOutcome {
         var stage = "input"
         func failure(_ status: String, _ reason: String, _ diagnosticField: String? = nil, _ diagnosticSubject: String? = nil) -> ReadOutcome {
             failureEnvelope(status, reason, stage, admitted.data["request_id"], diagnosticField, diagnosticSubject)
         }
         do {
             var request = admitted.data
-            if request["mode"].text != "exact_selection" {
-                return failure("unsupported", request["mode"].text == "expand" ? "EXPAND_INTEGRATION_UNIMPLEMENTED" : "PARTIAL_SEMANTIC_PROOF_UNAVAILABLE")
+            let mode = request["mode"].text
+            var binding: SectionExpansion.Binding?
+            if mode == "expand" {
+                guard let bound = admitted.expansion else { return failure("rejected", "READ_HANDLE_UNTRUSTED") }
+                binding = bound
+                request = bound.request
+            } else if mode != "exact_selection" {
+                return failure("unsupported", mode == "expand" ? "EXPAND_INTEGRATION_UNIMPLEMENTED" : "PARTIAL_SEMANTIC_PROOF_UNAVAILABLE")
             }
             var capture = try captureWhole(bytes)
             stage = "metadata"
+            if let binding { try SectionExpansion.checkCapture(binding, capture) }
             let manifest = try SectionManifest.load(capture.manifestBytes)
             let meta = try MetadataCodec.decode(manifest["representation_metadata"])
             let tuple = try SectionContract.loadedContract.get()["module"]["versionTuple"]
             try SectionLayout.checkMetadataBindings(manifest, meta, tuple)
-            let catalogIds = Set(meta["catalog"].list.map { $0["judgment_id"].text })
-            let selection = request["selection"]
-            try demand(exact(selection["asset_id"].text, manifest["asset_id"].text) && exact(selection["asset_version"].text, manifest["version"].text), "SECTION_SELECTION_ASSET")
-            let selected = Set(selection["judgment_ids"].list.map { $0.text })
-            try demand(selected.allSatisfy { catalogIds.contains($0) }, "SECTION_SELECTION_MISSING")
-            let normalizedIds = meta["catalog"].list.filter { selected.contains($0["judgment_id"].text) }.map { $0["judgment_id"].text }
-            request["selection"]["judgment_ids"] = .array(normalizedIds.map { .string($0) })
+            var normalizedIds: [String] = []
+            if mode == "exact_selection" || request["selection"] != .null {
+                let catalogIds = Set(meta["catalog"].list.map { $0["judgment_id"].text })
+                let selection = request["selection"]
+                try demand(exact(selection["asset_id"].text, manifest["asset_id"].text) && exact(selection["asset_version"].text, manifest["version"].text), "SECTION_SELECTION_ASSET")
+                let selected = Set(selection["judgment_ids"].list.map { $0.text })
+                try demand(selected.allSatisfy { catalogIds.contains($0) }, "SECTION_SELECTION_MISSING")
+                normalizedIds = meta["catalog"].list.filter { selected.contains($0["judgment_id"].text) }.map { $0["judgment_id"].text }
+                request["selection"]["judgment_ids"] = .array(normalizedIds.map { .string($0) })
+            }
             if SectionManifest.protectionDeclared(manifest) {
                 return failure("unsupported", "PROTECTION_BINDING_UNIMPLEMENTED")
             }
@@ -409,7 +442,7 @@ public enum SectionFaces {
             let layout = try SectionLayout.readSectionLayout(&capture, manifest)
             let structure = try SectionStructure.inspectStructure(&capture, layout, manifest)
             stage = "semantic"
-            let closure = try SectionFixedpoint.deriveMandatoryContext(&capture, layout, manifest, structure, normalizedIds)
+            let closure = try SectionFixedpoint.deriveMandatoryContext(&capture, layout, manifest, structure, normalizedIds, binding?.target, binding?.scope)
             var checkedSections = layout.checkedSections
             for row in closure["checked_sections"].list {
                 var merged = row
@@ -433,7 +466,7 @@ public enum SectionFaces {
             func unobserved(_ profile: String, _ claimed: J = .null) -> J {
                 ["profile": .string(profile), "status": "not_checked", "claimed_digest": claimed]
             }
-            let verification: J = ["checksum_integrity": scoped["checksum_integrity"], "signature_integrity": scoped["signature_integrity"],
+            var verification: J = ["checksum_integrity": scoped["checksum_integrity"], "signature_integrity": scoped["signature_integrity"],
                                    "runtime_entry_digest": scoped["runtime_entry_digest"],
                                    "capture": captureVerification, "request_digest": .string(requestDigest),
                                    "checked_sections": .array(checkedSections),
@@ -445,6 +478,7 @@ public enum SectionFaces {
                                    "mode": request["mode"], "semantic_status": "verified_loaded_closure",
                                    "structural_partition": structure.observation,
                                    "interpretation_inputs": closure["interpretation_observation"]]
+            if let binding { verification["origin"] = binding.origin }
             var runtimeEntryNames = Set(["kdna.json"]); packs.forEach { runtimeEntryNames.insert($0) }
             for name in manifest["runtime"]["mandatory_entries"].list { runtimeEntryNames.insert(name.text) }
             var data: J = ["snapshot_id": .string("section-scoped:" + UUID().uuidString.lowercased()),
@@ -456,7 +490,7 @@ public enum SectionFaces {
             }
             _ = try SectionContract.validate("SectionSnapshotData06", data)
             let snapshot = KDNASectionSnapshot(data)
-            SectionExpansion.retain(snapshot, data, capture)
+            if mode == "exact_selection" { SectionExpansion.retain(snapshot, data, capture) }
             let envelope: J = ["status": "accepted", "io": .array([]), "input_byte_length": .number(Double(bytes.count))]
             return ReadOutcome(envelope: envelope, snapshot: snapshot, normalizedRequest: normalizedToken)
         } catch let failureValue as PublicFailure {

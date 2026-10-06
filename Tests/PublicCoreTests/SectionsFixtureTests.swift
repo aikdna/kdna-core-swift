@@ -261,6 +261,77 @@ final class SectionsFixtureTests: XCTestCase {
             XCTAssertEqual(sha(Data(normalizedText.utf8)), digest, label)
         }
     }
+    // The expand binding + expand read, pinned against the released chain:
+    // a whole-origin expansion (empty selection closure) and a scoped-origin
+    // expansion (the exact_selection origin), plus the four READ_HANDLE_*
+    // negative codes. The run-bound digest normalization covers the random
+    // snapshot UUID that the request digest binds (each run hashes its own
+    // UUID; every other byte is compared exactly).
+    func testExpandBindingParity() async throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
+        let bytes = [UInt8](try Data(contentsOf: url))
+        func normalize(_ text: String) -> String {
+            var out = text
+            for family in ["section-snapshot", "section-scoped", "capture"] {
+                out = out.replacingOccurrences(of: "\(family):[0-9a-f-]{36}", with: "\(family):UUID", options: .regularExpression)
+            }
+            return out.replacingOccurrences(of: "\"request_digest\":\"sha256:[0-9a-f]{64}\"", with: "\"request_digest\":\"sha256:RUN-BOUND\"", options: .regularExpression)
+        }
+        func outcomeText(_ outcome: SectionFaces.ReadOutcome) throws -> String {
+            let view = try XCTUnwrap(outcome.snapshot).inspect()
+            let out: J = ["status": outcome.envelope["status"], "input_byte_length": outcome.envelope["input_byte_length"], "data": view]
+            return String(decoding: try KDNAJSON.canonical(out), as: UTF8.self)
+        }
+        // 1) whole-origin expand
+        let asset = try KDNASectionAsset.open(bytes: bytes)
+        let authority = try asset.createReadAuthority { _ in true }
+        let whole = await asset.readWhole(try asset.admitWholeReadRequest(requestId: "whole-1", budgetBytes: 1048576), authority)
+        let wholeView = try XCTUnwrap(whole.snapshot).inspect()
+        let target = wholeView["ir"]["expansion_targets"].list[0]
+        let handle: J = ["handle_id": "h1", "asset_id": wholeView["asset"]["asset_id"], "asset_version": wholeView["asset"]["asset_version"],
+                         "A": wholeView["digests"]["A"]["observed"], "C": wholeView["digests"]["C"]["observed"], "snapshot_id": wholeView["snapshot_id"],
+                         "core_version": wholeView["tuple"]["core"], "ir_version": wholeView["tuple"]["ir"], "read_version": wholeView["tuple"]["read"],
+                         "anchor": ["kind": "asset"], "target": target["target"], "scope": target["scope"],
+                         "issued_at": .number(0), "expires_at": .number(1), "host_id": "host:harness", "host_epoch": "epoch:1"]
+        let candidate: J = ["request_id": "expand-whole", "tuple": asset.tuple, "budget_bytes": .number(1048576), "mode": "expand", "selection": .null, "handle": handle]
+        let token = try KDNASectionAsset.bindExpansionRequest(whole.snapshot!, candidate)
+        let expanded = await asset.readExpand(token, authority)
+        XCTAssertEqual(expanded.envelope["status"].text, "accepted")
+        let expandedText = normalize(try outcomeText(expanded))
+        XCTAssertEqual(sha(Data(expandedText.utf8)), "sha256:a0096ed8ca7125f88d3c6add8fe460e38708afff200277f232f13ab8e9a73d6c")
+        XCTAssertEqual(expanded.snapshot!.inspect()["verification"]["origin"] != .null, true)
+        // 2) scoped-origin expand
+        let exact = await asset.readExactSelection(try asset.admitExactSelectionRequest(requestId: "exact-1", budgetBytes: 1048576, assetId: "asset:course-craft-standards", assetVersion: "0.1.0", judgmentIds: ["craft:judgment-shift"]), authority)
+        let exactView = try XCTUnwrap(exact.snapshot).inspect()
+        let starget = exactView["expansion_targets"].list[0]
+        let origin: J = ["snapshot_id": exactView["snapshot_id"], "request_digest": exactView["request_digest"],
+                         "capture_id": exactView["verification"]["capture"]["capture_id"], "input_byte_length": exactView["verification"]["capture"]["input_byte_length"],
+                         "manifest_bytes_digest": exactView["verification"]["capture"]["manifest_bytes_digest"],
+                         "zip_directory_bytes_digest": exactView["verification"]["capture"]["zip_directory_bytes_digest"],
+                         "checked_sections_digest": .string(sha(try KDNAJSON.canonical(exactView["verification"]["checked_sections"])))]
+        let shandle: J = ["handle_id": "h2", "binding_kind": "section_capture", "asset": exactView["asset"], "tuple": exactView["tuple"], "origin": origin,
+                          "anchor": starget["anchor"], "target": starget["target"], "scope": starget["scope"],
+                          "issued_at": .number(0), "expires_at": .number(1), "host_id": "host:harness", "host_epoch": "epoch:1"]
+        let scandidate: J = ["request_id": "expand-scoped", "tuple": asset.tuple, "budget_bytes": .number(1048576), "mode": "expand",
+                             "selection": ["asset_id": "asset:course-craft-standards", "asset_version": "0.1.0", "judgment_ids": .array([.string("craft:judgment-shift")])], "handle": shandle]
+        let stoken = try KDNASectionAsset.bindExpansionRequest(exact.snapshot!, scandidate)
+        let sexpanded = await asset.readExpand(stoken, authority)
+        XCTAssertEqual(sexpanded.envelope["status"].text, "accepted")
+        let sexpandedText = normalize(try outcomeText(sexpanded))
+        XCTAssertEqual(sha(Data(sexpandedText.utf8)), "sha256:28bb36e9b17c72619315ee1e55775a4c7ca0147d49164464a96b7bc2bd3da924")
+        // 3) negatives
+        func negative(_ mutate: (inout J) -> Void) -> String {
+            var c = candidate
+            mutate(&c)
+            do { _ = try KDNASectionAsset.bindExpansionRequest(whole.snapshot!, c); return "pass" }
+            catch let failure as KDNASectionError { return failure.code }
+            catch { return "other" }
+        }
+        XCTAssertEqual(negative { $0["handle"]["A"] = .string("sha256:" + String(repeating: "0", count: 64)) }, "READ_HANDLE_STALE")
+        XCTAssertEqual(negative { $0["handle"]["scope"] = .array(Array($0["handle"]["scope"].list.prefix(1))) }, "READ_HANDLE_SCOPE_MISMATCH")
+        XCTAssertEqual(negative { $0["tuple"]["core"] = .string("0.0.0") }, "SECTION_TYPED_SHAPE")
+        XCTAssertEqual(negative { $0["mode"] = .string("catalog"); $0["selection"] = .null; $0["handle"] = .null }, "READ_HANDLE_UNTRUSTED")
+    }
     func testFixtureAuthorshipAndRegenerationRecord() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0.authorship", withExtension: "json", subdirectory: "Fixtures"))
         let authorship = try KDNAJSON.parse(Data(contentsOf: url))

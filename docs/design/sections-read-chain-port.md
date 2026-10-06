@@ -827,8 +827,33 @@ substitute. Consequently:
     catalog (2,367,920 canonical bytes), a two-judgment prefix (893,374)
     and a reordered pair proving the catalog-order normalization
     (780,713); committed as `SectionsFixtureTests.testExactSelectionParity`.
-    Next: the expand binding (handle validation, `checkCapture`, the
-    origin verification and the retained read faces), then kdsig.
+  - **Expand binding + expand read (landed 2026-10-06, Stage B chunk
+    2b-5):** the whole read now retains its origin (the missing
+    `expansion.retain` the released flow performs) and `SectionExpansion`
+    ports the origin value and `bind` — the caller's ExpansionHandle is
+    validated against the retained view (snapshot identity, A/C digests,
+    tuple, anchor, target and scope; whole-origin handles carry no
+    `binding_kind`, scoped-origin handles require `binding_kind:
+    section_capture` plus the origin record; the READ_HANDLE_* codes
+    verbatim) — plus `checkCapture`. The scoped flow is shared by
+    exact_selection / expand: an expand request needs the binding token
+    (`READ_HANDLE_UNTRUSTED` otherwise), its selection is optional, and
+    the closure runs with the bound target/scope (the asset index
+    filters to the ordered scope with the scope-digest check;
+    `expansion_targets` stays empty on the expand snapshot). Public
+    surface: `readExpand` + `bindExpansionRequest`. **Acceptance:
+    whole-origin and scoped-origin expansions are byte-identical to the
+    released chain on the fixture** — with the run-bound snapshot UUID
+    and the request digests that bind it normalized (every other byte
+    exact) — and the four negative codes match
+    (`READ_HANDLE_STALE` / `READ_HANDLE_SCOPE_MISMATCH` /
+    `SECTION_TYPED_SHAPE` / `READ_HANDLE_UNTRUSTED`); committed as
+    `SectionsFixtureTests.testExpandBindingParity`. Recorded: the
+    in-memory capture's source identity is empty, so `checkCapture`'s
+    identity comparison is vacuous there while every digest field is
+    checked. Remaining Stage B: the retained read faces (retained-common /
+    retained-plan / retained-state with the host gate), then the kdsig
+    ed25519 stack.
 - **Stage A3:** whole-read/catalog faces and the consumer loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1
