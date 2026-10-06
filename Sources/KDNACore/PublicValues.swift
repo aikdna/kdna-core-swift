@@ -54,6 +54,14 @@ struct PublicFailure: Error {
     let componentFailure: J
     init(_ code: String = "READ_CORE_INVALID", componentFailure: J = nil) { self.code = code; self.componentFailure = componentFailure }
 }
+/// The Node strict parser hands string bodies to JSON.parse, so a malformed
+/// escape or a short \u hex run throws a raw SyntaxError there — not a
+/// reject() with a code. The two consumers classify it differently at their
+/// own boundaries (the 0.2/0.5 line normalizes raw errors to
+/// READ_CORE_INVALID; the sections line's catch-all maps them to
+/// READ_CORE_CAPABILITY_UNAVAILABLE), so the parser must keep that class
+/// distinguishable from its coded rejects.
+struct StrictJSONSyntaxFailure: Error {}
 func demand(_ condition: Bool, _ code: String = "READ_CORE_INVALID") throws { if !condition { throw PublicFailure(code) } }
 func exact(_ a: String, _ b: String) -> Bool { KDNAKey(a) == KDNAKey(b) }
 func scalar(_ value: String, maximum: Int = 1048576, controls: Bool = true) -> Bool {
@@ -155,41 +163,65 @@ private struct StrictJSON {
         let value = try value(0); whitespace(); try syntax(at == bytes.count)
         return value
     }
+    /// Scanner stage: exactly parseJson's. After a backslash the next byte is
+    /// skipped blindly — escape validity is not checked here — and unescaped
+    /// control characters reject. The token slice is decoded afterwards, the
+    /// way Node hands the slice to JSON.parse, so an invalid escape or a
+    /// short \u run surfaces as StrictJSONSyntaxFailure (a raw SyntaxError
+    /// there) while scanner rejects stay coded.
     mutating func string() throws -> String {
         try syntax(at < bytes.count && bytes[at] == 34); at += 1
-        var result = String.UnicodeScalarView()
-        var raw: [UInt8] = []
-        func decoded(_ bytes: [UInt8]) throws -> String { guard let s = String(bytes: bytes, encoding: .utf8) else { throw PublicFailure() }; return s }
-        while at < bytes.count {
-            let b = bytes[at]; at += 1
-            if b == 34 {
-                result.append(contentsOf: try decoded(raw).unicodeScalars)
-                let text = String(result); try syntax(scalar(text), "READ_INPUT_INVALID"); return text
-            }
-            try syntax(b >= 32)
-            if b != 92 { raw.append(b); continue }
-            result.append(contentsOf: try decoded(raw).unicodeScalars); raw = []
+        let start = at
+        while true {
             try syntax(at < bytes.count)
-            let escape = bytes[at]; at += 1
-            if let value: UInt32 = [34:34, 92:92, 47:47, 98:8, 102:12, 110:10, 114:13, 116:9][Int(escape)] {
+            let b = bytes[at]; at += 1
+            if b == 34 { break }
+            if b == 92 { try syntax(at < bytes.count); at += 1; continue }
+            try syntax(b >= 32)
+        }
+        let body = String(decoding: bytes[start..<at - 1], as: UTF8.self)
+        return try decodeStringBody(body)
+    }
+    func decodeStringBody(_ body: String) throws -> String {
+        var result = String.UnicodeScalarView()
+        var digits = Array(body.unicodeScalars)
+        func hexDigits(_ count: Int) throws -> UInt32 {
+            guard digits.count >= count else { throw StrictJSONSyntaxFailure() }
+            var value: UInt32 = 0
+            for scalar in digits.prefix(count) {
+                let nibble: UInt32
+                switch scalar.value {
+                case 48...57: nibble = scalar.value - 48
+                case 97...102: nibble = scalar.value - 87
+                case 65...70: nibble = scalar.value - 55
+                default: throw StrictJSONSyntaxFailure()
+                }
+                value = value << 4 | nibble
+            }
+            digits.removeFirst(count)
+            return value
+        }
+        while let scalar = digits.first {
+            digits.removeFirst()
+            guard scalar.value == 92 else { result.append(scalar); continue }
+            guard let escape = digits.first else { throw PublicFailure("READ_INPUT_INVALID") }
+            digits.removeFirst()
+            if let value: UInt32 = [34:34, 92:92, 47:47, 98:8, 102:12, 110:10, 114:13, 116:9][Int(escape.value)] {
                 result.append(Unicode.Scalar(value)!); continue
             }
-            try syntax(escape == 117, "READ_CORE_INVALID")
-            var n = try hex()
+            guard escape.value == 117 else { throw StrictJSONSyntaxFailure() }
+            var n = try hexDigits(4)
             if (0xd800...0xdbff).contains(n) {
-                try syntax(at + 2 <= bytes.count && bytes[at] == 92 && bytes[at + 1] == 117, "READ_INPUT_INVALID"); at += 2
-                let low = try hex(); try syntax((0xdc00...0xdfff).contains(low), "READ_INPUT_INVALID")
+                guard digits.count >= 2, digits[0].value == 92, digits[1].value == 117 else { throw PublicFailure("READ_INPUT_INVALID") }
+                digits.removeFirst(2)
+                let low = try hexDigits(4)
+                try demand((0xdc00...0xdfff).contains(low), "READ_INPUT_INVALID")
                 n = 0x10000 + (n - 0xd800) * 1024 + low - 0xdc00
-            } else { try syntax(!(0xdc00...0xdfff).contains(n), "READ_INPUT_INVALID") }
+            } else { try demand(!(0xdc00...0xdfff).contains(n), "READ_INPUT_INVALID") }
             guard let scalar = Unicode.Scalar(n) else { throw PublicFailure("READ_INPUT_INVALID") }
             result.append(scalar)
         }
-        throw PublicFailure("READ_INPUT_INVALID")
-    }
-    mutating func hex() throws -> UInt32 {
-        try syntax(at + 4 <= bytes.count, "READ_CORE_INVALID")
-        let text = String(bytes: bytes[at..<at + 4], encoding: .ascii); at += 4
-        guard let text, let n = UInt32(text, radix: 16) else { throw PublicFailure() }; return n
+        let text = String(result); try demand(scalar(text), "READ_INPUT_INVALID"); return text
     }
     mutating func value(_ depth: Int) throws -> J {
         count += 1; try syntax(depth <= 64 && count <= 100000, "READ_INPUT_INVALID"); whitespace()

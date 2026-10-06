@@ -200,6 +200,7 @@ Delta inventory for 0.6 (the actual port scope):
 New within `Sources/KDNACore` (additive; keep existing public surfaces;
 reuse `PublicCBOR`, `KDNAJSON.canonical`, `PublicContainer` machinery):
 `Sections/SectionContainer.swift` (0.6 container rules variant),
+`Sections/SectionManifest.swift` (0.6 manifest view + closed validation),
 `Sections/FrameGraph.swift`,
 `Sections/MetadataCodec.swift`, `Sections/SectionDigests.swift` (A/C/E +
 IR), `Sections/SectionFaces.swift` (admission/snapshot/modes/bytes),
@@ -298,6 +299,54 @@ No real coach material is involved anywhere; fixtures are synthetic.
 Committed tests: 11 XCTest cases
 (`Tests/PublicCoreTests/SectionContainerTests.swift`) with an in-code
 canonical-shape container builder; full Swift suite 20/20 green.
+
+**Manifest view — landed 2026-10-06.**
+`Sources/KDNACore/Sections/SectionManifest.swift` loads kdna.json as strict
+JSON and validates it closed against `Manifest06Candidate`, the way
+section-common.js `validate` does: schema shape first (`SECTION_TYPED_SHAPE`
+verbatim), then the scalar pass (Identifier / EntryName /
+RuntimeMandatoryEntryName / Timestamp → `READ_CORE_INVALID`). The sections
+contract is carried as a mechanical SHA-pinned mirror
+(`Resources/Schemas/sections-contract.json`, byte-identical to the released
+`@aikdna/kdna-core@0.36.0` file, `resourceSHA` pinned, every type
+keyword-checked at load). The schema engine gained the `else` keyword
+(draft-2020-12 if/then/else; the contract uses it outside the manifest
+closure) and the manifest-view projections the downstream stages name:
+`representationMetadata`, `payloadTables`, `runtimeMandatoryEntries`,
+`protectionDeclared`, `assetIdentity`, `declaredContentDigests`.
+
+Two findings while porting (both now pinned by oracle rows):
+
+- **Ajv compiles patterns with the `u` flag** (`unicodeRegExp` default when
+  the pattern is valid under `u`), so ECMAScript pattern semantics here are
+  code-point based — the ICU engine agrees. A bare-regex probe without the
+  flag suggested the opposite (emoji rejected as surrogate halves); the
+  released validator accepted emoji identifiers and the oracle corrected the
+  probe. Lesson recorded: pattern probes must reproduce Ajv's compile
+  options, not just `RegExp` defaults.
+- **Parse-failure classification splits in Node.** parseJson's own scanner
+  rejects throw coded errors (`READ_INPUT_INVALID`), but malformed escapes
+  and short `\u` hex runs surface as raw `JSON.parse` SyntaxErrors and the
+  sections catch-all maps them to `READ_CORE_CAPABILITY_UNAVAILABLE` (the
+  0.2/0.5 admission maps raw errors to `READ_CORE_INVALID` instead — it
+  normalizes everything through its `allowed` list). The shared parser now
+  distinguishes that class (`StrictJSONSyntaxFailure`) and scans exactly
+  like parseJson — blind one-character escape skip, decode of the token
+  body afterwards — so each line classifies exactly as its Node
+  counterpart. This fix is shared; the 0.2/0.5 line's observable codes are
+  unchanged.
+
+**Manifest parity (scratch, released-artifact baseline).** 449 cases (49
+curated: required/const/enum/additionalProperties/pattern/minItems/type/
+if-then/uniqueItems/scalar violations, calendar-invalid timestamps,
+protection markers, engine-sensitive identifier and pack-name vectors, and
+raw-text parse cases incl. duplicate keys, non-finite numbers, BOM, bad
+escapes, short unicode escapes, lone and paired surrogates, truncation;
+plus 400 seeded text-fuzz mutations of the base): **zero mismatches**
+against the released chain's verdicts. The checked-in fixture
+(`Fixtures/manifest-06-oracles.json`, 99 rows: the curated set plus a
+deterministic fuzz sample) records that authority in its header fields;
+its rows are the committed regression. Full Swift suite 24/24 green.
 
 ## 6. API sketch (for open-line alignment — early, per the review flow)
 

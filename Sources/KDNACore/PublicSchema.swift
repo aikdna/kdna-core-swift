@@ -12,12 +12,12 @@ enum PublicSchema {
         for s in c["types"].fields.values { try checkKeywords(s) }
         return c
     }
-    static let keywords: Set<String> = ["$ref", "type", "enum", "const", "properties", "required", "additionalProperties", "items", "minItems", "maxItems", "uniqueItems", "minLength", "maxLength", "pattern", "minimum", "maximum", "minProperties", "allOf", "anyOf", "oneOf", "not", "if", "then"]
+    static let keywords: Set<String> = ["$ref", "type", "enum", "const", "properties", "required", "additionalProperties", "items", "minItems", "maxItems", "uniqueItems", "minLength", "maxLength", "pattern", "minimum", "maximum", "minProperties", "allOf", "anyOf", "oneOf", "not", "if", "then", "else"]
     static func checkKeywords(_ s: J) throws {
         if case .bool = s { return }
         try demand(s.fields.keys.allSatisfy { keywords.contains($0.text) }, "READ_CORE_CAPABILITY_UNAVAILABLE")
         for k in ["allOf", "anyOf", "oneOf"] { for child in s[k].list { try checkKeywords(child) } }
-        for k in ["items", "not", "if", "then", "additionalProperties"] where s.has(k) { try checkKeywords(s[k]) }
+        for k in ["items", "not", "if", "then", "else", "additionalProperties"] where s.has(k) { try checkKeywords(s[k]) }
         for child in s["properties"].fields.values { try checkKeywords(child) }
     }
     static func typeMatches(_ v: J, _ kind: String) -> Bool {
@@ -47,10 +47,11 @@ enum PublicSchema {
             let count = Double(text.unicodeScalars.count)
             if s.has("minLength") && count < s["minLength"].numeric || s.has("maxLength") && count > s["maxLength"].numeric { return false }
             if s.has("pattern") {
-                if s["pattern"].text == "\\S" {
+                let pattern = s["pattern"].text
+                if pattern == "\\S" {
                     let whitespace: Set<UInt32> = [9,10,11,12,13,32,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288,65279]
                     if !text.unicodeScalars.contains(where: { !whitespace.contains($0.value) }) { return false }
-                } else if text.range(of: s["pattern"].text, options: .regularExpression) == nil { return false }
+                } else if text.range(of: pattern, options: .regularExpression) == nil { return false }
             }
         }
         if case .object(let object) = v {
@@ -73,7 +74,11 @@ enum PublicSchema {
         if s.has("anyOf") && !s["anyOf"].list.contains(where: { matches(v, $0, types, depth + 1) }) { return false }
         if s.has("oneOf") && s["oneOf"].list.filter({ matches(v, $0, types, depth + 1) }).count != 1 { return false }
         if s.has("not") && matches(v, s["not"], types, depth + 1) { return false }
-        if s.has("if") && matches(v, s["if"], types, depth + 1) && s.has("then") && !matches(v, s["then"], types, depth + 1) { return false }
+        if s.has("if") {
+            if matches(v, s["if"], types, depth + 1) {
+                if s.has("then") && !matches(v, s["then"], types, depth + 1) { return false }
+            } else if s.has("else") && !matches(v, s["else"], types, depth + 1) { return false }
+        }
         return true
     }
     static func timestamp(_ text: String) -> Bool {
