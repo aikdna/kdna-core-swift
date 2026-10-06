@@ -75,4 +75,16 @@ public final class KDNASectionAsset {
         try admitSectionRequest(["request_id": .string(requestId), "tuple": tuple, "budget_bytes": .number(Double(budgetBytes)),
                                  "mode": "catalog", "selection": .null, "handle": .null])
     }
+    /// Scoped exact_selection read (verified loaded closure); accepted reads
+    /// retain the expansion origin for a later expand binding.
+    public func readExactSelection(_ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> SectionFaces.ReadOutcome {
+        await SectionFaces.readExactSelection(bytes, admitted, authority)
+    }
+    /// The canonical exact_selection request for this asset's contract tuple.
+    public func admitExactSelectionRequest(requestId: String, budgetBytes: Int, assetId: String, assetVersion: String, judgmentIds: [String]) throws -> KDNAAdmittedSectionRequest {
+        try admitSectionRequest(["request_id": .string(requestId), "tuple": tuple, "budget_bytes": .number(Double(budgetBytes)),
+                                 "mode": "exact_selection",
+                                 "selection": ["asset_id": .string(assetId), "asset_version": .string(assetVersion), "judgment_ids": .array(judgmentIds.map { .string($0) })],
+                                 "handle": .null])
+    }
 }

@@ -228,6 +228,39 @@ final class SectionsFixtureTests: XCTestCase {
             XCTAssertEqual(sha(Data(normalized.utf8)), digest, label)
         }
     }
+    // The exact_selection face, pinned against the released chain on three
+    // selections of the fixture (full, prefix-of-two, and a reordered pair
+    // that proves the catalog-order normalization).
+    func testExactSelectionParity() async throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
+        let bytes = [UInt8](try Data(contentsOf: url))
+        let catalog = ["craft:judgment-shift", "craft:self-verifiable-assessment", "craft:transfer-protocol", "craft:arc-sequencing", "craft:lesson-rhythm", "craft:anti-patterns", "craft:evidence-and-sources", "craft:audience-fit"]
+        let cases: [(String, [String], [String], Int, String)] = [
+            ("all", catalog, catalog, 187, "sha256:1fd7901e72efff149183e70cfd1a2a07328b4eb03c11f63f40d596bf99d5b87c"),
+            ("two", Array(catalog.prefix(2)), Array(catalog.prefix(2)), 111, "sha256:88bfb181ccaee8c3bcbed0149ab51593599b397c10e0ac021f8b95c746d6d9f9"),
+            ("reordered", [catalog[5], catalog[0]], [catalog[0], catalog[5]], 103, "sha256:be45be6c4b4626c2de5582e4c2a356f5c99094255a605444bb6cd9099ffb2134"),
+        ]
+        for (label, requested, normalized, selectedCount, digest) in cases {
+            let asset = try KDNASectionAsset.open(bytes: bytes)
+            let admitted = try asset.admitExactSelectionRequest(requestId: "exact-" + label, budgetBytes: 1048576, assetId: "asset:course-craft-standards", assetVersion: "0.1.0", judgmentIds: requested)
+            let authority = try asset.createReadAuthority { _ in true }
+            let outcome = await asset.readExactSelection(admitted, authority)
+            XCTAssertEqual(outcome.envelope["status"].text, "accepted", label)
+            XCTAssertEqual(outcome.envelope["input_byte_length"].numeric, 762476, label)
+            XCTAssertNotNil(outcome.normalizedRequest, label)
+            let view = try XCTUnwrap(outcome.snapshot).inspect()
+            XCTAssertEqual(view["verification"]["mode"].text, "exact_selection", label)
+            XCTAssertEqual(view["verification"]["semantic_status"].text, "verified_loaded_closure", label)
+            XCTAssertEqual(view["mandatory_closures"].list.map { $0["selection"]["judgment_id"].text }, normalized, label)
+            XCTAssertEqual(view["selected_node_ids"].list.count, selectedCount, label)
+            let out: J = ["status": outcome.envelope["status"], "input_byte_length": outcome.envelope["input_byte_length"], "data": view]
+            let text = String(decoding: try KDNAJSON.canonical(out), as: UTF8.self)
+            let normalizedText = text
+                .replacingOccurrences(of: "section-scoped:[0-9a-f-]{36}", with: "section-scoped:UUID", options: .regularExpression)
+                .replacingOccurrences(of: "capture:[0-9a-f-]{36}", with: "capture:UUID", options: .regularExpression)
+            XCTAssertEqual(sha(Data(normalizedText.utf8)), digest, label)
+        }
+    }
     func testFixtureAuthorshipAndRegenerationRecord() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0.authorship", withExtension: "json", subdirectory: "Fixtures"))
         let authorship = try KDNAJSON.parse(Data(contentsOf: url))

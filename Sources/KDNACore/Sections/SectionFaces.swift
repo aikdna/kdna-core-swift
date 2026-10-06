@@ -19,6 +19,9 @@ import Foundation
 // (SectionSignatures).
 public final class KDNASectionSnapshot {
     let view: J
+    /// The retained expansion origin record (exact_selection accepts).
+    var retainedOrigin: J?
+    var retainedSourceIdentity: String = ""
     fileprivate init(_ view: J) { self.view = view }
     public func inspect() -> KDNAValue { view }
 }
@@ -102,6 +105,10 @@ public enum SectionFaces {
             return decoded
         }
         func touchedMemberNames() -> [String] { Array(touchedMembers) }
+        /// The Node capture sourceIdentity (the fd stat key): the in-memory
+        /// bytes variant has no file identity; empty is its analogue and the
+        /// binding comparison treats it as unchanged (recorded).
+        func sourceIdentity() -> String { "" }
         /// The Node structureAfterAuthorization: the consumer reads frame
         /// ranges through the callback; a non-empty read marks the member.
         mutating func structureAfterAuthorization<T>(_ member: String, _ offset: Int, _ length: Int, _ consume: (@escaping (Int, Int) throws -> [UInt8]) throws -> T) throws -> T {
@@ -196,6 +203,9 @@ public enum SectionFaces {
     public struct ReadOutcome {
         public let envelope: KDNAValue
         public let snapshot: KDNASectionSnapshot?
+        /// The opaque normalized request token the released envelope carries
+        /// for exact_selection / expand (`request`); nil on the other faces.
+        public let normalizedRequest: KDNAAdmittedSectionRequest?
     }
     static func failureEnvelope(_ status: String, _ reason: String, _ stage: String, _ requestId: J, _ diagnosticField: String?, _ diagnosticSubject: String?) -> ReadOutcome {
             let contractId = (try? SectionContract.loadedContract.get()["module"]["id"]) ?? .null
@@ -208,7 +218,7 @@ public enum SectionFaces {
             // Self-check against the closed envelope; a mismatch is a port bug,
             // not a caller-visible condition.
             try? SectionContract.validate(status == "unsupported" ? "SectionAdmissionUnsupported06" : "SectionAdmissionRejected06", value)
-            return ReadOutcome(envelope: value, snapshot: nil)
+            return ReadOutcome(envelope: value, snapshot: nil, normalizedRequest: nil)
     }
     public static func readWhole(_ bytes: [UInt8], _ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> ReadOutcome {
         var stage = "input"
@@ -279,7 +289,7 @@ public enum SectionFaces {
                            "verification": verification]
             _ = try SectionContract.validate("WholeSectionSnapshotData06", data)
             let envelope: J = ["status": "accepted", "io": .array([]), "input_byte_length": .number(Double(wholeBytes.count))]
-            return ReadOutcome(envelope: envelope, snapshot: KDNASectionSnapshot(data))
+            return ReadOutcome(envelope: envelope, snapshot: KDNASectionSnapshot(data), normalizedRequest: nil)
         } catch let failureValue as PublicFailure {
             return failure(classify(failureValue.code), failureValue.code, failureValue.field, failureValue.subject)
         } catch {
@@ -347,7 +357,108 @@ public enum SectionFaces {
                            "verification": verification]
             _ = try SectionContract.validate("CatalogSectionSnapshotData06", data)
             let envelope: J = ["status": "accepted", "io": .array([]), "input_byte_length": .number(Double(bytes.count))]
-            return ReadOutcome(envelope: envelope, snapshot: KDNASectionSnapshot(data))
+            return ReadOutcome(envelope: envelope, snapshot: KDNASectionSnapshot(data), normalizedRequest: nil)
+        } catch let failureValue as PublicFailure {
+            return failure(classify(failureValue.code), failureValue.code, failureValue.field, failureValue.subject)
+        } catch {
+            return failure("rejected", "READ_CORE_CAPABILITY_UNAVAILABLE")
+        }
+    }
+    /// The exact_selection face (admitPartialSectionNode's scoped flow): the
+    /// selection is validated against the catalog and normalized to catalog
+    /// order before authorization; the closure, the structure observation and
+    /// the interpretation inputs assemble the scoped snapshot data with the
+    /// scoped checksum/signature completion; accepted reads retain the
+    /// expansion origin record for a later expand binding.
+    public static func readExactSelection(_ bytes: [UInt8], _ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> ReadOutcome {
+        var stage = "input"
+        func failure(_ status: String, _ reason: String, _ diagnosticField: String? = nil, _ diagnosticSubject: String? = nil) -> ReadOutcome {
+            failureEnvelope(status, reason, stage, admitted.data["request_id"], diagnosticField, diagnosticSubject)
+        }
+        do {
+            var request = admitted.data
+            if request["mode"].text != "exact_selection" {
+                return failure("unsupported", request["mode"].text == "expand" ? "EXPAND_INTEGRATION_UNIMPLEMENTED" : "PARTIAL_SEMANTIC_PROOF_UNAVAILABLE")
+            }
+            var capture = try captureWhole(bytes)
+            stage = "metadata"
+            let manifest = try SectionManifest.load(capture.manifestBytes)
+            let meta = try MetadataCodec.decode(manifest["representation_metadata"])
+            let tuple = try SectionContract.loadedContract.get()["module"]["versionTuple"]
+            try SectionLayout.checkMetadataBindings(manifest, meta, tuple)
+            let catalogIds = Set(meta["catalog"].list.map { $0["judgment_id"].text })
+            let selection = request["selection"]
+            try demand(exact(selection["asset_id"].text, manifest["asset_id"].text) && exact(selection["asset_version"].text, manifest["version"].text), "SECTION_SELECTION_ASSET")
+            let selected = Set(selection["judgment_ids"].list.map { $0.text })
+            try demand(selected.allSatisfy { catalogIds.contains($0) }, "SECTION_SELECTION_MISSING")
+            let normalizedIds = meta["catalog"].list.filter { selected.contains($0["judgment_id"].text) }.map { $0["judgment_id"].text }
+            request["selection"]["judgment_ids"] = .array(normalizedIds.map { .string($0) })
+            if SectionManifest.protectionDeclared(manifest) {
+                return failure("unsupported", "PROTECTION_BINDING_UNIMPLEMENTED")
+            }
+            let requestDigest = sha(try KDNAJSON.canonical(request))
+            let normalizedToken = try admitSectionRequest(request)
+            let authorization = try SectionSignatures.authorizationContext(request, requestDigest, capture, manifest, request["mode"].text, authority.policy)
+            stage = "authorization"
+            let grant: J?
+            do { grant = try await authority.authorize(authorization) } catch { throw PublicFailure("READ_CORE_CAPABILITY_UNAVAILABLE") }
+            try demand(grant == .some(.bool(true)), "SECTION_PERMISSION_DENIED")
+            stage = "integrity"
+            let checksumState = try SectionChecksums.prepareScopedChecksums(&capture, manifest)
+            stage = "content"
+            let layout = try SectionLayout.readSectionLayout(&capture, manifest)
+            let structure = try SectionStructure.inspectStructure(&capture, layout, manifest)
+            stage = "semantic"
+            let closure = try SectionFixedpoint.deriveMandatoryContext(&capture, layout, manifest, structure, normalizedIds)
+            var checkedSections = layout.checkedSections
+            for row in closure["checked_sections"].list {
+                var merged = row
+                merged.remove("why")
+                checkedSections.append(merged)
+            }
+            let checkedIds = Set(checkedSections.map { $0["section_id"].text })
+            let names = capture.rows.map { $0.name }, packs = names.filter { $0.hasPrefix("sections/") }
+            for name in manifest["runtime"]["mandatory_entries"].list {
+                try demand(validEntry(name.text) && names.contains(name.text)
+                    && !["checksums.json", "signature.kdsig", "mimetype", "build-receipt.json"].contains(name.text)
+                    && !name.text.hasPrefix("reports/") && !name.text.hasPrefix("authoring/"), "SECTION_RUNTIME_MEMBER_MISSING")
+            }
+            stage = "integrity"
+            let scoped = try SectionSignatures.completeScoped(&capture, checksumState, requestDigest, authority.policy, authorization["signature_read_intent"])
+            var captureVerification = capture.identity
+            captureVerification["table_frames"] = .array(layout.checkedSections)
+            let claimedContent: J = manifest["content_digest"] != .null
+                ? manifest["content_digest"]
+                : (manifest["authoring"]["content_digest"] != .null ? manifest["authoring"]["content_digest"] : .null)
+            func unobserved(_ profile: String, _ claimed: J = .null) -> J {
+                ["profile": .string(profile), "status": "not_checked", "claimed_digest": claimed]
+            }
+            let verification: J = ["checksum_integrity": scoped["checksum_integrity"], "signature_integrity": scoped["signature_integrity"],
+                                   "runtime_entry_digest": scoped["runtime_entry_digest"],
+                                   "capture": captureVerification, "request_digest": .string(requestDigest),
+                                   "checked_sections": .array(checkedSections),
+                                   "unchecked_sections": .array(layout.ordered.filter { !checkedIds.contains($0["section_id"].text) }.map { $0["section_id"] }),
+                                   "routing_integrity": "checked",
+                                   "whole_container_digest": unobserved("kdna.digest-basis.container-bytes/0.2.0"),
+                                   "whole_content_digest": unobserved("kdna.digest-basis.content-tree/0.2.0", claimedContent),
+                                   "ir_digest": unobserved("CanonicalIR:SHA-256(RFC8785):existing-digestCanonical", layout.meta["ir_digest_claim"]),
+                                   "mode": request["mode"], "semantic_status": "verified_loaded_closure",
+                                   "structural_partition": structure.observation,
+                                   "interpretation_inputs": closure["interpretation_observation"]]
+            var runtimeEntryNames = Set(["kdna.json"]); packs.forEach { runtimeEntryNames.insert($0) }
+            for name in manifest["runtime"]["mandatory_entries"].list { runtimeEntryNames.insert(name.text) }
+            var data: J = ["snapshot_id": .string("section-scoped:" + UUID().uuidString.lowercased()),
+                           "tuple": tuple, "asset": layout.meta["asset"], "request_digest": .string(requestDigest),
+                           "runtime_entry_names": .array(runtimeEntryNames.sorted(by: SectionFrameGraph.utf8Less).map { .string($0) }),
+                           "verification": verification]
+            for key in ["selected_node_ids", "nodes", "references", "relationships", "expansion_targets", "asset_index", "catalog", "mandatory_closures", "asset_closure", "unresolved_external"] {
+                data[key] = closure[key]
+            }
+            _ = try SectionContract.validate("SectionSnapshotData06", data)
+            let snapshot = KDNASectionSnapshot(data)
+            SectionExpansion.retain(snapshot, data, capture)
+            let envelope: J = ["status": "accepted", "io": .array([]), "input_byte_length": .number(Double(bytes.count))]
+            return ReadOutcome(envelope: envelope, snapshot: snapshot, normalizedRequest: normalizedToken)
         } catch let failureValue as PublicFailure {
             return failure(classify(failureValue.code), failureValue.code, failureValue.field, failureValue.subject)
         } catch {

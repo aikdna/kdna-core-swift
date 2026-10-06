@@ -806,9 +806,29 @@ substitute. Consequently:
     `SectionsFixtureTests.testFixedpointParity`. Two porting bugs pinned
     while making it match: the scoped judgment loop must iterate the
     active subset, and the registry's null reference role is the
-    empty-string key (a `??`-on-non-optional fallback bug). Next: the
-    exact_selection face (the scoped snapshot assembly + expansion
-    retain) and the expand binding.
+    empty-string key (a `??`-on-non-optional fallback bug).
+  - **Exact-selection face (landed 2026-10-06, Stage B chunk 2b-4):**
+    `SectionFaces.readExactSelection` ports the scoped flow end to end —
+    the selection validated against the catalog and normalized to catalog
+    order before authorization (`SECTION_SELECTION_ASSET` /
+    `SECTION_SELECTION_MISSING`), the normalized admitted token, the
+    scoped checksums, layout, structure observation and closure, the
+    merged checked sections (closure rows without `why`), the runtime
+    mandatory-entry check, the scoped checksum/signature completion, and
+    the `SectionSnapshotData06` assembly with the structure observation
+    and interpretation inputs in the verification block.
+    `SectionExpansion.retain` stores the origin record on the snapshot
+    object (the released WeakMap analogue; the in-memory variant's
+    source identity is empty — recorded); the public asset gained
+    `readExactSelection` + `admitExactSelectionRequest`, and the
+    outcome carries the opaque normalized request token.
+    **Acceptance: the accepted snapshot plus envelope is byte-identical
+    to the released chain on three selections of the fixture** — full
+    catalog (2,367,920 canonical bytes), a two-judgment prefix (893,374)
+    and a reordered pair proving the catalog-order normalization
+    (780,713); committed as `SectionsFixtureTests.testExactSelectionParity`.
+    Next: the expand binding (handle validation, `checkCapture`, the
+    origin verification and the retained read faces), then kdsig.
 - **Stage A3:** whole-read/catalog faces and the consumer loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1
