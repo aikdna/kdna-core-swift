@@ -174,16 +174,28 @@ stat key before/after every read as the Node fd capture does; the initial
 port may operate on in-memory bytes (the gvjl app loads bundle resources),
 which keeps the discipline trivially but must keep the same phase order.
 
-Confirmed surface decisions (f2 early-alignment, binding):
+Confirmed surface decisions (f2 + c0 early-alignment, binding):
 
-- Naming: keep the `KDNA*` prefix; candidate state in docs/headers only.
-- Faces hang off the asset object (the §6 sketch shape), with the binding
-  requirement that phase order, the one-shot latch and stage observability
-  match the Node implementation point-by-point.
-- The retained/authorize callback is an explicit Swift closure that accepts
-  ONLY the literal `true` and is invoked before any pack body byte is read;
-  the document states plainly that observation is not authority
-  ("观测≠权威").
+- Naming: keep the `KDNA*` prefix (repo convention; the naming gate bans
+  only V+integer generation labels); run a collision sweep against existing
+  type names before landing; candidate state in docs/headers only.
+- Faces: asset methods or free functions both pass; the binding criterion
+  is payload discipline — the phase tokens (admitted request / authority /
+  prepared / snapshot) are the only channel through phases and are always
+  mandatory parameters; phase order, the one-shot latch and stage
+  observability match the Node implementation point-by-point. Node reality
+  (re-verified by c0): the core faces are free functions; the retained
+  prepare is `prepareRetainedSectionRead(snapshot, request, authority)` —
+  snapshot leading, three arguments. The §6 asset-hung sketch keeps that
+  shape and semantics; naming maps 1:1 to the Node faces for review.
+- Authority callback: a Swift closure returning `Bool?`; only `.some(true)`
+  grants (`.none` / `.some(false)` / thrown errors all deny — equivalent to
+  Node's strict `!== true`, which rejects every truthy non-true). Node
+  facts: the callback is awaited (async), invoked before any pack body byte
+  is read, the signature policy is validated and carried into the context,
+  and the prepared token is one-shot. Creating an authority from a
+  non-function throws `RETAINED_AUTHORITY_CALLBACK`. The document states
+  plainly that observation is not authority ("观测≠权威").
 
 Ordering rules that MUST NOT be unified: JCS key order = UTF-16 code-unit
 (ECMAScript); EntryName/node-id/table-key order = unsigned UTF-8 bytes.
@@ -221,9 +233,24 @@ public final class KDNASectionAsset {
     public func readCatalog(_ admitted: KDNAAdmittedSectionRequest) throws -> KDNASectionSnapshot
     public func readExactSelection(_ admitted: KDNAAdmittedSectionRequest) throws -> KDNASectionSnapshot
     public func sectionBytes(_ snapshot: KDNASectionSnapshot, sectionId: String) throws -> [UInt8]
-    public func prepareRetainedRead(_ snapshot: KDNASectionSnapshot, _ request: KDNASectionReadRequest) throws -> KDNAPreparedRetainedRead
-    public func readRetained(_ prepared: KDNAPreparedRetainedRead) throws -> KDNARetainedReadResult
 }
+
+// Retained faces mirror the Node split (snapshot leading, three arguments):
+public final class KDNASectionReadAuthority {
+    public static func create(
+        callback: @escaping (KDNAValue) async throws -> Bool?,
+        signaturePolicy: KDNASignaturePolicy
+    ) throws -> KDNASectionReadAuthority   // non-function callback → RETAINED_AUTHORITY_CALLBACK (typed)
+}
+public func prepareRetainedRead(
+    _ snapshot: KDNASectionSnapshot,
+    _ request: KDNAAdmittedSectionRequest,
+    _ authority: KDNASectionReadAuthority
+) throws -> KDNAPreparedRetainedRead        // one-shot token
+public func readRetained(
+    _ prepared: KDNAPreparedRetainedRead,
+    host: KDNATrustedHostReadProvider
+) throws -> KDNARetainedReadResult
 
 public struct KDNASectionReadRequest {   // closed union: whole|catalog|exactSelection|expand
     public static func whole(requestId: String, budgetBytes: Int) -> Self
@@ -281,8 +308,15 @@ jointly). Review flow agreed with the open line: early API sketch (this
 document's §6) → implementation → open-line review (c0 + f2) → Owner
 release gate.
 
-**Early alignment: PASSED** (f2, 2026-10-06) with four supplements now
-folded into this document: candidate-state mirroring (§ header, §2),
+**Early alignment: PASSED** (f2 and c0, 2026-10-06). c0's answers were
+implementation-verified against `sections-node.js` /
+`retained-sections-node.js` (core 0.36.0): KDNA* prefix with a pre-landing
+collision sweep; payload-discipline over receiver choice, with the retained
+prepare kept three-argument and snapshot-leading; the authority callback
+strictness spelled out above. c0 also logged the golden-fixtures proposal
+(the first cross-implementation conformance vectors) as a borrowable asset
+with no conflicts. f2 added four supplements, now folded into this
+document: candidate-state mirroring (§ header, §2),
 fixture privacy + per-fixture regeneration method (§7), digest-level
 byte-comparison against the released artifacts in scratch (§7), and the
 confirmed surface decisions (§4). The difficulty list (§8) was judged
