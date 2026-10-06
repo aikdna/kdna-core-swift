@@ -285,9 +285,19 @@ from the four bundles enters this public repo**; the four real bundles
 serve only as LOCAL acceptance comparisons (digest equality, not
 committed). Any real material in a fixture requires explicit Owner
 clearing with a public-safe subset. Every fixture carries its
-**regeneration method**: the released-artifact versions used and the
-generation script, so reviewers can replay it. Hostile-mutation
-diagnostic-expectation sets are explicitly welcome.
+**regeneration method**: the **released version numbers** (e.g. core
+0.36.0 / read 0.11.0) plus the generation script — scripts contain **no
+absolute local paths**, so reviewers can replay them anywhere.
+Hostile-mutation diagnostic expectations are recorded as **verbatim
+closed-code strings**. A machine-readable manifest (fixture → bytes
+sha256 → each digest) is optional and welcome. The review package for
+c0+f2 carries the **four-bundle digest comparison table** (A/C/E + IR,
+byte-level, computed from the released artifacts in a scratch
+environment) as the acceptance evidence.
+
+Fixture format governance (c0 ruling): the public repo's own
+`ParityTests` tradition governs; private ledger conventions do not enter
+the public repo.
 
 Byte-comparison obligation (confirmed): A/C/E and `digestCanonical` at the
 digest level, byte-exact against the Node chain **from the released
