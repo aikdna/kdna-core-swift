@@ -94,6 +94,23 @@ public enum SectionFaces {
             return decoded
         }
         func touchedMemberNames() -> [String] { Array(touchedMembers) }
+        /// The Node structureAfterAuthorization: the consumer reads frame
+        /// ranges through the callback; a non-empty read marks the member.
+        mutating func structureAfterAuthorization<T>(_ member: String, _ offset: Int, _ length: Int, _ consume: (@escaping (Int, Int) throws -> [UInt8]) throws -> T) throws -> T {
+            try demand(!consumed)
+            guard let row = row(member) else { throw PublicFailure("READ_CORE_INVALID") }
+            try demand(row.method == 0 && offset >= 0 && length >= 0 && offset + length <= row.size)
+            let source = bytes
+            let base = row.start + offset
+            var touched = Set<String>()
+            let result = try consume { innerOffset, count in
+                try demand(innerOffset >= 0 && count >= 0 && innerOffset + count <= length)
+                if count > 0 { touched.insert(member) }
+                return Array(source[base + innerOffset ..< base + innerOffset + count])
+            }
+            touchedMembers.formUnion(touched)
+            return result
+        }
         /// In-memory bytes cannot change under the read; the Node stat-key
         /// comparison is vacuous here (recorded, no silent difference).
         func assertUnchanged() throws {}

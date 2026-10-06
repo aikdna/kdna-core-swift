@@ -714,6 +714,30 @@ substitute. Consequently:
     item: the two remaining placeholder codes pinned as the port's own
     fail-closed behavior, not the released behavior). Full suite 41/41
     green.
+  - **Structure layer (landed 2026-10-06, Stage B chunk 2a):**
+    `Sections/StructureScanner.swift` ports the diagnostic structural
+    scanner (`scanFrame`: a definite-CBOR walk with the retained-path
+    policy, skipped text neither UTF-8/schema validated nor hashed, and
+    the verbatim SCAN_* codes — including the released half-float
+    arithmetic and the exact-integer round-trip rule); `Sections/
+    Structure.swift` ports `inspectStructure` + `checkPartitionBindings`
+    (per-frame observed-read digests, frame identity/record/owner checks,
+    then the unchanged Core registry re-run on the structurally observed
+    registration inputs with stable-node-id, owner, activation and
+    typed-id comparisons; the C.keys failures map to
+    READ_CORE_CAPABILITY_UNAVAILABLE exactly as the released boundary
+    does). The capture gained `structureAfterAuthorization` (the
+    consume-style frame reads with the touched-member rule). **Parity:
+    for all eight local assets the full inspection
+    `{observation, nodes, binding}` is byte-identical to the released
+    chain** (150–223 KB of canonical JSON each, capture UUID
+    normalized). Committed:
+    `SectionsFixtureTests.testStructureInspectionFixture` (frame digests,
+    read/skip accounting and the whole-output digest `ed47060b…21f8`;
+    the catalog pin comment's byte count was dropped per the c0
+    re-verification note). Next Stage B chunks: loaded validation + the
+    fixed-point closure + scoped materialization, then the
+    exact_selection face and the expansion binding.
 - **Stage A3:** whole-read/catalog faces and the consumer loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1
