@@ -11,26 +11,9 @@ import Foundation
 // READ_CORE_CAPABILITY_UNAVAILABLE through the sections catch-all.
 //
 // Authority: @aikdna/kdna-core@0.36.0
-// src/public-contract/sections/contract.json, carried as a mechanical
-// SHA-pinned mirror in Resources/Schemas (byte-identical to the released
-// file; the pin fails closed, and every type is keyword-checked against the
-// implemented schema subset at load).
+// src/public-contract/sections/contract.json (see SectionContract).
 enum SectionManifest {
-    static let resourceSHA = "a22a101db40b93d6e3817f8b9c30830e0a6526b2f81f6aa8c80b3ae80e0aaa20"
-    static let loadedContract: Result<J, Error> = Result {
-        guard let url = Bundle.module.url(forResource: "sections-contract", withExtension: "json", subdirectory: "Schemas") else { throw PublicFailure("READ_CORE_CAPABILITY_UNAVAILABLE") }
-        let data = try Data(contentsOf: url)
-        try demand(sha(data) == "sha256:" + resourceSHA, "READ_CORE_CAPABILITY_UNAVAILABLE")
-        let contract = try KDNAJSON.parse(data)
-        for shape in contract["types"].fields.values { try PublicSchema.checkKeywords(shape) }
-        return contract
-    }
-    static func validate(_ manifest: J) throws -> J {
-        let contract = try loadedContract.get(), types = contract["types"]
-        try demand(PublicSchema.matches(manifest, types["Manifest06Candidate"], types), "SECTION_TYPED_SHAPE")
-        try PublicSchema.scalars(manifest, types["Manifest06Candidate"], types)
-        return manifest
-    }
+    static func validate(_ manifest: J) throws -> J { try SectionContract.validate("Manifest06Candidate", manifest) }
     static func load(_ bytes: [UInt8]) throws -> J {
         let manifest: J
         do { manifest = try KDNAJSON.parse(Data(bytes)) }

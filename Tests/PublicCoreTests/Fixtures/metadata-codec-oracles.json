@@ -1,0 +1,840 @@
+{
+ "schema": "kdna.sections.metadata-codec-oracles",
+ "schemaVersion": "0.1.0",
+ "authority": "released @aikdna/kdna-core@0.36.0 src/public-contract/section-metadata-codec.js decode; value is canonicalJson of the decoded result, codes verbatim",
+ "note": "Synthetic: a schema-generated minimal stored node-order-index/1 object plus named mutations; no real material.",
+ "rows": [
+  {
+   "name": "valid",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 0,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/1"
+   },
+   "expected": "ok",
+   "value": "{\"asset\":{\"asset_id\":\"id-1\",\"asset_version\":\"0.1.0\",\"judgment_version\":\"0.1.0\"},\"asset_closure\":[\"node-a\",\"node-b\"],\"asset_index\":[{\"display_name\":\"text\",\"node_ref\":\"node-b\",\"owner\":{\"id\":\"id-1\",\"kind\":\"asset\"},\"target\":{\"id\":\"id-1\",\"kind\":\"asset\"}}],\"catalog\":[],\"contract\":\"kdna.canonical-ir/0.6.1\",\"ir_digest_claim\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"mandatory_closures\":[{\"node_ids\":[\"node-a\",\"node-b\"],\"selection\":{\"asset_id\":\"id-1\",\"asset_version\":\"0.1.0\",\"judgment_id\":\"id-1\"}}],\"node_order\":[\"node-a\",\"node-b\"],\"references\":[{\"id\":\"id-1\",\"mandatory\":false,\"role\":\"dependency\",\"source_node\":\"node-a\",\"target_node\":\"node-b\"}],\"relationships\":[],\"runtime_entry_names\":[\"kdna.json\"],\"tuple\":{\"container\":\"0.6.0\",\"core\":\"kdna.core/0.8.2\",\"host\":\"kdna.agent-host/0.3.1\",\"ir\":\"kdna.canonical-ir/0.6.1\",\"payload_profile\":\"kdna.payload.judgment\",\"payload_version\":\"0.5.1\",\"plan\":\"kdna.consumption-plan/0.3.1\",\"read\":\"kdna.read/0.7.0-candidate\",\"runtime\":\"kdna.runtime-capsule/0.3.1\",\"trace\":\"kdna.judgment-trace/0.3.1\"},\"unresolved_external\":[]}"
+  },
+  {
+   "name": "node-index-out-of-range",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 9,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/1"
+   },
+   "expected": "METADATA_NODE_INDEX_RANGE"
+  },
+  {
+   "name": "node-index-negative",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": -1,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/1"
+   },
+   "expected": "METADATA_StoredRepresentationMetadata06_SHAPE"
+  },
+  {
+   "name": "node-index-fractional",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 1.5,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/1"
+   },
+   "expected": "METADATA_StoredRepresentationMetadata06_SHAPE"
+  },
+  {
+   "name": "stored-missing-codec",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 0,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ]
+   },
+   "expected": "METADATA_StoredRepresentationMetadata06_SHAPE"
+  },
+  {
+   "name": "stored-wrong-codec",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 0,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/2"
+   },
+   "expected": "METADATA_StoredRepresentationMetadata06_SHAPE"
+  },
+  {
+   "name": "stored-missing-node-order",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 0,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/1"
+   },
+   "expected": "METADATA_StoredRepresentationMetadata06_SHAPE"
+  },
+  {
+   "name": "stored-extra-field",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 0,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false,
+      "extra": 1
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/1"
+   },
+   "expected": "METADATA_StoredRepresentationMetadata06_SHAPE"
+  },
+  {
+   "name": "asset-index-out-of-range",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 0,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 2,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/1"
+   },
+   "expected": "METADATA_NODE_INDEX_RANGE"
+  },
+  {
+   "name": "closure-index-out-of-range",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 0,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       2
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     0,
+     1
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/1"
+   },
+   "expected": "METADATA_NODE_INDEX_RANGE"
+  },
+  {
+   "name": "asset-closure-out-of-range",
+   "stored": {
+    "contract": "kdna.canonical-ir/0.6.1",
+    "tuple": {
+     "container": "0.6.0",
+     "payload_profile": "kdna.payload.judgment",
+     "payload_version": "0.5.1",
+     "core": "kdna.core/0.8.2",
+     "ir": "kdna.canonical-ir/0.6.1",
+     "runtime": "kdna.runtime-capsule/0.3.1",
+     "plan": "kdna.consumption-plan/0.3.1",
+     "host": "kdna.agent-host/0.3.1",
+     "trace": "kdna.judgment-trace/0.3.1",
+     "read": "kdna.read/0.7.0-candidate"
+    },
+    "asset": {
+     "asset_id": "id-1",
+     "asset_version": "0.1.0",
+     "judgment_version": "0.1.0"
+    },
+    "catalog": [],
+    "references": [
+     {
+      "source_node_index": 0,
+      "target_node_index": 1,
+      "id": "id-1",
+      "role": "dependency",
+      "mandatory": false
+     }
+    ],
+    "relationships": [],
+    "mandatory_closures": [
+     {
+      "node_indices": [
+       0,
+       1
+      ],
+      "selection": {
+       "asset_id": "id-1",
+       "asset_version": "0.1.0",
+       "judgment_id": "id-1"
+      }
+     }
+    ],
+    "asset_index": [
+     {
+      "node_index": 1,
+      "target": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "owner": {
+       "kind": "asset",
+       "id": "id-1"
+      },
+      "display_name": "text"
+     }
+    ],
+    "asset_closure": [
+     2
+    ],
+    "unresolved_external": [],
+    "node_order": [
+     "node-a",
+     "node-b"
+    ],
+    "ir_digest_claim": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_entry_names": [
+     "kdna.json"
+    ],
+    "codec": "node-order-index/1"
+   },
+   "expected": "METADATA_NODE_INDEX_RANGE"
+  }
+ ]
+}

@@ -50,7 +50,7 @@ final class SectionManifestTests: XCTestCase {
     }
 
     func testContractResourcePinFailsClosed() throws {
-        let contract = try SectionManifest.loadedContract.get()
+        let contract = try SectionContract.loadedContract.get()
         XCTAssertEqual(contract["module"]["versionTuple"]["container"].text, "0.6.0")
         XCTAssertEqual(contract["types"].fields.count, 483)
     }

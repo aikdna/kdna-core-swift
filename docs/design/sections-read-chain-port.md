@@ -200,8 +200,9 @@ Delta inventory for 0.6 (the actual port scope):
 New within `Sources/KDNACore` (additive; keep existing public surfaces;
 reuse `PublicCBOR`, `KDNAJSON.canonical`, `PublicContainer` machinery):
 `Sections/SectionContainer.swift` (0.6 container rules variant),
-`Sections/SectionManifest.swift` (0.6 manifest view + closed validation),
-`Sections/FrameGraph.swift`,
+`Sections/SectionContract.swift` (loaded SHA-pinned contract + generic
+validate), `Sections/SectionManifest.swift` (0.6 manifest view + closed
+validation), `Sections/FrameGraph.swift`,
 `Sections/MetadataCodec.swift`, `Sections/SectionDigests.swift` (A/C/E +
 IR), `Sections/SectionFaces.swift` (admission/snapshot/modes/bytes),
 `Sections/RetainedRead.swift`, `Sections/Diagnostics.swift` (closed code
@@ -347,6 +348,63 @@ against the released chain's verdicts. The checked-in fixture
 (`Fixtures/manifest-06-oracles.json`, 99 rows: the curated set plus a
 deterministic fuzz sample) records that authority in its header fields;
 its rows are the committed regression. Full Swift suite 24/24 green.
+
+**Frame decode layer — landed 2026-10-06.**
+`Sections/SectionContract.swift` (the loaded SHA-pinned contract plus the
+generic `validate`), `Sections/MetadataCodec.swift`
+(node-order-index/1 decode: *_index fields resolve through node_order, then
+validate as RepresentationMetadata06; METADATA_* codes verbatim) and
+`Sections/FrameGraph.swift` (`SectionScopeCodec.decodeFrame` for
+frame-local-ordered-scope-dictionary/1, then `restoreWholeFrames`: pack
+concatenation walk, the three table directories, the identity graph,
+xref/topic/volume ordering and every closed code ported point-by-point).
+`SectionManifest` now delegates to `SectionContract`. The scope-codec
+duplicate identity is `JSON.stringify(scope)` in Node; scope is an array of
+Identifier strings, for which JSON.stringify equals canonical JSON — the
+canonical-key check here is exact, not an approximation. The Node
+double-decode equality (raw walk vs cbor-x) has no Swift analogue (single
+decoder); recorded as a named difference with no observed behavioral gap.
+
+**Frame-graph parity (scratch, released-artifact baseline).** All eight
+sections assets on this machine — the four synthetic render fixtures and
+the four coach bundles (local-only, never committed) — parsed by both
+chains end to end: the canonical JSON of `{ir, checked_sections,
+pack_names, source_ir_digest_claim, source_runtime_entry_names}` is
+**byte-identical** (187–200 IR nodes, 689–1398 expansion targets, 17–25
+checked sections per asset), in debug and release builds. Release timing
+0.7–1.9 s per asset (debug 10–17 s; the loader builds release). The
+per-asset IR digest chain (C/E + IR cross-check) remains the next package,
+together with the committed frame-graph fixture: a small synthetic sections
+asset produced through the released creation path, checked in with its
+authored inputs and regeneration script (pinned to released 0.36.0) — the
+fixture package for §7.
+
+**Engine findings fixed while porting** (all three align Swift with the
+released source; old-line oracles stay green):
+
+- **Capacity is the payload's byte length, not a visit counter.** The Swift
+  parser/canonicalizer/CBOR walk still carried `count <= 100000` limits
+  that the released chain removed as the "count visits instead of measuring
+  the payload" defect; real manifests exceed 100 000 values, which the
+  Swift side rejected as READ_INPUT_INVALID (7 of 8 assets failed before
+  the fix). Removed; the CBOR walk gained the 8 MiB input cap that
+  decodePayload applies.
+- **`$` anchors:** ECMAScript `$` (no multiline flag) is the absolute end
+  of input; ICU's `$` also matches before a final line terminator. The
+  schema engine now rewrites unescaped, non-class `$` to `\z` before
+  compiling (probed against both engines on the contract's pattern shapes,
+  including the EntryName lookahead construction), keeps a compiled-pattern
+  cache (Ajv compiles once per schema; per-call compilation dominated the
+  walk) and has a string-array fast path for `uniqueItems`.
+- Together these took one asset's walk from ~22 s to ~1 s (release) with
+  identical verdicts.
+
+Committed tests: `SectionCodecTests` with three oracle fixtures —
+`metadata-codec-oracles.json` (11 rows), `scope-codec-oracles.json`
+(8 rows: duplicate/order/ref/unused/shape), `cbor-frame-oracles.json`
+(39 rows: integer edges incl. the ±2^64 boundaries, text/control/astral,
+map-16/float16 forms, caps, tags, trailing bytes). All synthetic; the
+authority string on each fixture names the released files.
 
 ## 6. API sketch (for open-line alignment — early, per the review flow)
 

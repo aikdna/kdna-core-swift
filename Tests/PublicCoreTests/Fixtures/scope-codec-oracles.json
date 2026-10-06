@@ -1,0 +1,429 @@
+{
+ "schema": "kdna.sections.scope-codec-oracles",
+ "schemaVersion": "0.1.0",
+ "authority": "released @aikdna/kdna-core@0.36.0 (src/public-contract/{section-metadata-codec,section-scope-codec,cbor}.js); values are canonicalJson of the decoded result, codes verbatim",
+ "note": "Synthetic: stored xref frames built with the released encodeFrame from synthetic expansion targets plus named mutations; no real material.",
+ "rows": [
+  {
+   "name": "valid",
+   "stored": {
+    "section_id": "xref:0:0",
+    "kind": "xref",
+    "scope_dictionary": [
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef"
+     ],
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef",
+      "material:3c62de10e7a110b9814f4b04b17f07a2515c1941",
+      "source:62822ab26754c157ed190ca0db1f30aa66c9969c",
+      "source:1312b562a140c21686e9cf332fb77187ba554174",
+      "source_use:3c63da6c9e8a77c98f97a735a1d0ed00ae6e0d30",
+      "source_use:ab07971d9d4a67db08a2b725235f8a6d976a6aa8"
+     ]
+    ],
+    "records": [
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "asset",
+       "id": "uid:trustworthy-data-comparison:reader-baseline:20261005"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "actor",
+       "id": "actor:comparison-author-agent"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "material",
+       "id": "material:goal-principle"
+      },
+      "scope_index": 1
+     }
+    ]
+   },
+   "expected": "ok",
+   "value": "{\"kind\":\"xref\",\"records\":[{\"anchor\":{\"kind\":\"asset\"},\"scope\":[\"asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff\",\"actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef\"],\"target\":{\"id\":\"uid:trustworthy-data-comparison:reader-baseline:20261005\",\"kind\":\"asset\"}},{\"anchor\":{\"kind\":\"asset\"},\"scope\":[\"asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff\",\"actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef\"],\"target\":{\"id\":\"actor:comparison-author-agent\",\"kind\":\"actor\"}},{\"anchor\":{\"kind\":\"asset\"},\"scope\":[\"asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff\",\"actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef\",\"material:3c62de10e7a110b9814f4b04b17f07a2515c1941\",\"source:62822ab26754c157ed190ca0db1f30aa66c9969c\",\"source:1312b562a140c21686e9cf332fb77187ba554174\",\"source_use:3c63da6c9e8a77c98f97a735a1d0ed00ae6e0d30\",\"source_use:ab07971d9d4a67db08a2b725235f8a6d976a6aa8\"],\"target\":{\"id\":\"material:goal-principle\",\"kind\":\"material\"}}],\"section_id\":\"xref:0:0\"}"
+  },
+  {
+   "name": "ref-out-of-range",
+   "stored": {
+    "section_id": "xref:0:0",
+    "kind": "xref",
+    "scope_dictionary": [
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef"
+     ],
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef",
+      "material:3c62de10e7a110b9814f4b04b17f07a2515c1941",
+      "source:62822ab26754c157ed190ca0db1f30aa66c9969c",
+      "source:1312b562a140c21686e9cf332fb77187ba554174",
+      "source_use:3c63da6c9e8a77c98f97a735a1d0ed00ae6e0d30",
+      "source_use:ab07971d9d4a67db08a2b725235f8a6d976a6aa8"
+     ]
+    ],
+    "records": [
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "asset",
+       "id": "uid:trustworthy-data-comparison:reader-baseline:20261005"
+      },
+      "scope_index": 1000
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "actor",
+       "id": "actor:comparison-author-agent"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "material",
+       "id": "material:goal-principle"
+      },
+      "scope_index": 1
+     }
+    ]
+   },
+   "expected": "XREF_DICTIONARY_REF"
+  },
+  {
+   "name": "wrong-kind-const",
+   "stored": {
+    "section_id": "xref:0:0",
+    "kind": "topic",
+    "scope_dictionary": [
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef"
+     ],
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef",
+      "material:3c62de10e7a110b9814f4b04b17f07a2515c1941",
+      "source:62822ab26754c157ed190ca0db1f30aa66c9969c",
+      "source:1312b562a140c21686e9cf332fb77187ba554174",
+      "source_use:3c63da6c9e8a77c98f97a735a1d0ed00ae6e0d30",
+      "source_use:ab07971d9d4a67db08a2b725235f8a6d976a6aa8"
+     ]
+    ],
+    "records": [
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "asset",
+       "id": "uid:trustworthy-data-comparison:reader-baseline:20261005"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "actor",
+       "id": "actor:comparison-author-agent"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "material",
+       "id": "material:goal-principle"
+      },
+      "scope_index": 1
+     }
+    ]
+   },
+   "expected": "XREF_DICTIONARY_SHAPE"
+  },
+  {
+   "name": "missing-dictionary",
+   "stored": {
+    "section_id": "xref:0:0",
+    "kind": "xref",
+    "records": [
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "asset",
+       "id": "uid:trustworthy-data-comparison:reader-baseline:20261005"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "actor",
+       "id": "actor:comparison-author-agent"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "material",
+       "id": "material:goal-principle"
+      },
+      "scope_index": 1
+     }
+    ]
+   },
+   "expected": "XREF_DICTIONARY_SHAPE"
+  },
+  {
+   "name": "first-use-order-violation",
+   "stored": {
+    "section_id": "xref:0:0",
+    "kind": "xref",
+    "scope_dictionary": [
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef"
+     ],
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef",
+      "material:3c62de10e7a110b9814f4b04b17f07a2515c1941",
+      "source:62822ab26754c157ed190ca0db1f30aa66c9969c",
+      "source:1312b562a140c21686e9cf332fb77187ba554174",
+      "source_use:3c63da6c9e8a77c98f97a735a1d0ed00ae6e0d30",
+      "source_use:ab07971d9d4a67db08a2b725235f8a6d976a6aa8"
+     ]
+    ],
+    "records": [
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "asset",
+       "id": "uid:trustworthy-data-comparison:reader-baseline:20261005"
+      },
+      "scope_index": 1
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "actor",
+       "id": "actor:comparison-author-agent"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "material",
+       "id": "material:goal-principle"
+      },
+      "scope_index": 1
+     }
+    ]
+   },
+   "expected": "XREF_DICTIONARY_ORDER"
+  },
+  {
+   "name": "dictionary-ref-dropped",
+   "stored": {
+    "section_id": "xref:0:0",
+    "kind": "xref",
+    "scope_dictionary": [
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef"
+     ]
+    ],
+    "records": [
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "asset",
+       "id": "uid:trustworthy-data-comparison:reader-baseline:20261005"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "actor",
+       "id": "actor:comparison-author-agent"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "material",
+       "id": "material:goal-principle"
+      },
+      "scope_index": 1
+     }
+    ]
+   },
+   "expected": "XREF_DICTIONARY_REF"
+  },
+  {
+   "name": "dictionary-duplicate",
+   "stored": {
+    "section_id": "xref:0:0",
+    "kind": "xref",
+    "scope_dictionary": [
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef"
+     ],
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef",
+      "material:3c62de10e7a110b9814f4b04b17f07a2515c1941",
+      "source:62822ab26754c157ed190ca0db1f30aa66c9969c",
+      "source:1312b562a140c21686e9cf332fb77187ba554174",
+      "source_use:3c63da6c9e8a77c98f97a735a1d0ed00ae6e0d30",
+      "source_use:ab07971d9d4a67db08a2b725235f8a6d976a6aa8"
+     ],
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef"
+     ]
+    ],
+    "records": [
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "asset",
+       "id": "uid:trustworthy-data-comparison:reader-baseline:20261005"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "actor",
+       "id": "actor:comparison-author-agent"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "material",
+       "id": "material:goal-principle"
+      },
+      "scope_index": 1
+     }
+    ]
+   },
+   "expected": "XREF_DICTIONARY_DUPLICATE"
+  },
+  {
+   "name": "dictionary-unused",
+   "stored": {
+    "section_id": "xref:0:0",
+    "kind": "xref",
+    "scope_dictionary": [
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef"
+     ],
+     [
+      "asset_declaration:53487aeb203c9cc56d2890d47a7f9a9ed38d16ff",
+      "actor:c94af9f7ade5559590e4ab099e89e1323eeaa7ef",
+      "material:3c62de10e7a110b9814f4b04b17f07a2515c1941",
+      "source:62822ab26754c157ed190ca0db1f30aa66c9969c",
+      "source:1312b562a140c21686e9cf332fb77187ba554174",
+      "source_use:3c63da6c9e8a77c98f97a735a1d0ed00ae6e0d30",
+      "source_use:ab07971d9d4a67db08a2b725235f8a6d976a6aa8"
+     ]
+    ],
+    "records": [
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "asset",
+       "id": "uid:trustworthy-data-comparison:reader-baseline:20261005"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "actor",
+       "id": "actor:comparison-author-agent"
+      },
+      "scope_index": 0
+     },
+     {
+      "anchor": {
+       "kind": "asset"
+      },
+      "target": {
+       "kind": "material",
+       "id": "material:goal-principle"
+      },
+      "scope_index": 0
+     }
+    ]
+   },
+   "expected": "XREF_DICTIONARY_UNUSED"
+  }
+ ]
+}

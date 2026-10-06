@@ -1,0 +1,227 @@
+{
+ "schema": "kdna.sections.cbor-frame-oracles",
+ "schemaVersion": "0.1.0",
+ "authority": "released @aikdna/kdna-core@0.36.0 (src/public-contract/{section-metadata-codec,section-scope-codec,cbor}.js); values are canonicalJson of the decoded result, codes verbatim",
+ "note": "Synthetic CBOR byte vectors; expected is the released decodePayload verdict, value is canonicalJson when accepted.",
+ "rows": [
+  {
+   "name": "uint-zero",
+   "bytes_hex": "00",
+   "expected": "ok",
+   "value": "0"
+  },
+  {
+   "name": "uint-23",
+   "bytes_hex": "17",
+   "expected": "ok",
+   "value": "23"
+  },
+  {
+   "name": "uint-24-byte",
+   "bytes_hex": "1818",
+   "expected": "ok",
+   "value": "24"
+  },
+  {
+   "name": "uint-16",
+   "bytes_hex": "190100",
+   "expected": "ok",
+   "value": "256"
+  },
+  {
+   "name": "uint-32",
+   "bytes_hex": "1a00010000",
+   "expected": "ok",
+   "value": "65536"
+  },
+  {
+   "name": "uint-64-exact-53",
+   "bytes_hex": "1b0020000000000000",
+   "expected": "ok",
+   "value": "9007199254740992"
+  },
+  {
+   "name": "uint-64-inexact-53",
+   "bytes_hex": "1b0020000000000001",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "uint-64-max",
+   "bytes_hex": "1bffffffffffffffff",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "neg-64-exact",
+   "bytes_hex": "3bffffffffffffffff",
+   "expected": "ok",
+   "value": "-18446744073709552000"
+  },
+  {
+   "name": "neg-64-one-off",
+   "bytes_hex": "3bfffffffffffffffe",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "neg-1",
+   "bytes_hex": "20",
+   "expected": "ok",
+   "value": "-1"
+  },
+  {
+   "name": "text-empty",
+   "bytes_hex": "60",
+   "expected": "ok",
+   "value": "\"\""
+  },
+  {
+   "name": "text-ascii",
+   "bytes_hex": "6568656c6c6f",
+   "expected": "ok",
+   "value": "\"hello\""
+  },
+  {
+   "name": "text-astral",
+   "bytes_hex": "64f09f9880",
+   "expected": "ok",
+   "value": "\"😀\""
+  },
+  {
+   "name": "text-control",
+   "bytes_hex": "6101",
+   "expected": "ok",
+   "value": "\"\\u0001\""
+  },
+  {
+   "name": "array-empty",
+   "bytes_hex": "80",
+   "expected": "ok",
+   "value": "[]"
+  },
+  {
+   "name": "array-three",
+   "bytes_hex": "83010203",
+   "expected": "ok",
+   "value": "[1,2,3]"
+  },
+  {
+   "name": "map-empty",
+   "bytes_hex": "a0",
+   "expected": "ok",
+   "value": "{}"
+  },
+  {
+   "name": "map-string-key",
+   "bytes_hex": "a1616101",
+   "expected": "ok",
+   "value": "{\"a\":1}"
+  },
+  {
+   "name": "map-dup-key",
+   "bytes_hex": "a2616101616102",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "map-int-key",
+   "bytes_hex": "a10101",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "byte-string",
+   "bytes_hex": "4101",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "tag",
+   "bytes_hex": "c101",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "indefinite-array",
+   "bytes_hex": "9f0102ff",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "float16-one",
+   "bytes_hex": "f93c00",
+   "expected": "ok",
+   "value": "1"
+  },
+  {
+   "name": "float32-one",
+   "bytes_hex": "fa3f800000",
+   "expected": "ok",
+   "value": "1"
+  },
+  {
+   "name": "float64-one",
+   "bytes_hex": "fb3ff0000000000000",
+   "expected": "ok",
+   "value": "1"
+  },
+  {
+   "name": "float64-nan",
+   "bytes_hex": "fb7ff8000000000000",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "float64-inf",
+   "bytes_hex": "fb7ff0000000000000",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "bool-true",
+   "bytes_hex": "f5",
+   "expected": "ok",
+   "value": "true"
+  },
+  {
+   "name": "bool-false",
+   "bytes_hex": "f4",
+   "expected": "ok",
+   "value": "false"
+  },
+  {
+   "name": "null",
+   "bytes_hex": "f6",
+   "expected": "ok",
+   "value": "null"
+  },
+  {
+   "name": "undefined",
+   "bytes_hex": "f7",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "trailing-byte",
+   "bytes_hex": "0000",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "empty-input",
+   "bytes_hex": "",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "map16-header",
+   "bytes_hex": "b90100a0",
+   "expected": "READ_CORE_INVALID"
+  },
+  {
+   "name": "map16-valid-shape",
+   "bytes_hex": "b90002616101616202",
+   "expected": "ok",
+   "value": "{\"a\":1,\"b\":2}"
+  },
+  {
+   "name": "depth-64",
+   "bytes_hex": "81818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181f6",
+   "expected": "ok",
+   "value": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[null]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"
+  },
+  {
+   "name": "depth-65",
+   "bytes_hex": "8181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181f6",
+   "expected": "READ_CORE_INVALID"
+  }
+ ]
+}

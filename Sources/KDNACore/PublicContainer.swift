@@ -85,8 +85,9 @@ enum PublicContainer {
 }
 
 struct PublicCBOR {
+    static let maximumBytes = 8388608
     let bytes: [UInt8]
-    var at = 0, count = 0
+    var at = 0
     mutating func take(_ length: Int) throws -> [UInt8] {
         try demand(length >= 0 && at + length <= bytes.count)
         let start = at; at += length; return Array(bytes[start..<at])
@@ -99,7 +100,10 @@ struct PublicCBOR {
         return n
     }
     mutating func value(_ depth: Int) throws -> J {
-        count += 1; try demand(depth <= 64 && count <= 100000)
+        // Capacity is the payload's own byte length, not a visit counter: the
+        // decoded chain's raw walk removed its per-value counters as a defect
+        // (each visited item consumes at least one input byte).
+        try demand(depth <= 64)
         let initial = try take(1)[0], major = initial >> 5, info = initial & 31
         if major == 0 || major == 1 {
             let n = try argument(info)
@@ -146,5 +150,8 @@ struct PublicCBOR {
         }
         throw PublicFailure()
     }
-    mutating func decode() throws -> J { let result = try value(0); try demand(at == bytes.count); return result }
+    mutating func decode() throws -> J {
+        try demand(bytes.count <= PublicCBOR.maximumBytes)
+        let result = try value(0); try demand(at == bytes.count); return result
+    }
 }

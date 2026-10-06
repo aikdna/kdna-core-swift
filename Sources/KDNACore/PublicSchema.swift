@@ -4,6 +4,42 @@ import Foundation
 /// Schema resources are mechanical mirrors, never an independently edited rule set.
 enum PublicSchema {
     static let resourceSHA = "ec8a2616a768f5523e8852487e757f6f9560d1933ea3a9ee90ead69fe1120f4d"
+    static let patternLock = NSLock()
+    static var patternCache: [String: NSRegularExpression?] = [:]
+    /// Compiled-pattern cache: the contract applies the same few patterns to
+    /// every string value (Ajv compiles per schema once); compiling per call
+    /// dominated the frame-graph walk.
+    static func patternMatches(_ text: String, _ pattern: String) -> Bool {
+        patternLock.lock()
+        let cached = patternCache[pattern]
+        patternLock.unlock()
+        let regex: NSRegularExpression?
+        if let cached { regex = cached } else {
+            regex = try? NSRegularExpression(pattern: absoluteEndAnchors(pattern))
+            patternLock.lock(); patternCache[pattern] = regex; patternLock.unlock()
+        }
+        guard let regex else { return false }
+        return regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
+    }
+    /// ECMAScript `$` (no multiline flag) is the absolute end of input, while
+    /// ICU's `$` also matches before a final line terminator. Rewrite
+    /// unescaped, non-class `$` anchors to `\z` so the pinned contract's
+    /// patterns mean in Swift exactly what they mean in Node (probed against
+    /// both engines on the contract's pattern shapes).
+    static func absoluteEndAnchors(_ pattern: String) -> String {
+        var out = ""; var inClass = false; var escaped = false
+        for character in pattern {
+            if escaped { out.append(character); escaped = false; continue }
+            switch character {
+            case "\\": out.append(character); escaped = true
+            case "[": inClass = true; out.append(character)
+            case "]": inClass = false; out.append(character)
+            case "$" where !inClass: out.append(contentsOf: "\\z")
+            default: out.append(character)
+            }
+        }
+        return out
+    }
     static func contract() throws -> J {
         guard let url = Bundle.module.url(forResource: "generated-contract", withExtension: "json", subdirectory: "Schemas") else { throw PublicFailure("READ_CORE_CAPABILITY_UNAVAILABLE") }
         let data = try Data(contentsOf: url)
@@ -51,7 +87,7 @@ enum PublicSchema {
                 if pattern == "\\S" {
                     let whitespace: Set<UInt32> = [9,10,11,12,13,32,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288,65279]
                     if !text.unicodeScalars.contains(where: { !whitespace.contains($0.value) }) { return false }
-                } else if text.range(of: pattern, options: .regularExpression) == nil { return false }
+                } else if !patternMatches(text, pattern) { return false }
             }
         }
         if case .object(let object) = v {
@@ -66,7 +102,14 @@ enum PublicSchema {
         if case .array(let items) = v {
             if s.has("minItems") && Double(items.count) < s["minItems"].numeric || s.has("maxItems") && Double(items.count) > s["maxItems"].numeric { return false }
             if s["uniqueItems"].boolean {
-                for i in items.indices { if items[..<i].contains(items[i]) { return false } }
+                // String-only arrays (scope lists, node orders) get a hash
+                // fast path; deep equality for strings is byte equality.
+                if items.allSatisfy({ if case .string = $0 { return true }; return false }) {
+                    var seen = Set<KDNAKey>()
+                    for item in items where !seen.insert(KDNAKey(item.text)).inserted { return false }
+                } else {
+                    for i in items.indices { if items[..<i].contains(items[i]) { return false } }
+                }
             }
             if s.has("items") && !items.allSatisfy({ matches($0, s["items"], types, depth + 1) }) { return false }
         }

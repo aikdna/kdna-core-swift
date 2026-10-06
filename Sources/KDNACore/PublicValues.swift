@@ -87,10 +87,10 @@ public enum KDNAJSON {
         return try parser.parse()
     }
     public static func canonical(_ value: KDNAValue) throws -> Data {
-        var count = 0
         func encode(_ v: J, _ depth: Int) throws -> String {
-            count += 1
-            try demand(depth <= 64 && count <= 100000, "READ_INPUT_INVALID")
+            // Capacity is the payload's own byte length, not a visit counter:
+            // the decoded chain removed its per-value counters as a defect.
+            try demand(depth <= 64, "READ_INPUT_INVALID")
             switch v {
             case .null: return "null"
             case .bool(let x): return x ? "true" : "false"
@@ -157,7 +157,6 @@ private struct StrictJSON {
     func syntax(_ condition: Bool, _ code: String = "READ_INPUT_INVALID") throws { try demand(condition, code) }
     let bytes: [UInt8]
     var at = 0
-    var count = 0
     mutating func whitespace() { while at < bytes.count && [32, 9, 10, 13].contains(bytes[at]) { at += 1 } }
     mutating func parse() throws -> J {
         let value = try value(0); whitespace(); try syntax(at == bytes.count)
@@ -224,7 +223,7 @@ private struct StrictJSON {
         let text = String(result); try demand(scalar(text), "READ_INPUT_INVALID"); return text
     }
     mutating func value(_ depth: Int) throws -> J {
-        count += 1; try syntax(depth <= 64 && count <= 100000, "READ_INPUT_INVALID"); whitespace()
+        try syntax(depth <= 64, "READ_INPUT_INVALID"); whitespace()
         try syntax(at < bytes.count)
         let b = bytes[at]
         if b == 34 { return .string(try string()) }
