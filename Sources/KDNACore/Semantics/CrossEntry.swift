@@ -380,4 +380,36 @@ enum CrossEntry {
             throw PublicFailure("READ_CORE_INVALID", field: "/payload" + first.path, subject: nil, crossEntryRule: rule.id)
         }
     }
+    /// assertScopedPayload: the scoped partial flows gate the rule inputs —
+    /// the graph rules run over the interpretation headers, the body rules
+    /// over the loaded subset (with the violation pointer remapped from the
+    /// local index to the full payload index), the rest over the full payload;
+    /// ASSET-CAPABILITY is skipped.
+    static func assertScopedPayload(_ payload: J, _ registry: J, _ loaded: Set<String>, _ headers: [J]) throws {
+        var local = payload
+        let localJudgments = payload["judgments"].list.filter { loaded.contains($0["id"].text) }
+        local["judgments"] = .array(localJudgments)
+        for rule in rules {
+            if rule.id == "PUBLIC-ASSET-CAPABILITY" { continue }
+            let allGraph = ["PUBLIC-PARENT-CLOSURE", "PUBLIC-LIFECYCLE"].contains(rule.id)
+            let localBody = ["PUBLIC-FORM-CONSISTENCY", "PUBLIC-TERM-VOCABULARY", "PUBLIC-NAVIGATION-LABEL"].contains(rule.id)
+            var input = payload
+            if allGraph { input["judgments"] = .array(headers) }
+            else if localBody { input = local }
+            let violations = try rule.run(input, registry)
+            guard let first = violations.first else { continue }
+            var pointer = first.path
+            if localBody, pointer.hasPrefix("/judgments/") {
+                let rest = pointer.dropFirst("/judgments/".count)
+                let digits = rest.prefix { $0.isNumber }
+                if let localIndex = Int(digits), localIndex < localJudgments.count {
+                    let id = localJudgments[localIndex]["id"].text
+                    if let fullIndex = payload["judgments"].list.firstIndex(where: { $0["id"].text == id }) {
+                        pointer = "/judgments/\(fullIndex)" + rest.dropFirst(digits.count)
+                    }
+                }
+            }
+            throw PublicFailure("READ_CORE_INVALID", field: "/payload" + pointer, subject: nil, crossEntryRule: rule.id)
+        }
+    }
 }

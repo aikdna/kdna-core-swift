@@ -156,6 +156,48 @@ final class SectionsFixtureTests: XCTestCase {
         let text = String(decoding: try KDNAJSON.canonical(inputs), as: UTF8.self)
         XCTAssertEqual(sha(Data(text.utf8)), "sha256:a2d8b6f2d67a8a9b1108334f4319bdbf9dd0de92b1b06c1c13251c322463afe0")
     }
+    // The loaded-schema probe matrix (frozen from the released-chain run;
+    // every cell matched byte-for-byte in the scratch comparison): the
+    // rejection reason, the Ajv-style field pointer and the scoped gating
+    // (an unloaded broken judgment must pass).
+    func testLoadedValidationProbeMatrix() throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
+        let bytes = [UInt8](try Data(contentsOf: url))
+        var capture = try SectionFaces.captureWhole(bytes)
+        let manifest = try SectionManifest.load(capture.manifestBytes)
+        let entries = try SectionContainer.parse(Data(bytes))
+        let restored = try SectionFrameGraph.restoreWholeFrames(entries, manifest)
+        let payload = try SectionDigests.reconstructPayload(restored.ir)
+        let layout = try SectionLayout.readSectionLayout(&capture, manifest)
+        let structure = try SectionStructure.inspectStructure(&capture, layout, manifest)
+        let interpretation = try SectionLoadedValidation.readInterpretationInputs(&capture, layout, structure)
+        let allIds = payload["judgments"].list.map { $0["id"].text }
+        func outcome(_ p: J, _ loaded: Set<String>, _ interp: J) -> String {
+            do { try SectionLoadedValidation.validateLoadedSchema(p, loaded, interp); return "pass" }
+            catch let failure as PublicFailure { return "\(failure.code)|\(failure.field ?? "-")|\(failure.crossEntryRule ?? "-")" }
+            catch { return "other" }
+        }
+        XCTAssertEqual(outcome(payload, Set(allIds), interpretation), "pass")
+        XCTAssertEqual(outcome(payload, Set([allIds[0]]), interpretation), "pass")
+        var p = payload; p.remove("kernel")
+        XCTAssertEqual(outcome(p, Set(allIds), interpretation), "SECTION_PAYLOAD_REQUIRED|-|-")
+        p = payload; p["zzz_unknown"] = .string("x")
+        XCTAssertEqual(outcome(p, Set(allIds), interpretation), "SECTION_PAYLOAD_FIELD|-|-")
+        p = payload; p["scope"] = .number(123)
+        XCTAssertEqual(outcome(p, Set(allIds), interpretation), "READ_CORE_INVALID|/payload/scope|-")
+        var mutated = payload
+        var judgment = mutated["judgments"].list[0]; judgment["focus"] = .number(123)
+        var list = mutated["judgments"].list; list[0] = judgment; mutated["judgments"] = .array(list)
+        XCTAssertEqual(outcome(mutated, Set(allIds), interpretation), "READ_CORE_INVALID|/payload/judgments/0/focus|-")
+        XCTAssertEqual(outcome(mutated, Set([allIds[1]]), interpretation), "pass")
+        var interp2 = interpretation
+        var ij = interp2["judgments"].list[1]
+        var method = ij["method"]; method["term"] = .number(123); ij["method"] = method
+        var iList = interp2["judgments"].list; iList[1] = ij; interp2["judgments"] = .array(iList)
+        XCTAssertEqual(outcome(payload, Set(allIds), interp2), "READ_CORE_INVALID|/payload/judgments/1/method|-")
+        var cap = payload; cap["asset_capability"] = .string("asserted_answers")
+        XCTAssertEqual(outcome(cap, Set([allIds[0]]), interpretation), "pass")
+    }
     func testFixtureAuthorshipAndRegenerationRecord() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0.authorship", withExtension: "json", subdirectory: "Fixtures"))
         let authorship = try KDNAJSON.parse(Data(contentsOf: url))

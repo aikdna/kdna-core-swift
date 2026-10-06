@@ -160,4 +160,95 @@ enum PublicSchema {
         try demand(matches(value, types[name], types))
         try scalars(value, types[name], types)
     }
+    struct SchemaFailure { let path: String; let missing: String? }
+    static func pointerEscape(_ key: String) -> String {
+        key.replacingOccurrences(of: "~", with: "~0").replacingOccurrences(of: "/", with: "~1")
+    }
+    /// The first failing position of a shape match (the Ajv first-error
+    /// analogue used by validateAuthored): the instance path plus a missing
+    /// property name for `required`. The traversal order is this port's own
+    /// fixed order (type / const / enum / bounds / required / properties in
+    /// UTF-16 key order / items / allOf / oneOf|anyOf); values with a single
+    /// violation produce the same pointer as Ajv, and multi-violation
+    /// ordering is a recorded named difference until hostile vectors need it.
+    static func firstError(_ v: J, _ s: J, _ types: J, _ path: String = "", _ depth: Int = 0) -> SchemaFailure? {
+        if depth > 256 { return SchemaFailure(path: path, missing: nil) }
+        if case .bool(let x) = s { return x ? nil : SchemaFailure(path: path, missing: nil) }
+        if s.has("$ref") {
+            let ref = s["$ref"].text
+            if !ref.hasPrefix("#/$defs/") || !types.has(String(ref.dropFirst(8))) { return SchemaFailure(path: path, missing: nil) }
+            if let failure = firstError(v, types[String(ref.dropFirst(8))], types, path, depth + 1) { return failure }
+        }
+        if s.has("type") && !typeMatches(v, s["type"].text) { return SchemaFailure(path: path, missing: nil) }
+        if s.has("const") && v != s["const"] { return SchemaFailure(path: path, missing: nil) }
+        if s.has("enum") && !s["enum"].list.contains(v) { return SchemaFailure(path: path, missing: nil) }
+        if case .number(let n) = v {
+            if s.has("minimum") && n < s["minimum"].numeric { return SchemaFailure(path: path, missing: nil) }
+            if s.has("maximum") && n > s["maximum"].numeric { return SchemaFailure(path: path, missing: nil) }
+        }
+        if case .string(let text) = v {
+            let count = Double(text.unicodeScalars.count)
+            if s.has("minLength") && count < s["minLength"].numeric || s.has("maxLength") && count > s["maxLength"].numeric { return SchemaFailure(path: path, missing: nil) }
+            if s.has("pattern") {
+                let pattern = s["pattern"].text
+                if pattern == "\\S" {
+                    let whitespace: Set<UInt32> = [9,10,11,12,13,32,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288,65279]
+                    if !text.unicodeScalars.contains(where: { !whitespace.contains($0.value) }) { return SchemaFailure(path: path, missing: nil) }
+                } else if !patternMatches(text, pattern) { return SchemaFailure(path: path, missing: nil) }
+            }
+        }
+        // The released validator evaluates the applicator unions before the
+        // property walk (probe-verified on the method path), so the union
+        // block precedes the object/array branches here.
+        let unionKey = s.has("oneOf") ? "oneOf" : "anyOf"
+        let branches = s[unionKey].list
+        if !branches.isEmpty {
+            var matched = 0
+            for child in branches {
+                let resolved = child.has("$ref") ? types[String(child["$ref"].text.dropFirst(8))] : child
+                if resolved.has("type") && !typeMatches(v, resolved["type"].text) { continue }
+                if resolved["properties"].fields.contains(where: { $0.value.has("const") && v.has($0.key.text) && v[$0.key.text] != $0.value["const"] }) { continue }
+                if firstError(v, child, types, path, depth + 1) == nil { matched += 1 }
+            }
+            if unionKey == "oneOf" ? matched != 1 : matched == 0 { return SchemaFailure(path: path, missing: nil) }
+        }
+        if case .object(let object) = v {
+            if let missing = s["required"].list.first(where: { object[KDNAKey($0.text)] == nil }) { return SchemaFailure(path: path, missing: missing.text) }
+            if s.has("minProperties") && Double(object.count) < s["minProperties"].numeric { return SchemaFailure(path: path, missing: nil) }
+            let props = s["properties"]
+            let keys = object.keys.sorted { $0.text.utf16.lexicographicallyPrecedes($1.text.utf16) }
+            for key in keys where props.has(key.text) {
+                if let failure = firstError(object[key]!, props[key.text], types, path + "/" + pointerEscape(key.text), depth + 1) { return failure }
+            }
+            if s.has("additionalProperties") {
+                for key in keys where !props.has(key.text) {
+                    // The Ajv additionalProperties error reports the parent
+                    // instancePath (the offending key travels in params only).
+                    if firstError(object[key]!, s["additionalProperties"], types, path, depth + 1) != nil {
+                        return SchemaFailure(path: path, missing: nil)
+                    }
+                }
+            }
+        }
+        if case .array(let items) = v {
+            if s.has("minItems") && Double(items.count) < s["minItems"].numeric || s.has("maxItems") && Double(items.count) > s["maxItems"].numeric { return SchemaFailure(path: path, missing: nil) }
+            if s["uniqueItems"].boolean {
+                if items.allSatisfy({ if case .string = $0 { return true }; return false }) {
+                    var seen = Set<String>()
+                    for item in items where !seen.insert(item.text).inserted { return SchemaFailure(path: path, missing: nil) }
+                } else {
+                    for i in 0..<items.count { for j in (i + 1)..<items.count where items[i] == items[j] { return SchemaFailure(path: path, missing: nil) } }
+                }
+            }
+            if s.has("items") {
+                for (i, item) in items.enumerated() {
+                    if let failure = firstError(item, s["items"], types, path + "/\(i)", depth + 1) { return failure }
+                }
+            }
+        }
+        for child in s["allOf"].list {
+            if let failure = firstError(v, child, types, path, depth + 1) { return failure }
+        }
+        return nil
+    }
 }

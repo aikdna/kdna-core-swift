@@ -760,6 +760,28 @@ substitute. Consequently:
     passes (`validateAuthored` with the Ajv field pointers), the scoped
     cross-entry variant, the fixed-point closure and the scoped
     materialization.
+  - **Loaded schema pass + scoped cross-entry (landed 2026-10-06, Stage B
+    chunk 2b-2):** `SectionLoadedValidation.validateAuthored`
+    (embedded-shape validation against the 0.5 contract — refs resolve
+    into its types — with the Ajv-style field pointer, then the
+    shape-level scalar pass) and `validateLoadedSchema` (required payload
+    fields, per-field property shapes, loaded judgments against
+    Judgment, the interpretation judgments' authored children, then the
+    cross-entry obligations); `CrossEntry.assertScopedPayload` (the graph
+    rules run over the interpretation headers, the body rules over the
+    loaded subset with the local→full index remap; ASSET-CAPABILITY is
+    skipped). The schema engine gained `PublicSchema.firstError` — the
+    first-error analogue: unions report at the value's path,
+    additionalProperties at the parent path, `required` with the missing
+    name. **Acceptance: a nine-case probe matrix on two assets matches
+    the released chain exactly** (reason + field pointer +
+    crossEntryRule, including the gating proof that a broken unloaded
+    judgment passes and the local→full pointer remap), committed as
+    `SectionsFixtureTests.testLoadedValidationProbeMatrix`. Recorded
+    named difference: multi-violation first-error ORDERING follows this
+    port's fixed traversal (type/const/enum/bounds → unions →
+    required/properties/additionalProperties → items → allOf); every
+    single-violation probe matches Ajv.
 - **Stage A3:** whole-read/catalog faces and the consumer loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1
