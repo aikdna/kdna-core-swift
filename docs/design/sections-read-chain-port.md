@@ -457,6 +457,24 @@ substitute. Consequently:
   digest on the eight assets plus the Node-side hostile suites for those
   modules. `SectionDigests.reconstructPayload` and the frame graph are
   already generation-independent and stay as landed.
+  - **A2a (landed 2026-10-06):** the 0.5 contract is vendored as
+    `Resources/Schemas/generated-contract-0.5.json` (byte-identical to the
+    released file; SHA-pinned; its keyword set is fully inside the schema
+    engine, so no engine extension was needed) with
+    `Sections/SemanticContract.swift` (`validate("Payload", …)` and the
+    same surface `validate.js` drives: shape first, then the scalar pass).
+    Parity: for all eight local assets the reconstructed payload validates
+    `ok` exactly as in Node, and seven named mutations per asset (56 cells:
+    missing/invalid asset, unknown top-level and nested fields, wrong
+    profile_version, emptied judgments) all classify `READ_CORE_INVALID` on
+    both sides — zero mismatches. Committed `SemanticContractTests`
+    (resource pin + tuple + type counts + negative rows + the deliberate
+    two-generation coexistence assertion).
+    Named difference (recorded): the Node rejection carries an Ajv field
+    pointer (diagnostic.field); this port reports the code without the
+    pointer until a consumer needs it. Synthetic-positive payload rows are
+    deferred to the fixture package (the created synthetic asset's payload
+    will serve as the committed positive instance).
 - **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1
