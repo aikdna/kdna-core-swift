@@ -17,12 +17,14 @@ enum R2Values {
     static func fail(_ field: String = "/payload", _ subject: String? = nil) throws -> Never {
         throw PublicFailure("READ_CORE_INVALID", field: field, subject: subject)
     }
-    static func unique(_ items: [J], _ name: String = "id", _ field: String = "/payload") throws -> [String: J] {
-        var result: [String: J] = [:]
+    /// Insertion-ordered: the JS Map these ports build feeds contract linking
+    /// order, and link insertion order is observable in the registry dump.
+    static func unique(_ items: [J], _ name: String = "id", _ field: String = "/payload") throws -> R2Registry.OrderedMap<J> {
+        var result = R2Registry.OrderedMap<J>()
         for item in items {
             let key = R2Registry.canonicalKey(item[name])
-            if result[key] != nil { try fail(field, item[name].text) }
-            result[key] = item
+            if result.get(key) != nil { try fail(field, item[name].text) }
+            result.set(key, item)
         }
         return result
     }
@@ -58,10 +60,10 @@ enum R2Values {
         default:
             if value["kind"].text != "record" { try fail(field, nil) }
             let fields = try unique(shape["fields"].list, "name", field), actual = try unique(value["fields"].list, "name", field)
-            for fieldShape in fields.values where fieldShape["required"] == .bool(true) && actual[R2Registry.canonicalKey(fieldShape["name"])] == nil { try fail(field, nil) }
+            for fieldShape in fields.values where fieldShape["required"] == .bool(true) && actual.get(R2Registry.canonicalKey(fieldShape["name"])) == nil { try fail(field, nil) }
             for actualField in actual.values {
                 let key = R2Registry.canonicalKey(actualField["name"])
-                guard let fieldShape = fields[key] else { try fail(field, nil) }
+                guard let fieldShape = fields.get(key) else { try fail(field, nil) }
                 try resultShape(fieldShape["shape"], actualField["value"], field, depth + 1)
             }
         }

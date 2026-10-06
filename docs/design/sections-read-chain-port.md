@@ -515,9 +515,27 @@ substitute. Consequently:
     identity in JS — strict JSON inputs carry no aliasing, so the port's
     per-path dedup is exact for every representable input (the one
     aliasing row was dropped from the fixture as unrepresentable).
-  - **A2c part 2 (next):** `r2-plan` and `r2-semantics` (`validateR2`),
-    then `canonical-ir` (buildIR) with the derived-IR digest acceptance on
-    the eight assets.
+  - **A2c part 2 (partially landed 2026-10-06):**
+    `Semantics/R2Semantics.swift` ports `validateR2` — the whole-read path
+    (the released function's `scope` variant belongs to the partial-read
+    flows, Stage B): the full registry relinking with scopes
+    (applies/covers/subset), contract/value checks, component bodies,
+    method roles, judgments with units and bindings, ports and result
+    compatibility, relationships, dependencies, examples (including the
+    partial-outcome entry ordering), revisions, attributions and closures.
+    Parity: the full post-validation registry state on all eight assets —
+    ordered records, edges with insertion-ordered links, reference roles,
+    unresolved externals and closures — is **byte-identical** (2.0 MB of
+    canonical JSON) to the released `validateR2`. Two porting facts pinned
+    again in this pass: JS Map insertion order is observable through link
+    insertion (the `unique` helper now returns an insertion-ordered map)
+    and the dependency's `producer_port` is a top-level field (not nested
+    under `producer`). One declared gap: `r2-plan.js` (the finite authored
+    plan graph, 312 lines) is the next package; until it lands a judgment
+    carrying `method.plan` fails loudly with READ_CORE_CAPABILITY_UNAVAILABLE
+    here instead of being silently unvalidated (no acceptance asset carries
+    plans; the registry dump covers none). `canonical-ir` (buildIR) is the
+    finale after that, with the derived-IR digest acceptance.
 - **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1
