@@ -406,6 +406,64 @@ Committed tests: `SectionCodecTests` with three oracle fixtures —
 map-16/float16 forms, caps, tags, trailing bytes). All synthetic; the
 authority string on each fixture names the released files.
 
+**Digest layer — landed 2026-10-06.**
+`Sections/SectionDigests.swift`: `observeWhole` (A = container bytes;
+C = the shared content-tree preimage, reusing the existing
+`PublicDigests.content` port — its byte parity with digests.js is
+demonstrated by the eight-asset C match below; E = `observeE` on the
+kdna.digest-basis.runtime-entry-set/0.3.0-candidate profile with
+SECTION_E_PACK_COVERAGE / SECTION_RUNTIME_DECLARATION /
+SECTION_RUNTIME_MEMBER_MISSING verbatim), `assertContentBindings`, and
+`reconstructPayload` (validates CanonicalIR06Candidate against the sections
+contract, rebuilds the 0.5.1 payload shape, SECTION_ASSET_NODE /
+SECTION_FORM_INVALID verbatim).
+
+**Digest parity (scratch, released-artifact baseline).** On all eight
+sections assets, A, C, E (digest + member names + profile) and the
+`reconstructPayload` output digest are byte-identical to the released
+chain. Committed: `sections-digests-oracles.json` (11 E rows + 5 C rows,
+synthetic entry sets; the C rows also pin the checksums.json/signature.kdsig
+exclusion and canonical key-order insensitivity) with
+`SectionDigestsTests`.
+
+**Discovery — the payload/IR semantic generation gap (major, re-scopes
+Stage A).** The two visible failures on the eight assets were
+`validate('Payload')` and `buildIR` against the package's bundled
+old-line contract — and the diagnosis is structural, not a bug: the
+bundled `generated-contract.json` is the **0.2.0 generation** (275 types,
+tuple container 0.2.0 / payload_version 0.2.0), while the released
+0.36.0 core's contract is the **0.5.0/0.5.1 generation** (431 types,
+adds `r2_semantics`, `core_terms`, `static_policy`, `authoring_workflow`).
+The 0.5.1 payload carries collections the 0.2 contract does not know
+(contracts, conditions, shared_declarations, examples, exceptions,
+misuse, asset_capability, kernel, reading_order) and richer boundary
+bodies (applies_to, exception_refs) — exactly the additionalProperties
+violations Ajv reports when the reconstructed payload is checked against
+the bundled contract. The sections chain's semantics are the 0.5.x
+generation; the Swift old-line semantic code (PublicIR 172 +
+PublicComponents 231 lines) implements the 0.2 generation and is not a
+substitute. Consequently:
+
+- **Stage A1 (done):** container, manifest, frame graph, codecs, digests
+  A/C/E, reconstruct — all parity-verified on the eight local assets.
+- **Stage A2 (new workstream, on the critical path for the IR
+  cross-check):** vendor the released generated-contract.json (sha256
+  b405bdb007ce18e144c607d92af4127540119c6d302724c313ae6bb0b72ab915) as a
+  second SHA-pinned resource and port the 0.5 semantic generation:
+  r2-registry (105 lines), r2-values (90), r2-semantics (316),
+  component-semantics (191), static-policy-semantics (52), cross-entry
+  (462), canonical-ir (97) — roughly 1 300 dense lines against the 0.5
+  contract, with acceptance = derived-IR digest equals the restored-IR
+  digest on the eight assets plus the Node-side hostile suites for those
+  modules. `SectionDigests.reconstructPayload` and the frame graph are
+  already generation-independent and stay as landed.
+- **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
+  Sequencing note: the judgment-supply projection the Render adapter
+  consumes comes from the A1 whole-frame path, so A3 can land against A1
+  + digests while A2 completes the IR cross-check; the chain's own
+  admission semantics include that cross-check, so A2 remains required
+  for a faithful port and for hostile-vector fidelity.
+
 ## 6. API sketch (for open-line alignment — early, per the review flow)
 
 ```swift

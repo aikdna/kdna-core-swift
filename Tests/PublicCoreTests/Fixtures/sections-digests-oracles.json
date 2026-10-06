@@ -1,0 +1,440 @@
+{
+ "schema": "kdna.sections.digests-oracles",
+ "schemaVersion": "0.1.0",
+ "authority": "released @aikdna/kdna-core@0.36.0 src/public-contract/section-digests.js observeE + digests.js contentTreePreimage; digests/codes verbatim",
+ "note": "Synthetic entry sets only (no real material). e_rows exercise observeE; c_rows exercise the shared content-tree preimage on sections-shaped entries.",
+ "e_rows": [
+  {
+   "name": "valid-with-declaration",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": [
+     "sections/pack-0.kdnab"
+    ]
+   },
+   "expected": "ok",
+   "digest": "sha256:93b1eb689cb2f6587e029ee78d3b139959b76e9dc34d15f36aecfcd3d03ab459",
+   "member_names": [
+    "kdna.json",
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ]
+  },
+  {
+   "name": "valid-empty-declaration",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": []
+   },
+   "expected": "ok",
+   "digest": "sha256:93b1eb689cb2f6587e029ee78d3b139959b76e9dc34d15f36aecfcd3d03ab459",
+   "member_names": [
+    "kdna.json",
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ]
+  },
+  {
+   "name": "pack-coverage-missing",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": []
+   },
+   "expected": "SECTION_E_PACK_COVERAGE"
+  },
+  {
+   "name": "pack-coverage-extra",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab",
+    "sections/pack-2.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": []
+   },
+   "expected": "SECTION_E_PACK_COVERAGE"
+  },
+  {
+   "name": "duplicate-declaration",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": [
+     "attachments/note.bin",
+     "attachments/note.bin"
+    ]
+   },
+   "expected": "SECTION_RUNTIME_DECLARATION"
+  },
+  {
+   "name": "declared-mimetype",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    },
+    {
+     "name": "mimetype",
+     "bytes_hex": "6170706c69636174696f6e2f766e642e6b646e612e6173736574"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": [
+     "mimetype"
+    ]
+   },
+   "expected": "SECTION_RUNTIME_MEMBER_MISSING"
+  },
+  {
+   "name": "declared-missing",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": [
+     "attachments/absent.bin"
+    ]
+   },
+   "expected": "SECTION_RUNTIME_MEMBER_MISSING"
+  },
+  {
+   "name": "declared-invalid-name",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": [
+     "bad//name"
+    ]
+   },
+   "expected": "SECTION_RUNTIME_MEMBER_MISSING"
+  },
+  {
+   "name": "declared-reports",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    },
+    {
+     "name": "reports/x",
+     "bytes_hex": "01"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": [
+     "reports/x"
+    ]
+   },
+   "expected": "SECTION_RUNTIME_MEMBER_MISSING"
+  },
+  {
+   "name": "declared-not-array",
+   "members": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab",
+    "sections/pack-1.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": "sections/pack-0.kdnab"
+   },
+   "expected": "SECTION_RUNTIME_DECLARATION"
+  },
+  {
+   "name": "kaina-json-missing",
+   "members": [
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "01"
+    }
+   ],
+   "pack_names": [
+    "sections/pack-0.kdnab"
+   ],
+   "runtime": {
+    "mandatory_entries": []
+   },
+   "expected": "SECTION_RUNTIME_MEMBER_MISSING"
+  }
+ ],
+ "c_rows": [
+  {
+   "name": "basic-with-exclusions",
+   "entries": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    }
+   ],
+   "expected": "ok",
+   "digest": "sha256:809191e6e903079b2bc6e7990fc8c95a9311e97e7300599df5580799df6c6989"
+  },
+  {
+   "name": "exclusions-ignored",
+   "entries": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22617574686f72696e67223a7b22636f6e74656e745f646967657374223a227368613235363a62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d7d"
+    },
+    {
+     "name": "sections/pack-0.kdnab",
+     "bytes_hex": "010203"
+    },
+    {
+     "name": "sections/pack-1.kdnab",
+     "bytes_hex": "04"
+    },
+    {
+     "name": "attachments/note.bin",
+     "bytes_hex": "0909"
+    },
+    {
+     "name": "checksums.json",
+     "bytes_hex": "7b2278223a317d"
+    },
+    {
+     "name": "signature.kdsig",
+     "bytes_hex": "07"
+    }
+   ],
+   "expected": "ok",
+   "digest": "sha256:809191e6e903079b2bc6e7990fc8c95a9311e97e7300599df5580799df6c6989"
+  },
+  {
+   "name": "no-authoring",
+   "entries": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b22666f726d61745f76657273696f6e223a22302e362e30222c22636f6e74656e745f646967657374223a227368613235363a63636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363227d"
+    },
+    {
+     "name": "attachments/a",
+     "bytes_hex": "01"
+    }
+   ],
+   "expected": "ok",
+   "digest": "sha256:01ed82b188c694bca491b8cf2a1f65d81327998309750d7f54e586d4be79f820"
+  },
+  {
+   "name": "json-order-insensitive",
+   "entries": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b2262223a312c2261223a327d"
+    }
+   ],
+   "expected": "ok",
+   "digest": "sha256:478bc9491c5cbd45c35b04f6c4826a4387c5103edec8e7b31104124aa7223587"
+  },
+  {
+   "name": "json-order-insensitive-2",
+   "entries": [
+    {
+     "name": "kdna.json",
+     "bytes_hex": "7b2261223a322c2262223a317d"
+    }
+   ],
+   "expected": "ok",
+   "digest": "sha256:478bc9491c5cbd45c35b04f6c4826a4387c5103edec8e7b31104124aa7223587"
+  }
+ ]
+}
