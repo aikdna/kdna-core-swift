@@ -111,12 +111,12 @@ enum SectionStructure {
         for expected in registry.ordered {
             guard let node = byTarget[key(expected.target)] else { throw PublicFailure("SCAN_REGISTRY_MISSING") }
             try demand(noAsset(node["owner"]) && key(node["owner"]) == key(expected.owner) && node["owner_judgment_id"] == expected.judgment, "SCAN_REGISTRY_OWNER")
-            let role = expected.value["kind"].text == "emission_list" && expected.target["kind"].text == "contract"
+            let role = expected.rawValue["kind"].text == "emission_list" && expected.target["kind"].text == "contract"
                 ? "emission_list_contract" : (roles[expected.target["kind"].text] ?? expected.target["kind"].text)
             try demand(node["role"].text == role && node["id"].text == (try SectionLayout.declarationRef(role, [meta["asset"], expected.target])), "SCAN_STABLE_NODE_ID")
             try demand(sha(try KDNAJSON.canonical(node["activation"])) == sha(try KDNAJSON.canonical(expected.activation)), "SCAN_REGISTRY_ACTIVATION")
             if expected.target["kind"].text != "asset" && expected.target["kind"].text != "result" {
-                try demand(node["value"]["id"].text == expected.value["id"].text, "SCAN_VALUE_TYPED_ID")
+                try demand(node["value"]["id"].text == expected.rawValue["id"].text, "SCAN_VALUE_TYPED_ID")
             }
         }
         return ["nodes": .number(Double(nodes.count)), "judgments": .number(Double(payload["judgments"].list.count)),

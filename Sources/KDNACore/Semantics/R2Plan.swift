@@ -46,7 +46,7 @@ enum R2Plan {
             guard let record = try r.get(target, ["plan_node"], at), record.owner["kind"].text == "plan", record.owner["id"].text == plan["id"].text, nodes.get(R2Registry.canonicalKey(record.target["id"])) != nil else {
                 try R2Registry.fail(at)
             }
-            return record.value
+            return try record.checkedValue()
         }
         func child(_ parent: J, _ target: J) throws {
             let value = try localNode(target)
@@ -77,8 +77,10 @@ enum R2Plan {
         }
         func contractValue(_ target: J, _ allowSpecial: Bool = false) throws -> J {
             guard let record = try r.get(target, ["contract"], at) else { return .null }
-            if !allowSpecial && record.value["kind"].text == "emission_list" { try R2Registry.fail(at) }
-            return record.value
+            if !allowSpecial {
+                if (try record.checkedValue())["kind"].text == "emission_list" { try R2Registry.fail(at) }
+            }
+            return try record.checkedValue()
         }
         func ports(_ node: J) throws -> (inputs: J, outputs: J) {
             if let cached = portCache[node["id"].text] { return (cached["inputs"], cached["outputs"]) }
@@ -97,15 +99,15 @@ enum R2Plan {
                 let target = R2Registry.qualified(node["judgment_ref"])
                 if let record = try r.link(R2Registry.ref("plan_node", node["id"].text), target, true, ["judgment"], at, nil) {
                     callTargets[judgment["id"].text]!.insert(record.target["id"].text)
-                    result = (.array(record.value["ports"].list.filter { $0["direction"].text == "input" }),
-                              .array(record.value["ports"].list.filter { $0["direction"].text == "output" }))
-                    instanceMethods[node["id"].text] = [record.value["method"]["method"]["term"].text]
+                    result = (.array(try record.checkedValue()["ports"].list.filter { $0["direction"].text == "input" }),
+                              .array(try record.checkedValue()["ports"].list.filter { $0["direction"].text == "output" }))
+                    instanceMethods[node["id"].text] = [try record.checkedValue()["method"]["method"]["term"].text]
                 } else {
                     result = (.null, .null)
                 }
             } else if node["kind"].text == "branch" {
                 let policy = try r.get(node["policy_ref"], ["policy"], at)
-                result = (.array([]), .array([["name": "result", "contract_ref": policy?.value["result_contract_ref"] ?? .null]]))
+                result = (.array([]), .array([["name": "result", "contract_ref": try policy?.checkedValue()["result_contract_ref"] ?? .null]]))
             } else if node["kind"].text == "feedback" {
                 let output = try endpoint(node["output"], "output", false)
                 result = (.array([]), .array([["name": "result", "resolved_contract": output.contract]]))
@@ -174,8 +176,8 @@ enum R2Plan {
                     let policy = try r.get(node["policy_ref"], ["policy"], at)
                     if policy == nil || policy!.judgment.text != judgment["id"].text { try R2Registry.fail(at) }
                     _ = try r.link(R2Registry.ref("plan_node", node["id"].text), policy!.target, true, ["policy"], at, nil)
-                    if policy!.value["combine"]["kind"].text == "authored" {
-                        try context.child(node, policy!.value["combine"]["merge_node_ref"])
+                    if try policy!.checkedValue()["combine"]["kind"].text == "authored" {
+                        try context.child(node, try policy!.checkedValue()["combine"]["merge_node_ref"])
                     }
                 }
             }
@@ -289,7 +291,7 @@ enum R2Plan {
                     guard let candidate = try r.get(entry["then"]["candidate_ref"], ["candidate"], at), candidate.owner["id"].text == policy["id"].text,
                           candidates.get(R2Registry.canonicalKey(candidate.target["id"])) != nil else { try R2Registry.fail(at) }
                     _ = try r.link(etarget, candidate.target, true, ["candidate"], at, nil)
-                    c = try normalContract(candidate.value["contract_ref"], at)
+                    c = try normalContract(try candidate.checkedValue()["contract_ref"], at)
                     producer = candidate.target
                 } else {
                     guard let context else { try R2Registry.fail(at) }
@@ -368,9 +370,11 @@ enum R2Plan {
                         if c["kind"].text == "emission_list" {
                             guard supplies.count == 1, supplies[0].source["kind"].text == "policy" else { try R2Registry.fail(at) }
                             let policy = try r.get(c["policy_ref"], ["policy"], at)
-                            if policy == nil || policy!.value["combine"]["kind"].text != "authored"
-                                || policy!.value["combine"]["merge_node_ref"]["id"].text != node["id"].text
-                                || policy!.value["combine"]["input_port"].text != port["name"].text { try R2Registry.fail(at) }
+                            if policy == nil { try R2Registry.fail(at) }
+                            let policyValue = try policy!.checkedValue()
+                            if policyValue["combine"]["kind"].text != "authored"
+                                || policyValue["combine"]["merge_node_ref"]["id"].text != node["id"].text
+                                || policyValue["combine"]["input_port"].text != port["name"].text { try R2Registry.fail(at) }
                         } else {
                             if supplies.isEmpty { try R2Registry.fail(at) }
                             if c != .null { try R2Values.completeBindings(c["shape"], supplies.map { $0.path }, at) }
@@ -421,7 +425,7 @@ enum R2Plan {
             } else {
                 for node in context!.nodes.values where context!.contributing.contains(node["id"].text) {
                     if node["kind"].text == "use" {
-                        out.insert((try r.get(node["unit_ref"], ["unit"], context!.at))!.value["method"].text)
+                        out.insert(try r.get(node["unit_ref"], ["unit"], context!.at)!.checkedValue()["method"].text)
                     }
                     if node["kind"].text == "judgment_use" {
                         if let target = try r.get(R2Registry.qualified(node["judgment_ref"]), ["judgment"], context!.at) {
@@ -446,20 +450,23 @@ enum R2Plan {
             }
         }
         for record in r.ordered where (scope == nil || record.judgment == .null || scope!.loadedJudgments.contains(record.judgment.text))
-            && record.target["kind"].text == "contract" && record.value["kind"].text == "emission_list" {
+            && record.target["kind"].text == "contract" {
+            if (try record.checkedValue())["kind"].text != "emission_list" { continue }
             if let scope { try scope.requireCompletePolicyUses(record) }
-            let policy = try r.get(record.value["policy_ref"], ["policy"], record.path)
-            if policy == nil || policy!.value["combine"]["kind"].text != "authored" { try R2Registry.fail(record.path) }
-            guard let context = contexts.get(policy!.judgment.text), let merge = context.nodes.get(R2Registry.canonicalKey(policy!.value["combine"]["merge_node_ref"]["id"])), merge["kind"].text == "use" else {
+            let policy = try r.get((try record.checkedValue())["policy_ref"], ["policy"], record.path)
+            if policy == nil { try R2Registry.fail(record.path) }
+            let policyValue = try policy!.checkedValue()
+            if policyValue["combine"]["kind"].text != "authored" { try R2Registry.fail(record.path) }
+            guard let context = contexts.get(policy!.judgment.text), let merge = context.nodes.get(R2Registry.canonicalKey(policyValue["combine"]["merge_node_ref"]["id"])), merge["kind"].text == "use" else {
                 try R2Registry.fail(record.path)
             }
-            let unit = (try r.get(merge["unit_ref"], ["unit"], record.path))!.value
+            let unit = try r.get(merge["unit_ref"], ["unit"], record.path)!.checkedValue()
             var count = 0
             for judgment in (scope?.completeJudgments ?? payload["judgments"].list) {
                 for candidate in judgment["method"]["units"].list {
                     for port in candidate["inputs"].list + candidate["outputs"].list where r.identity(port["contract_ref"]) == r.identity(record.target) {
                         count += 1
-                        if candidate["id"].text != unit["id"].text || !candidate["inputs"].list.contains(where: { $0 == port }) || port["name"].text != policy!.value["combine"]["input_port"].text {
+                        if candidate["id"].text != unit["id"].text || !candidate["inputs"].list.contains(where: { $0 == port }) || port["name"].text != policyValue["combine"]["input_port"].text {
                             try R2Registry.fail(record.path)
                         }
                     }

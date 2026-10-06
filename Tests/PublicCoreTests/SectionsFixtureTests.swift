@@ -198,6 +198,36 @@ final class SectionsFixtureTests: XCTestCase {
         var cap = payload; cap["asset_capability"] = .string("asserted_answers")
         XCTAssertEqual(outcome(cap, Set([allIds[0]]), interpretation), "pass")
     }
+    // The mandatory-context fixed point, pinned against the released chain
+    // on three selections of the fixture: the full catalog, one judgment and
+    // two judgments. The subset runs exercise the missing-body trap (the
+    // body sequence must match the released chain's iteration log).
+    func testFixedpointParity() throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
+        let bytes = [UInt8](try Data(contentsOf: url))
+        let cases: [(String, Int?, Int, Int, Int, [String], String)] = [
+            ("full", nil, 1, 187, 9, [], "sha256:7dd9fd0e58beec8eb292e573c55c215f0f610253079c66d41de73f233a46d207"),
+            ("one", 1, 5, 91, 6, ["craft:self-verifiable-assessment", "craft:arc-sequencing", "craft:audience-fit", "craft:transfer-protocol"], "sha256:77af15a5ac3e148091d6fa381b4ffbe46bb8c33df08343f690f7e7e24264ef78"),
+            ("two", 2, 5, 111, 7, ["craft:arc-sequencing", "craft:audience-fit", "craft:transfer-protocol"], "sha256:e16485d3cfb4cc341929391afa43265db7ae65368daf79f04b3cd0479ddc8a06"),
+        ]
+        for (label, count, iterationCount, selectedCount, checkedCount, bodySequence, digest) in cases {
+            var capture = try SectionFaces.captureWhole(bytes)
+            let manifest = try SectionManifest.load(capture.manifestBytes)
+            let layout = try SectionLayout.readSectionLayout(&capture, manifest)
+            let structure = try SectionStructure.inspectStructure(&capture, layout, manifest)
+            let all = layout.meta["catalog"].list.map { $0["judgment_id"].text }
+            let selected = count == nil ? all : Array(all.prefix(count!))
+            let result = try SectionFixedpoint.deriveMandatoryContext(&capture, layout, manifest, structure, selected)
+            XCTAssertEqual(result["iterations"].list.count, iterationCount, label)
+            let bodies = result["iterations"].list.compactMap { $0["required_body"] != .null ? $0["required_body"].text : nil }
+            XCTAssertEqual(bodies, bodySequence, label)
+            XCTAssertEqual(result["selected_node_ids"].list.count, selectedCount, label)
+            XCTAssertEqual(result["checked_sections"].list.count, checkedCount, label)
+            let text = String(decoding: try KDNAJSON.canonical(result), as: UTF8.self)
+            let normalized = text.replacingOccurrences(of: "capture:[0-9a-f-]{36}", with: "capture:UUID", options: .regularExpression)
+            XCTAssertEqual(sha(Data(normalized.utf8)), digest, label)
+        }
+    }
     func testFixtureAuthorshipAndRegenerationRecord() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0.authorship", withExtension: "json", subdirectory: "Fixtures"))
         let authorship = try KDNAJSON.parse(Data(contentsOf: url))

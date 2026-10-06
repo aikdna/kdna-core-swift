@@ -32,11 +32,22 @@ enum R2Registry {
     struct Record {
         let target: J
         let owner: J
-        var value: J
+        var rawValue: J
         let judgment: J
         let path: String
         let activation: J
         let key: String
+        /// The scoped fixed-point trap (the released code re-defines the
+        /// record's `value` property with a throwing getter): set to the
+        /// loaded-judgment set while deriving a scoped context, so any read
+        /// of an inactive judgment's value raises MissingBodyError.
+        var scopeTrap: Set<String>? = nil
+        func checkedValue() throws -> J {
+            if let trap = scopeTrap, judgment != .null, !trap.contains(judgment.text) {
+                throw MissingBodyError(judgment: judgment.text)
+            }
+            return rawValue
+        }
     }
     struct Unresolved {
         let source: J
@@ -59,7 +70,7 @@ enum R2Registry {
         }
         func setValue(_ key: String, _ value: J) {
             guard let position = index[key] else { return }
-            ordered[position].value = value
+            ordered[position].rawValue = value
         }
         func local(_ target: J) -> Bool { !target.has("asset") || target["asset"] == .null || R2Registry.sameAsset(target["asset"], payloadAsset) }
         func identity(_ target: J) -> String {
@@ -70,7 +81,7 @@ enum R2Registry {
         func add(_ kind: String, _ id: String, _ value: J, _ owner: J, _ judgment: J, _ path: String, _ activation: J = nil) throws -> Record {
             let target = R2Registry.ref(kind, id), key = identity(target)
             if index[key] != nil { try R2Registry.fail(path, id) }
-            let record = Record(target: target, owner: owner, value: value, judgment: judgment, path: path, activation: activation, key: key)
+            let record = Record(target: target, owner: owner, rawValue: value, judgment: judgment, path: path, activation: activation, key: key)
             index[key] = ordered.count
             ordered.append(record)
             edges[key] = OrderedMap<Bool>()
@@ -143,16 +154,16 @@ enum R2Registry {
             }
             if judgment["method"]["plan"] != .null {
                 let plan = try registry.add("plan", judgment["method"]["plan"]["id"].text, judgment["method"]["plan"], target, judgment["id"], at + "/method/plan")
-                for node in plan.value["nodes"].list {
+                for node in plan.rawValue["nodes"].list {
                     try registry.add("plan_node", node["id"].text, node, plan.target, judgment["id"], at + "/method/plan/nodes")
                 }
             }
             if judgment["formation_rule"]["policy"] != .null {
                 let policy = try registry.add("policy", judgment["formation_rule"]["policy"]["id"].text, judgment["formation_rule"]["policy"], target, judgment["id"], at + "/formation_rule/policy")
-                for entry in policy.value["entries"].list {
+                for entry in policy.rawValue["entries"].list {
                     try registry.add("branch_entry", entry["id"].text, entry, policy.target, judgment["id"], policy.path + "/entries")
                 }
-                for candidate in policy.value["candidates"].list {
+                for candidate in policy.rawValue["candidates"].list {
                     try registry.add("candidate", candidate["id"].text, candidate, policy.target, judgment["id"], policy.path + "/candidates")
                 }
             }
@@ -185,4 +196,11 @@ enum R2Registry {
         }
         return registry.ordered.filter { selected.contains($0.key) }
     }
+}
+
+/// The scoped fixed-point's missing-body signal (section-fixedpoint.js
+/// `MissingBody`): raised when a rule reads a value whose judgment body has
+/// not been loaded yet; the fixed-point loop loads it and retries.
+struct MissingBodyError: Error {
+    let judgment: String
 }

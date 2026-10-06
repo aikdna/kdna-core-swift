@@ -183,4 +183,16 @@ enum SectionLayout {
         var decoder = PublicCBOR(bytes: bytes)
         return try decoder.decode()
     }
+    /// The Node layout readFrame: member bounds, the section read (touching
+    /// the member), the digest check and the frame decode.
+    static func readFrame(_ capture: inout SectionFaces.Capture, _ layout: Layout, _ row: J, _ category: String) throws -> J {
+        var members: [String: Int] = [:]
+        for r in capture.rows { members[r.name] = r.size }
+        guard let memberSize = members[row["member"].text] else { throw PublicFailure("FRAME_RANGE") }
+        let offset = row["offset_bytes"].numeric, length = row["length_bytes"].numeric
+        try demand(isUInt(row["offset_bytes"]) && isUInt(row["length_bytes"]) && offset + length <= Double(memberSize), "FRAME_RANGE")
+        let bytes = try capture.sectionAfterAuthorization(row["member"].text, Int(offset), Int(length))
+        try demand(sha(Data(bytes)) == row["digest"].text, "SECTION_DIGEST")
+        return try frameValue(bytes)
+    }
 }

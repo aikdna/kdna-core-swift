@@ -34,13 +34,13 @@ enum StaticPolicySemantics {
               Array(text.unicodeScalars).last.map({ !ComponentSemantics.jsWhitespace($0) }) ?? false,
               scalar(text, maximum: maximum, controls: true) else { try fail() }
     }
-    static func resolveStaticPolicies(_ payload: J, _ validateCandidate: (J, J) throws -> Void) throws -> [String: J] {
+    static func resolveStaticPolicies(_ payload: J, _ visit: ComponentSemantics.ExtensionVisit? = nil, _ validateCandidate: (J, J) throws -> Void) throws -> [String: J] {
         let (definition, digest) = try definitionContract()
         let limits = definition["limits"]
         let carrier = definition["carrier"]
         var result: [String: J] = [:]
         var total = 0
-        try ComponentSemantics.visitExtensions(payload) { extensionValue, path in
+        try (visit ?? ComponentSemantics.defaultVisit)(payload) { extensionValue, path in
             if !exact(extensionValue["id"].text, carrier["id"].text) { return }
             let rightPosition = path.count == 4 && path[0] == .key("judgments") && path[2] == .key("extensions")
             if !rightPosition || !extensionValue["critical"].boolean || !exact(extensionValue["definition"].text, carrier["definition"].text) { try fail() }

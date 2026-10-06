@@ -22,7 +22,7 @@ enum CanonicalIR {
         let contract = try SemanticContract.loadedContract.get()
         let registry = try R2Semantics.validateR2(manifest, payload, entries)
         let methodValues = try ComponentSemantics.resolveComponents(payload)
-        let policyValues = try StaticPolicySemantics.resolveStaticPolicies(payload) { judgment, candidate in
+        let policyValues = try StaticPolicySemantics.resolveStaticPolicies(payload, nil) { judgment, candidate in
             var merged = judgment
             merged["result"] = ["contract_ref": judgment["result_contract"]["id"], "result_type": candidate["result_type"], "value": candidate["value"]]
             _ = try R2Values.validateResult(merged)
@@ -44,12 +44,12 @@ enum CanonicalIR {
         var nodes: [J] = [], nodeMap: [String: J] = [:]
         var references: [J] = []
         for record in registry.ordered {
-            let role = record.value["kind"].text == "emission_list" && record.target["kind"].text == "contract"
+            let role = record.rawValue["kind"].text == "emission_list" && record.target["kind"].text == "contract"
                 ? "emission_list_contract"
                 : (roles[record.target["kind"].text] ?? record.target["kind"].text)
             var node: J = ["id": .string(stableId(payload["asset"], role, record.target)), "role": .string(role),
                            "target": record.target, "owner": record.owner, "owner_judgment_id": record.judgment,
-                           "value": record.value]
+                           "value": record.rawValue]
             if record.activation != .null { node["activation"] = record.activation }
             if record.target["kind"].text == "judgment" {
                 node["method_interpretation"] = methodValues[record.target["id"].text] ?? .null
@@ -100,7 +100,7 @@ enum CanonicalIR {
         for target in globalSeeds { globalIds.insert(nodeFor(target)["id"].text) }
         let assetClosure = nodes.filter { globalIds.contains($0["id"].text) }.map { $0["id"] }
         func display(_ record: R2Registry.Record) -> J {
-            let v = record.value, kind = record.target["kind"].text
+            let v = record.rawValue, kind = record.target["kind"].text
             if kind == "judgment" { return v["focus"] }
             if kind == "asset" { return v["title"] }
             if kind == "material" && v["kind"].text == "definition" { return v["term"] }

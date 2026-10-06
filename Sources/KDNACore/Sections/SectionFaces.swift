@@ -83,6 +83,14 @@ public enum SectionFaces {
             try demand(!consumed)
             return try member(name)
         }
+        /// The Node resourceAfterAuthorization: only mimetype/attachments
+        /// members; a compressed member marks itself touched.
+        mutating func resourceAfterAuthorization(_ name: String) throws -> [UInt8] {
+            try demand(!consumed)
+            guard let row = row(name), name == "mimetype" || name.hasPrefix("attachments/") else { throw PublicFailure("READ_CORE_INVALID") }
+            if row.compressed > 0 { touchedMembers.insert(name) }
+            return try member(name)
+        }
         mutating func member(_ name: String) throws -> [UInt8] {
             guard let row = row(name) else { throw PublicFailure("READ_CORE_INVALID") }
             let raw = Array(bytes[row.start ..< row.start + row.compressed])

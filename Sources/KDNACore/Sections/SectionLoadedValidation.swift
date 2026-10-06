@@ -83,4 +83,57 @@ enum SectionLoadedValidation {
         }
         try CrossEntry.assertScopedPayload(payload, contract["core_terms"], loadedJudgments, interpretation["judgments"].list)
     }
+    /// validateLoadedInterpretation: the extension values over the manifest +
+    /// interpretation input, the resolved component methods and static
+    /// policies (with the interpretation-injected visit pair), the observed
+    /// interpretation digests of the loaded judgment nodes, the completeness
+    /// check, and the closed observation record.
+    static func validateLoadedInterpretation(_ payload: J, _ nodes: [J], _ loadedJudgments: Set<String>, _ interpretation: J, _ manifest: J, _ captureId: String) throws -> J {
+        let contract = try SemanticContract.loadedContract.get()
+        var input = payload
+        input["judgments"] = interpretation["judgments"]
+        let visit: ComponentSemantics.ExtensionVisit = { value, callback in
+            try ComponentSemantics.visitExtensions(manifest, "Manifest", { extensionValue, path in
+                try callback(extensionValue, [.key("manifest")] + path)
+            })
+            try ComponentSemantics.visitExtensions(value, "Payload", callback)
+        }
+        try visit(input) { extensionValue, path in
+            var components: [String] = []
+            for element in path {
+                if case .key(let key) = element { components.append(key) } else if case .index(let index) = element { components.append(String(index)) }
+            }
+            let prefix = path.first == .key("manifest") ? "" : "payload/"
+            try validateAuthored(["$ref": "#/$defs/Extension"], extensionValue, "/" + prefix + components.joined(separator: "/"))
+        }
+        let methods = try ComponentSemantics.resolveComponents(input, visit)
+        let policies = try StaticPolicySemantics.resolveStaticPolicies(input, visit) { judgment, candidate in
+            var modified = judgment
+            modified["result"] = ["contract_ref": judgment["result_contract"]["id"], "result_type": candidate["result_type"], "value": candidate["value"]]
+            _ = try R2Values.validateResult(modified)
+        }
+        for node in nodes where node["target"]["kind"].text == "judgment" && loadedJudgments.contains(node["target"]["id"].text) {
+            let observedMethod = methods[node["target"]["id"].text]
+            try demand(sha(try KDNAJSON.canonical(node["method_interpretation"])) == sha(try KDNAJSON.canonical(observedMethod ?? .null)), "SECTION_METHOD_INTERPRETATION_MISMATCH")
+            let observedPolicy = policies[node["target"]["id"].text]
+            try demand(sha(try KDNAJSON.canonical(node["static_policy_interpretation"])) == sha(try KDNAJSON.canonical(observedPolicy ?? .null)), "SECTION_STATIC_INTERPRETATION_MISMATCH")
+        }
+        try ComponentSemantics.checkInterpretationComplete(input, visit)
+        var componentIds = Set<String>()
+        for (_, carrier) in contract["component_semantics"]["definition"]["carriers"].fields { componentIds.insert(carrier["id"].text) }
+        let staticPolicyCarrier = contract["static_policy"]["definition"]["carrier"]["id"].text
+        var component = false, staticPolicy = false
+        try visit(input) { extensionValue, _ in
+            if componentIds.contains(extensionValue["id"].text) { component = true }
+            if extensionValue["id"].text == staticPolicyCarrier { staticPolicy = true }
+        }
+        let observation: J = ["profile": "kdna.scoped-interpretation-inputs/0.1.0-candidate", "capture_id": .string(captureId),
+                              "frames": interpretation["frames"],
+                              "observed_paths": .array(["judgment.id", "judgment.method", "judgment.extensions", "judgment.result_contract", "judgment.formation_rule", "judgment.parent_ref", "judgment.lifecycle", "all_typed_Extension_positions"].map { .string($0) }),
+                              "shared_component_adoption": component ? "verified_from_complete_actual_declarations" : "absent",
+                              "static_policy_aggregate": staticPolicy ? "verified_from_complete_actual_declarations" : "absent",
+                              "unrelated_topic_domain": "not_checked"]
+        _ = try SectionContract.validate("InterpretationInputsObservation06", observation)
+        return observation
+    }
 }

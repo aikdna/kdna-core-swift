@@ -782,6 +782,33 @@ substitute. Consequently:
     port's fixed traversal (type/const/enum/bounds → unions →
     required/properties/additionalProperties → items → allOf); every
     single-violation probe matches Ajv.
+  - **Fixed-point closure + scoped materialization (landed 2026-10-06,
+    Stage B chunk 2b-3):** the registry record reads now carry the scoped
+    missing-body trap — the released code re-defines a record's `value`
+    property with a throwing getter, mirrored here as `checkedValue()` (a
+    read of an inactive judgment's value raises `MissingBodyError`); the
+    whole-read path's reads are unchanged. `SectionScopedMaterialize`
+    ports `materializeScoped` (asset projection with the original Manifest
+    values authoritative, the judgment catalog check, the reference set
+    with declared/mandatory/optional meanings, the display-name index
+    subset, the mandatory and global closures, the unresolved externals)
+    and `SectionFixedpoint` ports `deriveMandatoryContext` (registration
+    payload, the trap-armed scoped validation, the closure derivation with
+    the available-edge expansion and the per-record expansion scopes, the
+    declared-closure comparison, the interpretation observation and the
+    iteration log). **Acceptance: the full derived context is
+    byte-identical to the released chain on three selections of the
+    committed fixture** — the full catalog (2,361,744 canonical bytes),
+    one judgment (606,017) and two judgments (887,744) — including the
+    missing-body iteration dynamics (the one-judgment run loads exactly
+    self-verifiable-assessment → arc-sequencing → audience-fit →
+    transfer-protocol); committed as
+    `SectionsFixtureTests.testFixedpointParity`. Two porting bugs pinned
+    while making it match: the scoped judgment loop must iterate the
+    active subset, and the registry's null reference role is the
+    empty-string key (a `??`-on-non-optional fallback bug). Next: the
+    exact_selection face (the scoped snapshot assembly + expansion
+    retain) and the expand binding.
 - **Stage A3:** whole-read/catalog faces and the consumer loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1

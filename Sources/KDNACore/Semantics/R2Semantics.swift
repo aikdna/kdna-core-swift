@@ -39,8 +39,8 @@ enum R2Semantics {
         }
         func normalContract(_ target: J, _ field: String) throws -> J {
             guard let record = try resolve(target, "contract", field) else { return .null }
-            if record.value["kind"].text == "emission_list" { try R2Registry.fail(field) }
-            return record.value
+            if try record.checkedValue()["kind"].text == "emission_list" { try R2Registry.fail(field) }
+            return try record.checkedValue()
         }
         func applies(_ scope: J, _ field: String) throws -> Set<String> {
             if scope["kind"].text == "asset" { return Set(payload["judgments"].list.map { $0["id"].text }) }
@@ -62,12 +62,13 @@ enum R2Semantics {
         for id in readingOrder { _ = try resolve(R2Registry.ref("judgment", id.text), "judgment", "/payload/reading_order") }
         for target in payload["kernel"]["foundation_refs"].list {
             let material = try own(assetRecord!, target, !r.local(target), ["material"], nil)
-            if let material, !["foundation", "premise"].contains(material.value["kind"].text) { try R2Registry.fail("/payload/kernel/foundation_refs") }
+            if let material, !["foundation", "premise"].contains((try material.checkedValue())["kind"].text) { try R2Registry.fail("/payload/kernel/foundation_refs") }
         }
         for record in r.ordered where activeRecord(record) && record.target["kind"].text == "contract" {
-            try R2Values.validateContract(record.value, record.path)
-            if record.value["kind"].text != "emission_list" {
-                for term in [record.value["form"]] + record.value["allowed_result_types"].list {
+            let recordValue = try record.checkedValue()
+            try R2Values.validateContract(recordValue, record.path)
+            if recordValue["kind"].text != "emission_list" {
+                for term in [recordValue["form"]] + recordValue["allowed_result_types"].list {
                     let vocabulary = term["vocabulary"].text, name = term["term"].text
                     if vocabulary != "author" && !termsRegistry["answer_type"].list.contains(where: { $0.text == name }) { try R2Registry.fail(record.path) }
                 }
@@ -76,7 +77,7 @@ enum R2Semantics {
         var terms = Set<String>()
         for record in r.ordered {
             if !activeRecord(record) { continue }
-            let v = record.value, kind = record.target["kind"].text, at = record.path
+            let v = try record.checkedValue(), kind = record.target["kind"].text, at = record.path
             if kind == "material" {
                 if ["definition", "foundation", "premise"].contains(v["kind"].text) { _ = try applies(v["applies_to"], at) }
                 if v["kind"].text == "definition" {
@@ -105,8 +106,11 @@ enum R2Semantics {
                 if v.has("statement") == v.has("content_ref") { try R2Registry.fail(at) }
                 if v.has("content_ref") {
                     let target = try own(record, v["content_ref"], true, ["result", "material", "shared_declaration", "reason", "component"], nil)
-                    if let target, target.target["kind"].text == "result", !(target.judgment.text == record.judgment.text && target.value["value"]["kind"].text == "text") {
-                        try R2Registry.fail(at + "/content_ref")
+                    if let target, target.target["kind"].text == "result" {
+                        let targetValue = try target.checkedValue()
+                        if !(target.judgment.text == record.judgment.text && targetValue["value"]["kind"].text == "text") {
+                            try R2Registry.fail(at + "/content_ref")
+                        }
                     }
                 }
                 for target in v["material_refs"].list { _ = try own(record, target, true, ["material"], nil) }
@@ -125,13 +129,16 @@ enum R2Semantics {
                 if record.activation["kind"].text == "exception" && !v["exception_refs"].list.isEmpty { try R2Registry.fail(at) }
                 for id in v["exception_refs"].list {
                     let exception = try own(record, R2Registry.ref("exception", id.text), true, ["exception"], nil)
-                    if exception == nil || exception!.value["boundary_ref"].text != v["id"].text { try R2Registry.fail(at) }
+                    if exception == nil { try R2Registry.fail(at) }
+                    if (try exception!.checkedValue())["boundary_ref"].text != v["id"].text { try R2Registry.fail(at) }
                 }
             } else if kind == "exception" {
                 if v["boundary_ref"] == .null { try R2Registry.fail(at) }
                 let boundary = try own(record, R2Registry.ref("boundary", v["boundary_ref"].text), true, ["boundary"], nil)
-                if boundary == nil || boundary!.activation["kind"].text != "always" || !boundary!.value["exception_refs"].list.contains(where: { $0.text == v["id"].text }) { try R2Registry.fail(at) }
-                try subset(v["applies_to"], boundary!.value["applies_to"], at)
+                if boundary == nil { try R2Registry.fail(at) }
+                let boundaryValue = try boundary!.checkedValue()
+                if boundary!.activation["kind"].text != "always" || !boundaryValue["exception_refs"].list.contains(where: { $0.text == v["id"].text }) { try R2Registry.fail(at) }
+                try subset(v["applies_to"], boundaryValue["applies_to"], at)
                 if record.judgment != .null && (v["applies_to"]["kind"].text != "judgments" || v["applies_to"]["judgment_refs"].list.count != 1 || v["applies_to"]["judgment_refs"].list[0].text != record.judgment.text) { try R2Registry.fail(at) }
                 _ = try own(record, v["when"], true, ["condition"], nil)
                 if v["effect"]["kind"].text == "replace_limit" {
@@ -148,8 +155,8 @@ enum R2Semantics {
             if contentDone.contains(id) { return }
             if contentActive.contains(id) { try R2Registry.fail(record.path + "/content_ref") }
             contentActive.insert(id)
-            if record.value["content_ref"]["kind"].text == "component" {
-                if let next = try resolve(record.value["content_ref"], "component", record.path) { try componentBody(next) }
+            if try record.checkedValue()["content_ref"]["kind"].text == "component" {
+                if let next = try resolve(try record.checkedValue()["content_ref"], "component", record.path) { try componentBody(next) }
             }
             contentActive.remove(id); contentDone.insert(id)
         }
@@ -168,7 +175,7 @@ enum R2Semantics {
             }
             if required.contains(where: { !used.contains($0) }) { try R2Registry.fail(field) }
         }
-        for judgment in payload["judgments"].list {
+        for judgment in activeJudgments {
             let record = try resolve(R2Registry.ref("judgment", judgment["id"].text), "judgment", "/payload")!
             let at = record.path
             try R2Values.validateResult(judgment)
@@ -179,7 +186,7 @@ enum R2Semantics {
             for id in judgment["material_refs"].list { _ = try own(record, R2Registry.ref("material", id.text), true, ["material"], nil) }
             for id in judgment["reason_refs"].list {
                 let reason = try own(record, R2Registry.ref("reason", id.text), true, ["reason"], nil)
-                if reason?.value["judgment_ref"].text != judgment["id"].text { try R2Registry.fail(at) }
+                if try reason?.checkedValue()["judgment_ref"].text != judgment["id"].text { try R2Registry.fail(at) }
             }
             if !definition["answer_kinds"].list.contains(where: { $0.text == judgment["answer_kind"].text })
                 || !definition["method_kinds"].list.contains(where: { $0.text == judgment["method"]["method"]["term"].text }) { try R2Registry.fail(at) }
@@ -217,7 +224,7 @@ enum R2Semantics {
                     if c.judgment.text != judgment["id"].text { try R2Registry.fail(at) }
                     referencedComponents.insert(id.text)
                     _ = try r.link(R2Registry.ref("unit", unit["id"].text), c.target, true, nil, at, nil)
-                    components.append(c.value)
+                    components.append(try c.checkedValue())
                 }
                 if Set(unit["component_refs"].list.map { $0.text }).count != unit["component_refs"].list.count { try R2Registry.fail(at) }
                 try methodRoles(unit["method"].text, components, at + "/method/units")
@@ -261,8 +268,8 @@ enum R2Semantics {
                 var previous = used[id] ?? Set<String>()
                 if previous.contains(role) || (role == "adopt" && previous.contains("oppose")) || (role == "oppose" && previous.contains("adopt")) { try R2Registry.fail(at) }
                 previous.insert(role); used[id] = previous
-                if let target, role == "adopt", target.value["applies_to"] != .null, !(try covers(target.value["applies_to"], judgment["id"].text, at)) { try R2Registry.fail(at) }
-                if let target, target.target["kind"].text == "shared_declaration", role == "oppose", try covers(target.value["applies_to"], judgment["id"].text, at) { try R2Registry.fail(at) }
+                if let target, role == "adopt", (try target.checkedValue())["applies_to"] != .null, !(try covers((try target.checkedValue())["applies_to"], judgment["id"].text, at)) { try R2Registry.fail(at) }
+                if let target, target.target["kind"].text == "shared_declaration", role == "oppose", try covers(try target.checkedValue()["applies_to"], judgment["id"].text, at) { try R2Registry.fail(at) }
             }
             for shared in payload["shared_declarations"].list where try covers(shared["applies_to"], judgment["id"].text, at) {
                 _ = try own(record, R2Registry.ref("shared_declaration", shared["id"].text), true, nil, nil)
@@ -312,15 +319,16 @@ enum R2Semantics {
             let record = try resolve(R2Registry.ref("dependency", dependency["id"].text), "dependency", "/payload")!
             let at = record.path
             let consumer = try resolve(R2Registry.ref("judgment", dependency["consumer_judgment_ref"].text), "judgment", at)!
-            let cport = consumer.value["ports"].list.first { $0["name"].text == dependency["consumer_port"].text && $0["direction"].text == "input" }
+            let cport = (try consumer.checkedValue())["ports"].list.first { $0["name"].text == dependency["consumer_port"].text && $0["direction"].text == "input" }
             if cport == nil || cport!["input_role"].text != dependency["input_role"].text { try R2Registry.fail(at) }
             _ = try own(record, cport!["contract_ref"], true, ["contract"], nil)
             _ = try own(record, consumer.target, false, ["judgment"], nil)
             _ = try r.link(consumer.target, record.target, dependency["required"].boolean, nil, at, nil)
             if dependency["producer"]["kind"].text == "judgment_result" {
                 let producer = try own(record, R2Registry.ref("judgment", dependency["producer"]["judgment_ref"].text), true, ["judgment"], nil)!
-                let pport = producer.value["ports"].list.first { $0["name"].text == dependency["producer_port"].text && $0["direction"].text == "output" }
-                if pport == nil || producer.value["result_contract"]["id"].text != dependency["producer"]["result_contract_ref"].text { try R2Registry.fail(at) }
+                let producerValue = try producer.checkedValue()
+                let pport = producerValue["ports"].list.first { $0["name"].text == dependency["producer_port"].text && $0["direction"].text == "output" }
+                if pport == nil || producerValue["result_contract"]["id"].text != dependency["producer"]["result_contract_ref"].text { try R2Registry.fail(at) }
                 try R2Values.compatible(try normalContract(pport!["contract_ref"], at), try normalContract(cport!["contract_ref"], at), at)
             } else {
                 if dependency.has("producer_port") { try R2Registry.fail(at) }
@@ -357,15 +365,18 @@ enum R2Semantics {
                     if contract != .null { try R2Values.valueFor(contract, result["value"], at) }
                     if result["comparison_ref"] != .null {
                         let comparison = try own(item, result["comparison_ref"], true, ["example_result"], nil)
-                        if result["kind"].text != "observed" || comparison?.owner["id"].text != example["id"].text || comparison?.value["kind"].text != "expected"
-                            || r.identity(comparison!.value["contract_ref"]) != r.identity(result["contract_ref"]) { try R2Registry.fail(at) }
+                        let comparisonValue = try comparison?.checkedValue()
+                        if result["kind"].text != "observed" || comparison?.owner["id"].text != example["id"].text || comparisonValue?["kind"].text != "expected"
+                            || r.identity(comparison!.rawValue["contract_ref"]) != r.identity(result["contract_ref"]) { try R2Registry.fail(at) }
                     }
                 } else if result["kind"].text == "partial" {
                     let outcome = result["outcome"]
                     let policy = try own(item, outcome["policy_ref"], true, ["policy"], nil)
-                    if outcome["kind"].text != "partial" || policy == nil || policy!.value["match"].text != "all_matches"
-                        || policy!.value["combine"]["kind"].text != "collect" || policy!.value["on_undetermined"]["kind"].text != "partial"
-                        || r.identity(outcome["item_contract_ref"]) != r.identity(policy!.value["combine"]["item_contract_ref"]) { try R2Registry.fail(at) }
+                    if outcome["kind"].text != "partial" || policy == nil { try R2Registry.fail(at) }
+                    let policyValue = try policy!.checkedValue()
+                    if policyValue["match"].text != "all_matches"
+                        || policyValue["combine"]["kind"].text != "collect" || policyValue["on_undetermined"]["kind"].text != "partial"
+                        || r.identity(outcome["item_contract_ref"]) != r.identity(policyValue["combine"]["item_contract_ref"]) { try R2Registry.fail(at) }
                     _ = try own(item, outcome["item_contract_ref"], true, ["contract"], nil)
                     let contract = try normalContract(outcome["item_contract_ref"], at)
                     var seen = Set<String>()
@@ -377,8 +388,8 @@ enum R2Semantics {
                     func producerKey(_ value: J) -> String {
                         value["kind"] != .null ? r.identity(value) : R2Registry.canonicalKey(.array([.string(r.identity(value["node_ref"])), value["port"], value["field_path"]]))
                     }
-                    var declared = policy!.value["entries"].list
-                    if policy!.value["combine"]["order"].text == "priority" {
+                    var declared = policyValue["entries"].list
+                    if policyValue["combine"]["order"].text == "priority" {
                         declared.sort { $0["priority"].numeric < $1["priority"].numeric }
                     }
                     var order: [String: Int] = [:]
@@ -388,17 +399,18 @@ enum R2Semantics {
                     for emission in outcome["confirmed"].list {
                         if contract != .null { try R2Values.valueFor(contract, emission["value"], at) }
                         let identity = producerKey(emission["producer"])
-                        if let earlier = emitted[identity], !R2Values.equal(earlier, emission["value"]) || policy!.value["combine"]["duplicates"].text == "producer_identity" { try R2Registry.fail(at) }
+                        if let earlier = emitted[identity], !R2Values.equal(earlier, emission["value"]) || policyValue["combine"]["duplicates"].text == "producer_identity" { try R2Registry.fail(at) }
                         emitted[identity] = emission["value"]
-                        if policy!.value["combine"]["duplicates"].text == "preserve" && emission["entry_refs"].list.count != 1 { try R2Registry.fail(at) }
+                        if policyValue["combine"]["duplicates"].text == "preserve" && emission["entry_refs"].list.count != 1 { try R2Registry.fail(at) }
                         var lastEntry = -1
                         for target in emission["entry_refs"].list {
                             let entry = try own(item, target, true, ["branch_entry"], nil)
                             if entry?.owner["id"].text != policy!.target["id"].text || !seen.insert(entry!.target["id"].text).inserted { try R2Registry.fail(at) }
-                            let producer = entry!.value["then"]["kind"].text == "candidate" ? entry!.value["then"]["candidate_ref"] : entry!.value["then"]["from"]
+                            let entryValue = try entry!.checkedValue()
+                            let producer = entryValue["then"]["kind"].text == "candidate" ? entryValue["then"]["candidate_ref"] : entryValue["then"]["from"]
                             if producerKey(producer) != identity { try R2Registry.fail(at) }
-                            if entry!.value["then"]["kind"].text == "candidate" {
-                                if !R2Values.equal(try resolve(producer, "candidate", at)!.value["value"], emission["value"]) { try R2Registry.fail(at) }
+                            if entryValue["then"]["kind"].text == "candidate" {
+                                if !R2Values.equal(try resolve(producer, "candidate", at)!.checkedValue()["value"], emission["value"]) { try R2Registry.fail(at) }
                             }
                             if order[entry!.target["id"].text]! <= lastEntry { try R2Registry.fail(at) }
                             if lastEntry == -1 {

@@ -81,10 +81,17 @@ enum ComponentSemantics {
         }
         try walk(value, types[rootType], [])
     }
-    static func checkInterpretationComplete(_ payload: J) throws {
+    /// The two-argument visit pair the loaded-validation path injects
+    /// (manifest extensions + payload extensions); the default walks the
+    /// payload alone, as the whole-read call sites did.
+    typealias ExtensionVisit = (J, (J, [PathElement]) throws -> Void) throws -> Void
+    static let defaultVisit: ExtensionVisit = { value, callback in
+        try visitExtensions(value, "Payload", callback)
+    }
+    static func checkInterpretationComplete(_ payload: J, _ visit: ExtensionVisit? = nil) throws {
         let (_, _, kinds, _) = try definitionContract()
         let staticPolicyCarrier = try SemanticContract.loadedContract.get()["static_policy"]["definition"]["carrier"]["id"].text
-        try visitExtensions(payload) { extensionValue, _ in
+        try (visit ?? defaultVisit)(payload) { extensionValue, _ in
             if extensionValue["critical"].boolean && kinds[extensionValue["id"].text] == nil && extensionValue["id"].text != staticPolicyCarrier {
                 throw PublicFailure("READ_UNSUPPORTED_CRITICAL")
             }
@@ -191,7 +198,7 @@ enum ComponentSemantics {
         }
         return .null
     }
-    static func resolveComponents(_ payload: J) throws -> [String: J] {
+    static func resolveComponents(_ payload: J, _ visit: ExtensionVisit? = nil) throws -> [String: J] {
         let (definition, digest, kinds, profiles) = try definitionContract()
         let limits = definition["limits"]
         var byJudgment: [String: J] = [:]
@@ -207,7 +214,7 @@ enum ComponentSemantics {
             presences[judgment["id"].text] = ["components_state": "declared", "bindings_state": "declared"]
         }
         var seenPresence = Set<String>()
-        try visitExtensions(payload) { extensionValue, path in
+        try (visit ?? defaultVisit)(payload) { extensionValue, path in
             guard let registered = kinds[extensionValue["id"].text] else { return }
             let judgmentPosition = path.count == 4 && path[0] == .key("judgments") && path[2] == .key("extensions")
             let payloadPosition = path.count == 2 && path[0] == .key("extensions")
