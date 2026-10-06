@@ -39,6 +39,68 @@ final class SectionsFixtureTests: XCTestCase {
         XCTAssertEqual(view["verification"]["ir_digest"]["digest"].text, "sha256:aa3f961aa78506f9d804b28c2abb52dd29d9a26a802ab825f3608474f6ced747")
         XCTAssertEqual(view["runtime_entry_names"].list.map { $0.text }, ["kdna.json", "sections/pack-0.kdnab", "sections/pack-1.kdnab", "sections/pack-2.kdnab"])
     }
+    func testCatalogReadFixture() async throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
+        let bytes = [UInt8](try Data(contentsOf: url))
+        let asset = try KDNASectionAsset.open(bytes: bytes)
+        let admitted = try asset.admitCatalogRequest(requestId: "fixture-catalog-1", budgetBytes: 1048576)
+        let authority = try asset.createReadAuthority { _ in true }
+        let outcome = await asset.readCatalog(admitted, authority)
+        XCTAssertEqual(outcome.envelope["status"].text, "accepted")
+        XCTAssertEqual(outcome.envelope["input_byte_length"].numeric, 762476)
+        let view = try XCTUnwrap(outcome.snapshot).inspect()
+        XCTAssertEqual(view["catalog"].list.count, 8)
+        XCTAssertEqual(view["asset_index"].list.count, 190)
+        let verification = view["verification"]
+        XCTAssertEqual(verification["mode"].text, "catalog")
+        XCTAssertEqual(verification["semantic_status"].text, "metadata_only")
+        XCTAssertEqual(verification["checked_sections"].list.map { $0["section_id"].text }, ["table:sections:0", "table:topics:0", "table:node_sections:0"])
+        XCTAssertEqual(verification["unchecked_sections"].list.count, 18)
+        XCTAssertEqual(verification["whole_container_digest"]["status"].text, "not_checked")
+        XCTAssertEqual(verification["whole_content_digest"]["status"].text, "not_checked")
+        XCTAssertEqual(verification["whole_content_digest"]["claimed_digest"], .null)
+        XCTAssertEqual(verification["ir_digest"]["claimed_digest"].text.hasPrefix("sha256:aa3f961a"), true)
+        XCTAssertEqual(verification["runtime_entry_digest"]["status"].text, "not_checked")
+        XCTAssertEqual(verification["runtime_entry_digest"]["claimed_digest"], .null)
+        XCTAssertEqual(verification["checksum_integrity"]["status"].text, "absent")
+        XCTAssertEqual(verification["signature_integrity"]["status"].text, "absent")
+        // Whole-output pin: the canonical catalog data with the two UUID
+        // families normalized equals the released chain's bytes
+        // (3199074e...77c4 over 54,045 canonical bytes for this fixture and
+        // request id, recomputed from released 0.36.0).
+        let text = String(decoding: try KDNAJSON.canonical(view), as: UTF8.self)
+        let normalized = text
+            .replacingOccurrences(of: "section-catalog:[0-9a-f-]{36}", with: "section-catalog:UUID", options: .regularExpression)
+            .replacingOccurrences(of: "capture:[0-9a-f-]{36}", with: "capture:UUID", options: .regularExpression)
+        XCTAssertEqual(sha(Data(normalized.utf8)), "sha256:3199074e931ffeb7b170c5f76ac666fce8ea007564971cf297fff93fb79877c4")
+    }
+    // Pins the current fail-closed placeholders for the not-yet-ported partial
+    // modes (f2 review item): contract-valid unsupported envelopes, NOT the
+    // released behavior — the released chain serves both modes, and landing
+    // that parity replaces these pins.
+    func testUnportedPartialModesFailClosed() async throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
+        let bytes = [UInt8](try Data(contentsOf: url))
+        let asset = try KDNASectionAsset.open(bytes: bytes)
+        let authority = try asset.createReadAuthority { _ in true }
+        let selection: J = ["asset_id": "asset:course-craft-standards", "asset_version": "0.1.0", "judgment_ids": ["fixture:judgment"]]
+        let handle: J = ["handle_id": "fixture-handle-1", "asset_id": "asset:course-craft-standards", "asset_version": "0.1.0",
+                         "A": .string("sha256:" + String(repeating: "a", count: 64)), "C": .string("sha256:" + String(repeating: "b", count: 64)),
+                         "snapshot_id": "section-snapshot:fixture", "core_version": "0.36.0", "ir_version": "0.1.0", "read_version": "0.11.0",
+                         "anchor": ["kind": "asset"], "target": ["kind": "asset", "id": "asset:course-craft-standards"],
+                         "scope": .array([.string("fixture-scope")]), "issued_at": .number(0), "expires_at": .number(1),
+                         "host_id": "host:fixture", "host_epoch": "epoch:1"]
+        let requests: [(String, String, J, J)] = [("exact_selection", "PARTIAL_SEMANTIC_PROOF_UNAVAILABLE", selection, .null),
+                                                  ("expand", "EXPAND_INTEGRATION_UNIMPLEMENTED", .null, handle)]
+        for (mode, code, selectionValue, handleValue) in requests {
+            let admitted = try asset.admitSectionRequest(["request_id": .string("fixture-\(mode)"), "tuple": asset.tuple,
+                                                          "budget_bytes": .number(1048576), "mode": .string(mode), "selection": selectionValue, "handle": handleValue])
+            let outcome = await asset.readWhole(admitted, authority)
+            XCTAssertEqual(outcome.envelope["status"].text, "unsupported", mode)
+            XCTAssertEqual(outcome.envelope["reason"].text, code, mode)
+            XCTAssertNil(outcome.snapshot)
+        }
+    }
     func testFixtureAuthorshipAndRegenerationRecord() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0.authorship", withExtension: "json", subdirectory: "Fixtures"))
         let authorship = try KDNAJSON.parse(Data(contentsOf: url))

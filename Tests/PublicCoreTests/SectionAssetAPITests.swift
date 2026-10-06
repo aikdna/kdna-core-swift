@@ -4,7 +4,7 @@ import Foundation
 
 // The public asset-hung surface (design note §4/§6): open → admit →
 // authority → read, against the committed synthetic fixture. This is the
-// surface the gvjl product consumes; the assertions mirror the internal
+// surface the product consumer uses; the assertions mirror the internal
 // whole-read acceptance.
 final class SectionAssetAPITests: XCTestCase {
     func testWholeReadThroughPublicSurface() async throws {

@@ -65,4 +65,14 @@ public final class KDNASectionAsset {
     public func readWhole(_ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> SectionFaces.ReadOutcome {
         await SectionFaces.readWhole(bytes, admitted, authority)
     }
+    /// Catalog read (metadata-only snapshot: catalog, asset index and the
+    /// scoped verification; A/C/E are reported unobserved on this face).
+    public func readCatalog(_ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> SectionFaces.ReadOutcome {
+        await SectionFaces.readCatalog(bytes, admitted, authority)
+    }
+    /// The canonical catalog request for this asset's contract tuple.
+    public func admitCatalogRequest(requestId: String, budgetBytes: Int) throws -> KDNAAdmittedSectionRequest {
+        try admitSectionRequest(["request_id": .string(requestId), "tuple": tuple, "budget_bytes": .number(Double(budgetBytes)),
+                                 "mode": "catalog", "selection": .null, "handle": .null])
+    }
 }

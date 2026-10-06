@@ -10,9 +10,11 @@ import Foundation
 // metadata scan, same identity fields and consistency checks; file-read io
 // batches have no bytes analogue (recorded; io is empty here).
 //
-// Declared gaps (both fail closed, never silently): partial modes
-// (catalog / exact_selection / expand) return the released unsupported
-// envelope until Stage B lands the partial flows; a signed asset fails at
+// Declared gaps (fail closed, never silently): exact_selection / expand
+// are not yet ported and return a contract-valid unsupported placeholder
+// envelope — this is the port's own stand-in, NOT the released behavior
+// (the released chain implements these modes; that parity is the Stage B
+// target; catalog landed in readCatalog below). A signed asset fails at
 // the integrity stage until the kdsig ed25519 stack is ported
 // (SectionSignatures).
 public final class KDNASectionSnapshot {
@@ -42,20 +44,59 @@ public enum SectionFaces {
         return KDNASectionReadAuthority(authorize, policy)
     }
     struct Capture {
+        struct Row {
+            let name: String, size: Int, method: Int, crc: Int, local: Int, start: Int, compressed: Int
+        }
         let bytes: [UInt8]
         let end: Int, cdStart: Int, cdSize: Int
-        let rows: [(name: String, size: Int)]
+        let rows: [Row]
         let manifestBytes: [UInt8]
         let directory: [UInt8]
         let footerObservation: [UInt8]
         let identity: J
         var consumed = false
+        var touchedMembers = Set<String>()
         mutating func wholeAfterAuthorization() throws -> [UInt8] {
             try demand(!consumed)
             consumed = true
             try demand(bytes[cdStart..<cdStart + cdSize].elementsEqual(directory) && bytes[end...].elementsEqual(footerObservation))
             return bytes
         }
+        func row(_ name: String) -> Row? { rows.first { $0.name == name } }
+        /// The Node sectionAfterAuthorization: a stored frame at (member,
+        /// offset, length); a non-empty read marks the member as touched.
+        /// The fd stat-key re-checks have no bytes analogue (recorded).
+        mutating func sectionAfterAuthorization(_ member: String, _ offset: Int, _ length: Int) throws -> [UInt8] {
+            try demand(!consumed)
+            guard let row = row(member) else { throw PublicFailure("READ_CORE_INVALID") }
+            try demand(row.method == 0 && offset >= 0 && length >= 0 && offset + length <= row.size)
+            if length > 0 { touchedMembers.insert(member) }
+            return Array(bytes[row.start + offset ..< row.start + offset + length])
+        }
+        /// The Node checksumMemberAfterAuthorization / signatureMemberAfterAuthorization:
+        /// a full member read through the stored/inflated member path.
+        mutating func checksumMemberAfterAuthorization(_ name: String) throws -> [UInt8] {
+            try demand(!consumed)
+            return try member(name)
+        }
+        mutating func signatureMemberAfterAuthorization(_ name: String) throws -> [UInt8] {
+            try demand(!consumed)
+            return try member(name)
+        }
+        mutating func member(_ name: String) throws -> [UInt8] {
+            guard let row = row(name) else { throw PublicFailure("READ_CORE_INVALID") }
+            let raw = Array(bytes[row.start ..< row.start + row.compressed])
+            let decoded: [UInt8]
+            if row.method == 0 { decoded = raw }
+            else if row.method == 8 { decoded = try PublicContainer.decompress(raw, maximum: SectionContainer.entryLimit) }
+            else { throw PublicFailure("READ_CORE_CAPABILITY_UNAVAILABLE") }
+            try demand(decoded.count == row.size && PublicContainer.crc(decoded) == UInt32(row.crc), "READ_CORE_INVALID")
+            return decoded
+        }
+        func touchedMemberNames() -> [String] { Array(touchedMembers) }
+        /// In-memory bytes cannot change under the read; the Node stat-key
+        /// comparison is vacuous here (recorded, no silent difference).
+        func assertUnchanged() throws {}
     }
     static func captureWhole(_ input: [UInt8]) throws -> Capture {
         let bytes = input
@@ -73,7 +114,7 @@ public enum SectionFaces {
         try demand(u16(eocd + 4) == 0 && u16(eocd + 6) == 0 && u16(eocd + 8) == u16(eocd + 10))
         let count = u16(eocd + 10), cdSize = u32(eocd + 12), cdStart = u32(eocd + 16)
         try demand(count > 0 && count <= SectionContainer.countLimit && cdStart + cdSize == eocd)
-        var rows: [(name: String, size: Int, method: Int, local: Int, start: Int, compressed: Int)] = []
+        var rows: [(name: String, size: Int, method: Int, crc: Int, local: Int, start: Int, compressed: Int)] = []
         var names = Set<String>()
         var at = 0, total = 0
         for index in 0..<count {
@@ -100,7 +141,7 @@ public enum SectionFaces {
             let start = local + 30 + nameLength + u16(local + 28)
             try demand(start + compressed <= cdStart)
             if index == 0 { try demand(name == "mimetype" && local == 0 && method == 0) }
-            rows.append((name: name, size: size, method: method, local: local, start: start, compressed: compressed))
+            rows.append((name: name, size: size, method: method, crc: u32(record + 16), local: local, start: start, compressed: compressed))
             at += 46 + nameLength + extraLength + commentLength
         }
         try demand(at == cdSize)
@@ -119,7 +160,8 @@ public enum SectionFaces {
                            "manifest_bytes_digest": .string(sha(Data(manifestBytes))), "zip_directory_bytes_digest": .string(sha(Data(directory))),
                            "identity_scope": "observed_metadata_and_loaded_sections_only", "table_frames": .array([])]
         return Capture(bytes: bytes, end: end, cdStart: cdStart, cdSize: cdSize,
-                       rows: rows.map { (name: $0.name, size: $0.size) }, manifestBytes: manifestBytes,
+                       rows: rows.map { Capture.Row(name: $0.name, size: $0.size, method: $0.method, crc: $0.crc, local: $0.local, start: $0.start, compressed: $0.compressed) },
+                       manifestBytes: manifestBytes,
                        directory: directory, footerObservation: Array(bytes[end...]), identity: identity)
     }
     static let unsupportedCodes = ["CONTAINER_COMMENT_CAPTURE_UNIMPLEMENTED", "PROTECTION_BINDING_UNIMPLEMENTED", "PARTIAL_SEMANTIC_PROOF_UNAVAILABLE", "EXPAND_INTEGRATION_UNIMPLEMENTED", "CHECKSUMS_PROFILE_UNSUPPORTED", "CHECKSUMS_SCOPED_PROOF_UNIMPLEMENTED", "SIGNATURE_PROFILE_UNSUPPORTED"]
@@ -130,20 +172,23 @@ public enum SectionFaces {
         public let envelope: KDNAValue
         public let snapshot: KDNASectionSnapshot?
     }
-    public static func readWhole(_ bytes: [UInt8], _ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> ReadOutcome {
-        var stage = "input"
-        func failure(_ status: String, _ reason: String, _ diagnosticField: String? = nil, _ diagnosticSubject: String? = nil) -> ReadOutcome {
+    static func failureEnvelope(_ status: String, _ reason: String, _ stage: String, _ requestId: J, _ diagnosticField: String?, _ diagnosticSubject: String?) -> ReadOutcome {
             let contractId = (try? SectionContract.loadedContract.get()["module"]["id"]) ?? .null
             let diagnostic: J = (diagnosticField == nil && diagnosticSubject == nil)
                 ? .null
                 : ["field": diagnosticField.map { .string($0) } ?? .null, "subject": diagnosticSubject.map { .string($0) } ?? .null]
-            let value: J = ["contract": contractId, "request_id": admitted.data["request_id"],
+            let value: J = ["contract": contractId, "request_id": requestId,
                             "status": .string(status), "reason": .string(reason), "stage": .string(stage), "io": .array([]),
                             "diagnostic": diagnostic]
             // Self-check against the closed envelope; a mismatch is a port bug,
             // not a caller-visible condition.
             try? SectionContract.validate(status == "unsupported" ? "SectionAdmissionUnsupported06" : "SectionAdmissionRejected06", value)
             return ReadOutcome(envelope: value, snapshot: nil)
+    }
+    public static func readWhole(_ bytes: [UInt8], _ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> ReadOutcome {
+        var stage = "input"
+        func failure(_ status: String, _ reason: String, _ diagnosticField: String? = nil, _ diagnosticSubject: String? = nil) -> ReadOutcome {
+            failureEnvelope(status, reason, stage, admitted.data["request_id"], diagnosticField, diagnosticSubject)
         }
         do {
             let request = admitted.data
@@ -156,12 +201,8 @@ public enum SectionFaces {
             if SectionManifest.protectionDeclared(manifest) {
                 return failure("unsupported", "PROTECTION_BINDING_UNIMPLEMENTED")
             }
-            let intent = try SectionSignatures.intent(capture.rows)
-            let authorization: J = ["request": request, "request_digest": .string(admitted.digest), "capture": capture.identity,
-                                    "manifest_identity": ["asset_id": manifest["asset_id"], "asset_version": manifest["version"], "judgment_version": manifest["judgment_version"]],
-                                    "mode": "whole_asset", "operation": "read", "signature_policy": authority.policy,
-                                    "signature_policy_digest": .string(sha(try KDNAJSON.canonical(authority.policy))),
-                                    "signature_read_intent": intent, "signature_read_intent_digest": .string(sha(try KDNAJSON.canonical(intent)))]
+            let authorization = try SectionSignatures.authorizationContext(request, admitted.digest, capture, manifest, "whole_asset", authority.policy)
+            let intent = authorization["signature_read_intent"]
             stage = "authorization"
             let grant: J?
             do { grant = try await authority.authorize(authorization) } catch { throw PublicFailure("READ_CORE_CAPABILITY_UNAVAILABLE") }
@@ -213,6 +254,74 @@ public enum SectionFaces {
                            "verification": verification]
             _ = try SectionContract.validate("WholeSectionSnapshotData06", data)
             let envelope: J = ["status": "accepted", "io": .array([]), "input_byte_length": .number(Double(wholeBytes.count))]
+            return ReadOutcome(envelope: envelope, snapshot: KDNASectionSnapshot(data))
+        } catch let failureValue as PublicFailure {
+            return failure(classify(failureValue.code), failureValue.code, failureValue.field, failureValue.subject)
+        } catch {
+            return failure("rejected", "READ_CORE_CAPABILITY_UNAVAILABLE")
+        }
+    }
+    /// The catalog face (admitPartialSectionNode with mode catalog): metadata
+    /// bindings, the layout walk and the scoped checksum/signature completion;
+    /// the snapshot is metadata-only (A/C/E unobserved). exact_selection /
+    /// expand remain unported and fail closed with the contract-valid
+    /// unsupported envelope until Stage B (the released chain implements
+    /// them — that parity is the Stage B target, not this placeholder).
+    public static func readCatalog(_ bytes: [UInt8], _ admitted: KDNAAdmittedSectionRequest, _ authority: KDNASectionReadAuthority) async -> ReadOutcome {
+        var stage = "input"
+        func failure(_ status: String, _ reason: String, _ diagnosticField: String? = nil, _ diagnosticSubject: String? = nil) -> ReadOutcome {
+            failureEnvelope(status, reason, stage, admitted.data["request_id"], diagnosticField, diagnosticSubject)
+        }
+        do {
+            let request = admitted.data
+            if request["mode"].text != "catalog" {
+                return failure("unsupported", request["mode"].text == "expand" ? "EXPAND_INTEGRATION_UNIMPLEMENTED" : "PARTIAL_SEMANTIC_PROOF_UNAVAILABLE")
+            }
+            var capture = try captureWhole(bytes)
+            stage = "metadata"
+            let manifest = try SectionManifest.load(capture.manifestBytes)
+            let meta = try MetadataCodec.decode(manifest["representation_metadata"])
+            let tuple = try SectionContract.loadedContract.get()["module"]["versionTuple"]
+            try SectionLayout.checkMetadataBindings(manifest, meta, tuple)
+            if SectionManifest.protectionDeclared(manifest) {
+                return failure("unsupported", "PROTECTION_BINDING_UNIMPLEMENTED")
+            }
+            let requestDigest = sha(try KDNAJSON.canonical(request))
+            let authorization = try SectionSignatures.authorizationContext(request, requestDigest, capture, manifest, "catalog", authority.policy)
+            stage = "authorization"
+            let grant: J?
+            do { grant = try await authority.authorize(authorization) } catch { throw PublicFailure("READ_CORE_CAPABILITY_UNAVAILABLE") }
+            try demand(grant == .some(.bool(true)), "SECTION_PERMISSION_DENIED")
+            stage = "integrity"
+            let checksumState = try SectionChecksums.prepareScopedChecksums(&capture, manifest)
+            stage = "content"
+            let layout = try SectionLayout.readSectionLayout(&capture, manifest)
+            stage = "integrity"
+            let scoped = try SectionSignatures.completeScoped(&capture, checksumState, requestDigest, authority.policy, authorization["signature_read_intent"])
+            var captureVerification = capture.identity
+            captureVerification["table_frames"] = .array(layout.checkedSections)
+            let claimedContent: J = manifest["content_digest"] != .null
+                ? manifest["content_digest"]
+                : (manifest["authoring"]["content_digest"] != .null ? manifest["authoring"]["content_digest"] : .null)
+            func unobserved(_ profile: String, _ claimed: J = .null) -> J {
+                ["profile": .string(profile), "status": "not_checked", "claimed_digest": claimed]
+            }
+            let verification: J = ["checksum_integrity": scoped["checksum_integrity"], "signature_integrity": scoped["signature_integrity"],
+                                   "runtime_entry_digest": scoped["runtime_entry_digest"],
+                                   "capture": captureVerification, "request_digest": .string(requestDigest),
+                                   "checked_sections": .array(layout.checkedSections),
+                                   "unchecked_sections": .array(layout.ordered.map { $0["section_id"] }),
+                                   "routing_integrity": "checked",
+                                   "whole_container_digest": unobserved("kdna.digest-basis.container-bytes/0.2.0"),
+                                   "whole_content_digest": unobserved("kdna.digest-basis.content-tree/0.2.0", claimedContent),
+                                   "ir_digest": unobserved("CanonicalIR:SHA-256(RFC8785):existing-digestCanonical", layout.meta["ir_digest_claim"]),
+                                   "mode": "catalog", "semantic_status": "metadata_only"]
+            let data: J = ["snapshot_id": .string("section-catalog:" + UUID().uuidString.lowercased()),
+                           "tuple": tuple, "asset": layout.meta["asset"], "request_digest": .string(requestDigest),
+                           "catalog": layout.meta["catalog"], "asset_index": layout.meta["asset_index"],
+                           "verification": verification]
+            _ = try SectionContract.validate("CatalogSectionSnapshotData06", data)
+            let envelope: J = ["status": "accepted", "io": .array([]), "input_byte_length": .number(Double(bytes.count))]
             return ReadOutcome(envelope: envelope, snapshot: KDNASectionSnapshot(data))
         } catch let failureValue as PublicFailure {
             return failure(classify(failureValue.code), failureValue.code, failureValue.field, failureValue.subject)

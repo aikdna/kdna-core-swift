@@ -17,7 +17,7 @@
 
 ## 1. Why
 
-A real consumer needs it: CoachLettersAI (gvjl) ships the re-authored
+A real consumer needs it: the coach product ships the re-authored
 current-format coach bundles (`kdna.json` + `sections/pack-*.kdnab`,
 container 0.6.0) but its on-device KDNA reader (`KDNACore`, pinned at
 fbb6e45; open-line HEAD 0b85375 matches) parses only the retired layout
@@ -209,7 +209,7 @@ IR), `Sections/SectionFaces.swift` (admission/snapshot/modes/bytes),
 enums). Tokens become opaque final classes with a registry mirroring the
 WeakMap discipline. TOCTOU: where file-based reads are used, re-check a
 stat key before/after every read as the Node fd capture does; the initial
-port may operate on in-memory bytes (the gvjl app loads bundle resources),
+port may operate on in-memory bytes (the consumer loads bundle resources),
 which keeps the discipline trivially but must keep the same phase order.
 
 Confirmed surface decisions (f2 + c0 early-alignment, binding):
@@ -243,7 +243,7 @@ Ordering rules that MUST NOT be unified: JCS key order = UTF-16 code-unit
 - **Stage A (unblocks the real consumer):** open container → validate
   ZIP subset + manifest → whole read → A/C/E + IR cross-check → judgment
   supply projection (nodes with conditions/boundaries as the Render
-  adapter surfaces them). Acceptance: gvjl `KDNALoaderServiceTests` green
+  adapter surfaces them). Acceptance: the consumer's loader tests green
   plus digest equality against Node golden fixtures for the four coach
   bundles.
 - **Stage B (parity):** catalog / exact_selection / expand faces, frame
@@ -622,10 +622,15 @@ substitute. Consequently:
     normalized) is **byte-identical** to the released chain — 57 MB of
     canonical JSON — and the denied-callback case matches
     (`SECTION_PERMISSION_DENIED`, stage `authorization`, diagnostic
-    `null`). Two declared gaps, both fail closed: partial modes
-    (catalog/exact_selection/expand) return the released unsupported
-    envelope until Stage B; a signed asset fails at the integrity stage
-    until the kdsig ed25519 stack is ported. Pitfalls pinned: the
+    `null`). Two declared gaps, both fail closed — correction (c0 review,
+    2026-10-06): the partial modes are **not** served by "the released
+    unsupported envelope"; the released chain implements
+    catalog/exact_selection/expand, and the port's placeholder envelope is
+    its own fail-closed stand-in (the placeholder codes are unreachable in
+    the released mode enum). Catalog landed 2026-10-06 (see below);
+    exact_selection/expand remain the Stage B parity target. A signed asset
+    fails at the integrity stage until the kdsig ed25519 stack is ported.
+    Pitfalls pinned: the
     envelope's `diagnostic` is the whole object or `null` (not a
     field/null pair), and comparator harnesses must embed the snapshot as
     a parsed object — a 9 MB canonical string trips the 1 MiB
@@ -680,9 +685,36 @@ substitute. Consequently:
     fixture through the public surface (accepted whole read incl. the IR
     digest; denied callback → SECTION_PERMISSION_DENIED without a
     snapshot; expected-digest mismatch → READ_INPUT_INVALID). Motivation:
-    the gvjl coach app consumes the chain through exactly this surface
+    the coach app consumer uses exactly this surface
     (its loader migration lands with it). Full suite 39/39 green.
-- **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
+  - **Catalog face (landed 2026-10-06):**
+    `Sections/SectionLayout.swift` ports `readSectionLayout` — the metadata
+    bindings (descriptor node-ref digests included), the table
+    directory/frame walk with every closed code, the topic/volume/xref
+    coverage obligations, the mandated physical order and the pack span
+    checks; the capture gained the full row records, the touched-member
+    set and the member reads (checksum/signature members through the
+    stored-or-inflate + CRC path; the fd stat-key re-checks have no bytes
+    analogue). `SectionChecksums` gained the scoped prepare/complete pair
+    (touched-partition semantics, the runtime-entry-set preimage, the
+    closed first-difference pointers) and `SectionSignatures` the scoped
+    `authorizationContext` / `readScoped` / `completeScoped` (unsigned
+    intents read nothing extra; a signed asset still fails closed at the
+    kdsig gap). `SectionFaces.readCatalog` assembles the metadata-only
+    snapshot (`CatalogSectionSnapshotData06`: catalog, asset index and the
+    scoped verification with A/C/E reported `not_checked`); the public
+    asset gained `readCatalog` + `admitCatalogRequest`. **Parity: for all
+    eight local assets the catalog snapshot plus envelope is
+    byte-identical to the released chain** (50–59 KB of canonical JSON
+    each, UUIDs normalized) — recon confirmed c0's finding that the
+    released chain serves these modes. Committed:
+    `SectionsFixtureTests.testCatalogReadFixture` (whole-output digest
+    `3199074e…77c4`, recomputed from released 0.36.0 for the fixture and
+    its request id) and `testUnportedPartialModesFailClosed` (f2 review
+    item: the two remaining placeholder codes pinned as the port's own
+    fail-closed behavior, not the released behavior). Full suite 41/41
+    green.
+- **Stage A3:** whole-read/catalog faces and the consumer loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1
   + digests while A2 completes the IR cross-check; the chain's own
