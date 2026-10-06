@@ -1,0 +1,963 @@
+{
+ "schema": "kdna.semantics.r2values-oracles",
+ "schemaVersion": "0.1.0",
+ "authority": "released @aikdna/kdna-core@0.36.0 src/public-contract/r2-values.js; verdicts verbatim",
+ "note": "Synthetic shapes/values only.",
+ "rows": [
+  {
+   "name": "unique-ok",
+   "expected": "ok",
+   "fn": "unique",
+   "args": [
+    [
+     {
+      "id": "a"
+     },
+     {
+      "id": "b"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "unique-duplicate",
+   "expected": "READ_CORE_INVALID",
+   "fn": "unique",
+   "args": [
+    [
+     {
+      "id": "a"
+     },
+     {
+      "id": "a"
+     }
+    ]
+   ]
+  },
+  {
+   "name": "bounds-ok",
+   "expected": "ok",
+   "fn": "bounds",
+   "args": [
+    {
+     "minimum": 0,
+     "maximum": 3
+    }
+   ]
+  },
+  {
+   "name": "bounds-null-max",
+   "expected": "ok",
+   "fn": "bounds",
+   "args": [
+    {
+     "minimum": 1,
+     "maximum": null
+    }
+   ]
+  },
+  {
+   "name": "bounds-missing-max",
+   "expected": "READ_CORE_INVALID",
+   "fn": "bounds",
+   "args": [
+    {
+     "minimum": 1
+    }
+   ]
+  },
+  {
+   "name": "bounds-negative",
+   "expected": "READ_CORE_INVALID",
+   "fn": "bounds",
+   "args": [
+    {
+     "minimum": -1,
+     "maximum": null
+    }
+   ]
+  },
+  {
+   "name": "bounds-max-below-min",
+   "expected": "READ_CORE_INVALID",
+   "fn": "bounds",
+   "args": [
+    {
+     "minimum": 3,
+     "maximum": 2
+    }
+   ]
+  },
+  {
+   "name": "bounds-max-not-integer",
+   "expected": "READ_CORE_INVALID",
+   "fn": "bounds",
+   "args": [
+    {
+     "minimum": 0,
+     "maximum": 1.5
+    }
+   ]
+  },
+  {
+   "name": "validateShape-scalar",
+   "expected": "ok",
+   "fn": "validateShape",
+   "args": [
+    {
+     "kind": "scalar",
+     "scalar_type": "text"
+    }
+   ]
+  },
+  {
+   "name": "validateShape-list-ok",
+   "expected": "ok",
+   "fn": "validateShape",
+   "args": [
+    {
+     "kind": "list",
+     "item_shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 5
+    }
+   ]
+  },
+  {
+   "name": "validateShape-list-bad-min",
+   "expected": "READ_CORE_INVALID",
+   "fn": "validateShape",
+   "args": [
+    {
+     "kind": "list",
+     "item_shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": -1,
+     "maximum": null
+    }
+   ]
+  },
+  {
+   "name": "validateShape-record-ok",
+   "expected": "ok",
+   "fn": "validateShape",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      },
+      {
+       "name": "b",
+       "shape": {
+        "kind": "list",
+        "item_shape": {
+         "kind": "scalar",
+         "scalar_type": "text"
+        },
+        "minimum": 0,
+        "maximum": null
+       },
+       "required": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "validateShape-record-dup",
+   "expected": "READ_CORE_INVALID",
+   "fn": "validateShape",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      },
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "validateShape-unknown-kind",
+   "expected": "READ_CORE_INVALID",
+   "fn": "validateShape",
+   "args": [
+    {
+     "kind": "map"
+    }
+   ]
+  },
+  {
+   "name": "validateShape-nested-bad",
+   "expected": "READ_CORE_INVALID",
+   "fn": "validateShape",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "list",
+        "item_shape": {
+         "kind": "bogus"
+        },
+        "minimum": 0,
+        "maximum": null
+       },
+       "required": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "resultShape-scalar-ok",
+   "expected": "ok",
+   "fn": "resultShape",
+   "args": [
+    {
+     "kind": "scalar",
+     "scalar_type": "text"
+    },
+    {
+     "kind": "text",
+     "value": "x"
+    }
+   ]
+  },
+  {
+   "name": "resultShape-scalar-mismatch",
+   "expected": "READ_CORE_INVALID",
+   "fn": "resultShape",
+   "args": [
+    {
+     "kind": "scalar",
+     "scalar_type": "text"
+    },
+    {
+     "kind": "number",
+     "value": 1
+    }
+   ]
+  },
+  {
+   "name": "resultShape-list-ok",
+   "expected": "ok",
+   "fn": "resultShape",
+   "args": [
+    {
+     "kind": "list",
+     "item_shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 3
+    },
+    {
+     "kind": "list",
+     "items": [
+      {
+       "kind": "text",
+       "value": "a"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "resultShape-list-undersized",
+   "expected": "READ_CORE_INVALID",
+   "fn": "resultShape",
+   "args": [
+    {
+     "kind": "list",
+     "item_shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 2,
+     "maximum": 3
+    },
+    {
+     "kind": "list",
+     "items": [
+      {
+       "kind": "text",
+       "value": "a"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "resultShape-list-oversized",
+   "expected": "READ_CORE_INVALID",
+   "fn": "resultShape",
+   "args": [
+    {
+     "kind": "list",
+     "item_shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 1
+    },
+    {
+     "kind": "list",
+     "items": [
+      {
+       "kind": "text",
+       "value": "a"
+      },
+      {
+       "kind": "text",
+       "value": "b"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "resultShape-record-ok",
+   "expected": "ok",
+   "fn": "resultShape",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      },
+      {
+       "name": "b",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": false
+      }
+     ]
+    },
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      {
+       "name": "b",
+       "value": {
+        "kind": "text",
+        "value": "y"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "resultShape-record-missing-required",
+   "expected": "READ_CORE_INVALID",
+   "fn": "resultShape",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      }
+     ]
+    },
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "b",
+       "value": {
+        "kind": "text",
+        "value": "y"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "resultShape-record-unknown-field",
+   "expected": "READ_CORE_INVALID",
+   "fn": "resultShape",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      }
+     ]
+    },
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      {
+       "name": "c",
+       "value": {
+        "kind": "text",
+        "value": "z"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "validateContract-ok",
+   "expected": "ok",
+   "fn": "validateContract",
+   "args": [
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": null,
+     "allowed_result_types": [
+      {
+       "kind": "scalar",
+       "scalar_type": "text"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "validateContract-types-empty",
+   "expected": "READ_CORE_INVALID",
+   "fn": "validateContract",
+   "args": [
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": null,
+     "allowed_result_types": []
+    }
+   ]
+  },
+  {
+   "name": "validateContract-types-dup",
+   "expected": "READ_CORE_INVALID",
+   "fn": "validateContract",
+   "args": [
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": null,
+     "allowed_result_types": [
+      {
+       "kind": "scalar",
+       "scalar_type": "text"
+      },
+      {
+       "kind": "scalar",
+       "scalar_type": "text"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "validateContract-emission-list-passthrough",
+   "expected": "ok",
+   "fn": "validateContract",
+   "args": [
+    {
+     "kind": "emission_list"
+    }
+   ]
+  },
+  {
+   "name": "compatible-null",
+   "expected": "ok",
+   "fn": "compatible",
+   "args": [
+    null,
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": null
+    }
+   ]
+  },
+  {
+   "name": "compatible-narrower-ok",
+   "expected": "ok",
+   "fn": "compatible",
+   "args": [
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 2,
+     "allowed_result_types": []
+    },
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 3,
+     "allowed_result_types": []
+    }
+   ]
+  },
+  {
+   "name": "compatible-wider-max",
+   "expected": "READ_CORE_INVALID",
+   "fn": "compatible",
+   "args": [
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 3,
+     "allowed_result_types": []
+    },
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 2,
+     "allowed_result_types": []
+    }
+   ]
+  },
+  {
+   "name": "compatible-shape-mismatch",
+   "expected": "READ_CORE_INVALID",
+   "fn": "compatible",
+   "args": [
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": null,
+     "allowed_result_types": []
+    },
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "list",
+      "item_shape": {
+       "kind": "scalar",
+       "scalar_type": "text"
+      },
+      "minimum": 0,
+      "maximum": null
+     },
+     "minimum": 1,
+     "maximum": null,
+     "allowed_result_types": []
+    }
+   ]
+  },
+  {
+   "name": "shapeAt-ok",
+   "expected": "ok",
+   "fn": "shapeAt",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "record",
+        "fields": [
+         {
+          "name": "b",
+          "shape": {
+           "kind": "scalar",
+           "scalar_type": "text"
+          },
+          "required": true
+         }
+        ]
+       },
+       "required": true
+      }
+     ]
+    },
+    [
+     "a",
+     "b"
+    ]
+   ]
+  },
+  {
+   "name": "shapeAt-missing",
+   "expected": "READ_CORE_INVALID",
+   "fn": "shapeAt",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      }
+     ]
+    },
+    [
+     "b"
+    ]
+   ]
+  },
+  {
+   "name": "shapeAt-not-record",
+   "expected": "READ_CORE_INVALID",
+   "fn": "shapeAt",
+   "args": [
+    {
+     "kind": "scalar",
+     "scalar_type": "text"
+    },
+    [
+     "a"
+    ]
+   ]
+  },
+  {
+   "name": "projected-empty-path",
+   "expected": "ok",
+   "fn": "projected",
+   "args": [
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": null
+    },
+    []
+   ]
+  },
+  {
+   "name": "projected-record",
+   "expected": "ok",
+   "fn": "projected",
+   "args": [
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "record",
+      "fields": [
+       {
+        "name": "a",
+        "shape": {
+         "kind": "scalar",
+         "scalar_type": "text"
+        },
+        "required": true
+       }
+      ]
+     },
+     "minimum": 1,
+     "maximum": null
+    },
+    [
+     "a"
+    ]
+   ]
+  },
+  {
+   "name": "projected-null-contract",
+   "expected": "ok",
+   "fn": "projected",
+   "args": [
+    null,
+    [
+     "a"
+    ]
+   ]
+  },
+  {
+   "name": "projected-bad-path",
+   "expected": "READ_CORE_INVALID",
+   "fn": "projected",
+   "args": [
+    {
+     "kind": "judgment",
+     "shape": {
+      "kind": "record",
+      "fields": [
+       {
+        "name": "a",
+        "shape": {
+         "kind": "scalar",
+         "scalar_type": "text"
+        },
+        "required": true
+       }
+      ]
+     },
+     "minimum": 1,
+     "maximum": null
+    },
+    [
+     "zz"
+    ]
+   ]
+  },
+  {
+   "name": "completeBindings-ok",
+   "expected": "ok",
+   "fn": "completeBindings",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "record",
+        "fields": [
+         {
+          "name": "b",
+          "shape": {
+           "kind": "scalar",
+           "scalar_type": "text"
+          },
+          "required": false
+         }
+        ]
+       },
+       "required": false
+      }
+     ]
+    },
+    [
+     [
+      "a",
+      "b"
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "completeBindings-overlap",
+   "expected": "READ_CORE_INVALID",
+   "fn": "completeBindings",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      }
+     ]
+    },
+    [
+     [
+      "a"
+     ],
+     [
+      "a",
+      "b"
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "completeBindings-root",
+   "expected": "ok",
+   "fn": "completeBindings",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      }
+     ]
+    },
+    [
+     []
+    ]
+   ]
+  },
+  {
+   "name": "completeBindings-root-plus",
+   "expected": "READ_CORE_INVALID",
+   "fn": "completeBindings",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      }
+     ]
+    },
+    [
+     [],
+     [
+      "a"
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "completeBindings-uncovered-required",
+   "expected": "READ_CORE_INVALID",
+   "fn": "completeBindings",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      }
+     ]
+    },
+    [
+     [
+      "b"
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "completeBindings-covered-required",
+   "expected": "ok",
+   "fn": "completeBindings",
+   "args": [
+    {
+     "kind": "record",
+     "fields": [
+      {
+       "name": "a",
+       "shape": {
+        "kind": "scalar",
+        "scalar_type": "text"
+       },
+       "required": true
+      }
+     ]
+    },
+    [
+     [
+      "a"
+     ]
+    ]
+   ]
+  }
+ ]
+}

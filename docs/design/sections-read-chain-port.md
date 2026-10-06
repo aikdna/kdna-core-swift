@@ -475,6 +475,26 @@ substitute. Consequently:
     pointer until a consumer needs it. Synthetic-positive payload rows are
     deferred to the fixture package (the created synthetic asset's payload
     will serve as the committed positive instance).
+  - **A2b (landed 2026-10-06):** `Semantics/R2Registry.swift` (typed
+    targets, ownership, mandatory/optional edges, reference roles,
+    unresolved externals, mandatory closure) and
+    `Semantics/R2Values.swift` (contracts, shapes, result values,
+    projections, compatibility, binding completeness). `PublicFailure` now
+    carries the registry/values `field` and `subject` diagnostics verbatim.
+    Parity: the full registry state for all eight local assets — ordered
+    records with targets/owners/paths/activations/value digests, unresolved
+    edges, reference roles and every closure — is **byte-identical** (766 KB
+    of canonical JSON) to the released `createRegistry`. Committed
+    `r2values-oracles.json` (44 synthetic rows across all eleven helpers)
+    with `R2ValuesTests`. Two porting facts pinned: the registry identity
+    key is the canonical array `[asset|null, kind, id]` (not the ref
+    object), and JS Map insertion order is observable (reference roles
+    iterate into the derived IR's reference array), so the port carries
+    insertion-ordered maps; `bounds` distinguishes an absent `maximum` from
+    an explicit null (JS `=== null`).
+  - **A2c (next):** component semantics, static-policy semantics,
+    `validateR2`, then `canonical-ir` (buildIR) with the derived-IR digest
+    acceptance on the eight assets.
 - **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1

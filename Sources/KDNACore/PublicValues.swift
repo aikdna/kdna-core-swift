@@ -52,7 +52,11 @@ typealias J = KDNAValue
 struct PublicFailure: Error {
     let code: String
     let componentFailure: J
-    init(_ code: String = "READ_CORE_INVALID", componentFailure: J = nil) { self.code = code; self.componentFailure = componentFailure }
+    let field: String?
+    let subject: String?
+    init(_ code: String = "READ_CORE_INVALID", componentFailure: J = nil, field: String? = nil, subject: String? = nil) {
+        self.code = code; self.componentFailure = componentFailure; self.field = field; self.subject = subject
+    }
 }
 /// The Node strict parser hands string bodies to JSON.parse, so a malformed
 /// escape or a short \u hex run throws a raw SyntaxError there — not a
