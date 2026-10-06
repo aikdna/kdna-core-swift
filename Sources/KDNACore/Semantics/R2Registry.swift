@@ -32,7 +32,7 @@ enum R2Registry {
     struct Record {
         let target: J
         let owner: J
-        let value: J
+        var value: J
         let judgment: J
         let path: String
         let activation: J
@@ -56,6 +56,10 @@ enum R2Registry {
         init(_ manifest: J, _ payload: J) {
             asset = R2Registry.ref("asset", manifest["asset_uid"].text)
             payloadAsset = payload["asset"]
+        }
+        func setValue(_ key: String, _ value: J) {
+            guard let position = index[key] else { return }
+            ordered[position].value = value
         }
         func local(_ target: J) -> Bool { !target.has("asset") || target["asset"] == .null || R2Registry.sameAsset(target["asset"], payloadAsset) }
         func identity(_ target: J) -> String {

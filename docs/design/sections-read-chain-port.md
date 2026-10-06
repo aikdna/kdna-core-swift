@@ -554,6 +554,22 @@ substitute. Consequently:
     key (the JS Map keys raw values), and a unit's `method` is the term
     string, not the method object. The 8-asset validateR2 registry-state
     parity (2.0 MB) was re-verified after wiring the real plan pass.
+  - **A2 complete (2026-10-06):** `Semantics/CanonicalIR.swift` ports
+    `buildIR` — role naming and stable identity ids, reference meanings,
+    catalog, mandatory closures, the global asset closure, display index
+    and the expansion-target passes — then validates CanonicalIR and
+    checks interpretation completeness. **The finale acceptance passes:**
+    for all eight local assets the FULL derived IR — 3.1 MB to 9.8 MB of
+    canonical JSON per asset, ~57 MB in total — is **byte-identical** to
+    the released `buildIR`, the derived and restored IR digests match, and
+    the chain's own `SECTION_DERIVED_IR_MISMATCH` cross-check is `true`
+    on both sides. One recorded equivalence: the released `visit` pair
+    also walks the manifest for extension carriers; Manifest06Candidate
+    has no extension positions, so the payload walks are equivalent (the
+    note stands until a manifest grows one). The 0.5-generation semantic
+    stack is now fully ported and parity-verified: contract, registry,
+    values, components, static policies, r2 semantics, the plan graph and
+    the canonical IR.
 - **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1
