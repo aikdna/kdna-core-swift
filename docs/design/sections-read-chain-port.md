@@ -536,6 +536,24 @@ substitute. Consequently:
     here instead of being silently unvalidated (no acceptance asset carries
     plans; the registry dump covers none). `canonical-ir` (buildIR) is the
     finale after that, with the derived-IR digest acceptance.
+  - **A2c part 3 (landed 2026-10-06):** the plan gap is closed —
+    `Semantics/R2Plan.swift` ports `checkPlans` point-by-point with the
+    helpers carried as context methods (the released code keeps them in the
+    per-judgment context closure; the formation-policy section uses them
+    across judgments): node graph shape and reachability, ports and
+    endpoints, input supplies, links with round checks, feedback state and
+    update rules, result bindings and contributing closure, method
+    contribution and the emission-list contract coupling. Verified with a
+    synthetic plan matrix (a schema-legal plan grafted onto the synthetic
+    trustworthy-data-comparison payload): the success case's full
+    post-validation registry state and five negative variants (root
+    mismatch, detached node, self link, missing input supply, binding to a
+    missing port) with their field pointers are byte-identical to the
+    released chain (111 KB canonical JSON). Two porting bugs pinned while
+    fixing the matrix: `unique`-map lookups must go through the canonical
+    key (the JS Map keys raw values), and a unit's `method` is the term
+    string, not the method object. The 8-asset validateR2 registry-state
+    parity (2.0 MB) was re-verified after wiring the real plan pass.
 - **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1

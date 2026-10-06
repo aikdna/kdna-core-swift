@@ -313,13 +313,7 @@ enum R2Semantics {
                 _ = try own(record, R2Registry.ref("source", dependency["producer"]["source_ref"].text), true, ["source"], nil)
             }
         }
-        // The plan semantics (r2-plan.js, the finite authored plan graph) are
-        // the next package of this workstream: until they land, a judgment
-        // carrying a method plan fails loudly here instead of being silently
-        // unvalidated. None of the acceptance assets carry plans.
-        for judgment in payload["judgments"].list where judgment["method"]["plan"] != .null {
-            throw PublicFailure("READ_CORE_CAPABILITY_UNAVAILABLE")
-        }
+        try R2Plan.checkPlans(payload, r, normalContract)
         for example in payload["examples"].list {
             let record = try resolve(R2Registry.ref("example", example["id"].text), "example", "/payload")!
             let at = record.path
