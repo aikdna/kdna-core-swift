@@ -12,11 +12,11 @@ enum PublicContainer {
         }
         return n ^ 0xffffffff
     }
-    static func decompress(_ bytes: [UInt8]) throws -> [UInt8] {
+    static func decompress(_ bytes: [UInt8], maximum: Int = entryLimit) throws -> [UInt8] {
         var stream = z_stream()
         try demand(inflateInit2_(&stream, -MAX_WBITS, zlibVersion(), Int32(MemoryLayout<z_stream>.size)) == Z_OK, "READ_CORE_CAPABILITY_UNAVAILABLE")
         defer { inflateEnd(&stream) }
-        var output = [UInt8](repeating: 0, count: entryLimit + 1)
+        var output = [UInt8](repeating: 0, count: maximum + 1)
         let result = bytes.withUnsafeBufferPointer { input in
             output.withUnsafeMutableBufferPointer { target in
                 stream.next_in = UnsafeMutablePointer(mutating: input.baseAddress)
@@ -26,7 +26,7 @@ enum PublicContainer {
                 return inflate(&stream, Z_FINISH)
             }
         }
-        try demand(result == Z_STREAM_END && stream.total_out <= entryLimit)
+        try demand(result == Z_STREAM_END && stream.total_out <= maximum)
         return Array(output.prefix(Int(stream.total_out)))
     }
     static func parse(_ data: Data) throws -> [KDNAKey: Data] {

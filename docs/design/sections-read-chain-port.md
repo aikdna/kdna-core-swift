@@ -253,6 +253,52 @@ Ordering rules that MUST NOT be unified: JCS key order = UTF-16 code-unit
   signature.kdsig, protection binding — closed as `unsupported` exactly
   where the Node chain closes them, until implemented.
 
+### 5.1 Stage A progress (append-only)
+
+**Container rules variant — landed 2026-10-06.**
+`Sources/KDNACore/Sections/SectionContainer.swift` (`SectionContainer.parse`,
+sibling to `PublicContainer.parse`) + parameterized
+`PublicContainer.decompress(_:maximum:)` (default unchanged). Rules and
+observable diagnostics mirror `@aikdna/kdna-core@0.36.0`
+`src/public-contract/section-container.js`; byte-identical file verified
+between the released vendored tree and the work tree before porting.
+Decisions recorded while porting:
+
+- Diagnostic mapping (matches the Node catch-all in `sections-node.js` /
+  `creation-sections-node.js`): structural rule violations reject
+  `READ_CORE_INVALID`; raw-decoder failures classify as
+  `READ_CORE_CAPABILITY_UNAVAILABLE` — invalid UTF-8 in an entry name,
+  invalid UTF-8 in the mimetype value, an inflate failure or its 8 MiB
+  output cap, and an unknown compression method. A hostile fixture pins
+  each.
+- `kdna.json` presence is checked, not emptiness: an empty entry is
+  admitted at container level, exactly as the Node truthiness check admits
+  it (pinned by test).
+- The `sections/pack-(0|[1-9][0-9]*).kdnab` rule is hand-rolled, not
+  regex: the digit run is unbounded (must not route through `Int`), and
+  the rule should not depend on ICU-versus-ECMAScript `$` anchor semantics
+  across platforms (probed equivalent on this platform; hand-rolled is
+  exact by construction).
+- Bounds checks stay per-field `READ_CORE_INVALID` via the shared `demand`
+  helper; `mode` semantics (`0` or `S_IFREG`) and the first-entry rule
+  (`mimetype`, local offset 0, stored) are ported point-by-point.
+
+**Parity evidence (scratch, released-artifact baseline).** The port was
+cross-checked against the released `@aikdna/kdna-core@0.36.0`
+`parseSectionContainer` on 341 synthetic containers (allowlist/naming
+edges, EOCD comment, gaps, duplicate names, flag/mode/CRC/size-lie
+variants, method 8/9, UTF-8 hostility cases, count 0/129, truncation,
+trailing bytes, plus 300 seeded byte-level fuzz mutations of one valid
+container): **zero mismatches** — 18 accepted with identical entry names,
+sizes, modes and per-entry byte hashes; 309 `READ_CORE_INVALID`; 14
+`READ_CORE_CAPABILITY_UNAVAILABLE`. The harness is scratch-only (case
+builder + verdict dumps on both sides) and pins the released version.
+No real coach material is involved anywhere; fixtures are synthetic.
+
+Committed tests: 11 XCTest cases
+(`Tests/PublicCoreTests/SectionContainerTests.swift`) with an in-code
+canonical-shape container builder; full Swift suite 20/20 green.
+
 ## 6. API sketch (for open-line alignment — early, per the review flow)
 
 ```swift
