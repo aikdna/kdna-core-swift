@@ -570,6 +570,27 @@ substitute. Consequently:
     stack is now fully ported and parity-verified: contract, registry,
     values, components, static policies, r2 semantics, the plan graph and
     the canonical IR.
+  - **A2 closeout — cross-entry (landed 2026-10-06):**
+    `Semantics/CrossEntry.swift` ports all eight obligations
+    (form consistency, asset capability, unique identity incl. the nested
+    resolution targets, definition-term uniqueness, parent closure,
+    core-term vocabulary, the navigation-label ban, lifecycle
+    replacement rules) with rule ids, violation paths and messages
+    verbatim; `assertPayload` surfaces the first violation as
+    READ_CORE_INVALID with its field pointer and rule id
+    (`PublicFailure.crossEntryRule`),
+    `SectionDigests.validateDecodedPayload` composes the full
+    semantic-admission path (Payload shape, asset bindings, cross-entry).
+    Parity: `checkPayload`'s complete eight-rule reports on the eight
+    assets plus eight per-rule mutation cases — and the `assertPayload`
+    code/field/rule for each — are byte-identical to the released chain;
+    committed `crossentry-micro-oracles.json` (21 synthetic micro-rows,
+    one clean base plus per-rule mutations) with `CrossEntryTests`. One
+    Swift pitfall pinned while porting: a ternary's `nil` branch with a
+    contextually-typed optional infers `KDNAValue.null` (the type is
+    ExpressibleByNilLiteral) instead of `Optional.none` — the absent case
+    is written with an explicit branch instead. With this, everything the
+    whole-read face calls is ported; A3 (the faces and envelopes) is next.
 - **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1

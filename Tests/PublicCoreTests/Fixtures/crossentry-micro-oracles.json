@@ -1,0 +1,2237 @@
+{
+ "schema": "kdna.semantics.cross-entry-oracles",
+ "schemaVersion": "0.1.0",
+ "authority": "released @aikdna/kdna-core@0.36.0 src/public-contract/cross-entry.js checkPayload/assertPayload; reports and fields verbatim",
+ "note": "Synthetic micro-payloads around a clean base row; each mutation targets one rule with the earlier rules left clean.",
+ "rows": [
+  {
+   "name": "clean-minimal",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "ok"
+   }
+  },
+  {
+   "name": "form-missing-result",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-FORM-CONSISTENCY",
+       "path": "/judgments/0/form",
+       "message": "exactly one of result or formation_rule is required; neither is present"
+      },
+      {
+       "rule_id": "PUBLIC-FORM-CONSISTENCY",
+       "path": "/judgments/0/result",
+       "message": "form \"conclusion\" requires an actual result"
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/form",
+    "rule": "PUBLIC-FORM-CONSISTENCY"
+   }
+  },
+  {
+   "name": "form-unregistered",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "bogus",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-FORM-CONSISTENCY",
+       "path": "/judgments/0/form",
+       "message": "form must be one of [\"conclusion\",\"rule\"]; found the declared value in an unregistered form"
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-ASSET-CAPABILITY",
+       "path": "/asset_capability",
+       "message": "asset capability cannot be derived because at least one judgment declares no closed form"
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/form",
+    "rule": "PUBLIC-FORM-CONSISTENCY"
+   }
+  },
+  {
+   "name": "form-both-present",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      },
+      "formation_rule": {}
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-FORM-CONSISTENCY",
+       "path": "/judgments/0/form",
+       "message": "exactly one of result or formation_rule is allowed; both are present"
+      },
+      {
+       "rule_id": "PUBLIC-FORM-CONSISTENCY",
+       "path": "/judgments/0/formation_rule",
+       "message": "form \"conclusion\" forbids a formation_rule"
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/form",
+    "rule": "PUBLIC-FORM-CONSISTENCY"
+   }
+  },
+  {
+   "name": "capability-mismatch",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "mixed",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-ASSET-CAPABILITY",
+       "path": "/asset_capability",
+       "message": "asset_capability string contradicts the declared judgment forms; the closed mapping of this asset is \"asserted_answers\". The asset-level value is a summary; the issue-level form stays authoritative."
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/asset_capability",
+    "rule": "PUBLIC-ASSET-CAPABILITY"
+   }
+  },
+  {
+   "name": "capability-absent",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-ASSET-CAPABILITY",
+       "path": "/asset_capability",
+       "message": "asset_capability absent contradicts the declared judgment forms; the closed mapping of this asset is \"asserted_answers\". The asset-level value is a summary; the issue-level form stays authoritative."
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/asset_capability",
+    "rule": "PUBLIC-ASSET-CAPABILITY"
+   }
+  },
+  {
+   "name": "duplicate-actor-id",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ],
+    "actors": [
+     {
+      "id": "a1"
+     },
+     {
+      "id": "a1"
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+       "path": "/actors/1/id",
+       "message": "duplicate actor id \"a1\"; first declared at /actors/0/id. One id must name one object inside its class."
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/actors/1/id",
+    "rule": "PUBLIC-UNIQUE-IDENTITY"
+   }
+  },
+  {
+   "name": "duplicate-result-contract",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     },
+     {
+      "id": "j2",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+       "path": "/judgments/1/result_contract/id",
+       "message": "duplicate result_contract id \"c1\"; first declared by /judgments/0. A result contract id is a resolution target, so one id must name one contract."
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/1/result_contract/id",
+    "rule": "PUBLIC-UNIQUE-IDENTITY"
+   }
+  },
+  {
+   "name": "duplicate-component-id",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       },
+       "components": [
+        {
+         "id": "comp1"
+        }
+       ]
+      }
+     },
+     {
+      "id": "j2",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       },
+       "components": [
+        {
+         "id": "comp1"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+       "path": "/judgments/1/result_contract/id",
+       "message": "duplicate result_contract id \"c1\"; first declared by /judgments/0. A result contract id is a resolution target, so one id must name one contract."
+      },
+      {
+       "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+       "path": "/judgments/1/method/components/0/id",
+       "message": "duplicate MethodComponent id \"comp1\"; first declared at /judgments/0/method/components/0/id. A method component id is a resolution target of the whole asset, so one id must name one component even across different judgments."
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/1/result_contract/id",
+    "rule": "PUBLIC-UNIQUE-IDENTITY"
+   }
+  },
+  {
+   "name": "duplicate-definition-term",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ],
+    "materials": [
+     {
+      "id": "m1",
+      "kind": "definition",
+      "term": "t1"
+     },
+     {
+      "id": "m2",
+      "kind": "definition",
+      "term": "t1"
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-TERM-UNIQUENESS",
+       "path": "/materials/1/term",
+       "message": "duplicate definition term \"t1\"; first declared at /materials/0/term. Duplicates are rejected, never merged by the reader."
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/materials/1/term",
+    "rule": "PUBLIC-TERM-UNIQUENESS"
+   }
+  },
+  {
+   "name": "parent-unresolved",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": "absent",
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-PARENT-CLOSURE",
+       "path": "/judgments/0/parent_ref",
+       "message": "parent_ref \"absent\" does not resolve to any judgment id in this asset"
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/parent_ref",
+    "rule": "PUBLIC-PARENT-CLOSURE"
+   }
+  },
+  {
+   "name": "parent-self",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": "j1",
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-PARENT-CLOSURE",
+       "path": "/judgments/0/parent_ref",
+       "message": "parent_ref points at its own judgment (\"j1\")"
+      },
+      {
+       "rule_id": "PUBLIC-PARENT-CLOSURE",
+       "path": "/judgments/0/parent_ref",
+       "message": "parent_ref cycle detected: \"j1\" -> \"j1\""
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/parent_ref",
+    "rule": "PUBLIC-PARENT-CLOSURE"
+   }
+  },
+  {
+   "name": "parent-cycle",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": "j2",
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     },
+     {
+      "id": "j2",
+      "form": "conclusion",
+      "parent_ref": "j1",
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+       "path": "/judgments/1/result_contract/id",
+       "message": "duplicate result_contract id \"c1\"; first declared by /judgments/0. A result contract id is a resolution target, so one id must name one contract."
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-PARENT-CLOSURE",
+       "path": "/judgments/0/parent_ref",
+       "message": "parent_ref cycle detected: \"j1\" -> \"j2\" -> \"j1\""
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/1/result_contract/id",
+    "rule": "PUBLIC-UNIQUE-IDENTITY"
+   }
+  },
+  {
+   "name": "vocabulary-unknown",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "bogus"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-TERM-VOCABULARY",
+       "path": "/judgments/0/method/method/term",
+       "message": "term \"bogus\" is not in core_terms.method and vocabulary is absent; either register the term or declare vocabulary:\"author\""
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/method/method/term",
+    "rule": "PUBLIC-TERM-VOCABULARY"
+   }
+  },
+  {
+   "name": "vocabulary-author-ok",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "bogus",
+        "vocabulary": "author"
+       }
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "ok"
+   }
+  },
+  {
+   "name": "navigation-label",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      },
+      "label": "x"
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-NAVIGATION-LABEL",
+       "path": "/judgments/0/label",
+       "message": "R2 uses the unique authored focus; a separate navigation label is forbidden"
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/label",
+    "rule": "PUBLIC-NAVIGATION-LABEL"
+   }
+  },
+  {
+   "name": "lifecycle-superseded-empty",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      },
+      "lifecycle": {
+       "status": "superseded",
+       "superseded_by": []
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-LIFECYCLE",
+       "path": "/judgments/0/lifecycle/superseded_by",
+       "message": "superseded requires an explicit replacement"
+      }
+     ]
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/lifecycle/superseded_by",
+    "rule": "PUBLIC-LIFECYCLE"
+   }
+  },
+  {
+   "name": "lifecycle-active-ok",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      },
+      "lifecycle": {
+       "status": "active",
+       "superseded_by": []
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": true,
+     "violations": []
+    }
+   ],
+   "assert": {
+    "status": "ok"
+   }
+  },
+  {
+   "name": "lifecycle-closed-status",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      },
+      "lifecycle": {
+       "status": "bogus",
+       "superseded_by": []
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-LIFECYCLE",
+       "path": "/judgments/0/lifecycle",
+       "message": "lifecycle must use the closed status and replacement target contract"
+      }
+     ]
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/lifecycle",
+    "rule": "PUBLIC-LIFECYCLE"
+   }
+  },
+  {
+   "name": "lifecycle-self-replacement",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      },
+      "lifecycle": {
+       "status": "deprecated",
+       "superseded_by": [
+        {
+         "asset": {
+          "asset_id": "a",
+          "asset_version": "1",
+          "judgment_version": "1"
+         },
+         "judgment_id": "j1"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-LIFECYCLE",
+       "path": "/judgments/0/lifecycle/superseded_by/0",
+       "message": "a judgment cannot replace itself"
+      },
+      {
+       "rule_id": "PUBLIC-LIFECYCLE",
+       "path": "/judgments",
+       "message": "current-asset replacement graph must be acyclic"
+      }
+     ]
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/0/lifecycle/superseded_by/0",
+    "rule": "PUBLIC-LIFECYCLE"
+   }
+  },
+  {
+   "name": "lifecycle-cycle",
+   "payload": {
+    "asset": {
+     "asset_id": "a",
+     "asset_version": "1",
+     "judgment_version": "1"
+    },
+    "asset_capability": "asserted_answers",
+    "judgments": [
+     {
+      "id": "j1",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      },
+      "lifecycle": {
+       "status": "deprecated",
+       "superseded_by": [
+        {
+         "asset": {
+          "asset_id": "a",
+          "asset_version": "1",
+          "judgment_version": "1"
+         },
+         "judgment_id": "j2"
+        }
+       ]
+      }
+     },
+     {
+      "id": "j2",
+      "form": "conclusion",
+      "parent_ref": null,
+      "result_contract": {
+       "id": "c1",
+       "form": {
+        "term": "text"
+       },
+       "allowed_result_types": [
+        {
+         "term": "text"
+        }
+       ]
+      },
+      "result": {
+       "result_type": {
+        "term": "text"
+       },
+       "value": {
+        "kind": "text",
+        "value": "x"
+       }
+      },
+      "method": {
+       "method": {
+        "term": "interpretation"
+       }
+      },
+      "lifecycle": {
+       "status": "deprecated",
+       "superseded_by": [
+        {
+         "asset": {
+          "asset_id": "a",
+          "asset_version": "1",
+          "judgment_version": "1"
+         },
+         "judgment_id": "j1"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "report": [
+    {
+     "rule_id": "PUBLIC-FORM-CONSISTENCY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-ASSET-CAPABILITY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-UNIQUE-IDENTITY",
+       "path": "/judgments/1/result_contract/id",
+       "message": "duplicate result_contract id \"c1\"; first declared by /judgments/0. A result contract id is a resolution target, so one id must name one contract."
+      }
+     ]
+    },
+    {
+     "rule_id": "PUBLIC-TERM-UNIQUENESS",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-PARENT-CLOSURE",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-TERM-VOCABULARY",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-NAVIGATION-LABEL",
+     "ok": true,
+     "violations": []
+    },
+    {
+     "rule_id": "PUBLIC-LIFECYCLE",
+     "ok": false,
+     "violations": [
+      {
+       "rule_id": "PUBLIC-LIFECYCLE",
+       "path": "/judgments",
+       "message": "current-asset replacement graph must be acyclic"
+      }
+     ]
+    }
+   ],
+   "assert": {
+    "status": "READ_CORE_INVALID",
+    "field": "/payload/judgments/1/result_contract/id",
+    "rule": "PUBLIC-UNIQUE-IDENTITY"
+   }
+  }
+ ]
+}

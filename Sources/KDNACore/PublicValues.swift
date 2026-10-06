@@ -54,8 +54,9 @@ struct PublicFailure: Error {
     let componentFailure: J
     let field: String?
     let subject: String?
-    init(_ code: String = "READ_CORE_INVALID", componentFailure: J = nil, field: String? = nil, subject: String? = nil) {
-        self.code = code; self.componentFailure = componentFailure; self.field = field; self.subject = subject
+    let crossEntryRule: String?
+    init(_ code: String = "READ_CORE_INVALID", componentFailure: J = nil, field: String? = nil, subject: String? = nil, crossEntryRule: String? = nil) {
+        self.code = code; self.componentFailure = componentFailure; self.field = field; self.subject = subject; self.crossEntryRule = crossEntryRule
     }
 }
 /// The Node strict parser hands string bodies to JSON.parse, so a malformed

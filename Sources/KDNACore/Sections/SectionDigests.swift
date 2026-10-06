@@ -51,6 +51,16 @@ enum SectionDigests {
             try demand(declared.text == C, "READ_CORE_INVALID")
         }
     }
+    // validateDecodedPayload (semantic-admission.js): the 0.5-generation
+    // Payload shape, the asset bindings, then the cross-entry obligations.
+    static func validateDecodedPayload(_ manifest: J, _ payload: J) throws -> J {
+        let validated = try SemanticContract.validate("Payload", payload)
+        for (assetKey, manifestKey) in [("asset_id", "asset_id"), ("asset_version", "version"), ("judgment_version", "judgment_version")] {
+            try demand(exact(validated["asset"][assetKey].text, manifest[manifestKey].text), "READ_CORE_INVALID")
+        }
+        try CrossEntry.assertPayload(validated, try SemanticContract.loadedContract.get()["core_terms"])
+        return validated
+    }
     static func reconstructPayload(_ ir: J) throws -> J {
         try SectionContract.validate("CanonicalIR06Candidate", ir)
         let nodes = ir["nodes"].list
