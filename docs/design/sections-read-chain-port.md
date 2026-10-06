@@ -179,15 +179,15 @@ Confirmed surface decisions (f2 + c0 early-alignment, binding):
 - Naming: keep the `KDNA*` prefix (repo convention; the naming gate bans
   only V+integer generation labels); run a collision sweep against existing
   type names before landing; candidate state in docs/headers only.
-- Faces: asset methods or free functions both pass; the binding criterion
-  is payload discipline — the phase tokens (admitted request / authority /
-  prepared / snapshot) are the only channel through phases and are always
-  mandatory parameters; phase order, the one-shot latch and stage
-  observability match the Node implementation point-by-point. Node reality
-  (re-verified by c0): the core faces are free functions; the retained
-  prepare is `prepareRetainedSectionRead(snapshot, request, authority)` —
-  snapshot leading, three arguments. The §6 asset-hung sketch keeps that
-  shape and semantics; naming maps 1:1 to the Node faces for review.
+- Faces: **asset-hung** (f2's preference governs; c0's free-function note
+  is compatibility context only). The binding criterion is payload
+  discipline — the phase tokens (admitted request / authority / prepared /
+  snapshot) are the only channel through phases and are always mandatory
+  parameters; phase order, the one-shot latch and stage observability match
+  the Node implementation point-by-point. The retained prepare keeps the
+  Node semantics (snapshot leading among its arguments, three arguments in
+  total) while hanging on the asset object; naming maps 1:1 to the Node
+  faces for review.
 - Authority callback: a Swift closure returning `Bool?`; only `.some(true)`
   grants (`.none` / `.some(false)` / thrown errors all deny — equivalent to
   Node's strict `!== true`, which rejects every truthy non-true). Node
@@ -233,24 +233,25 @@ public final class KDNASectionAsset {
     public func readCatalog(_ admitted: KDNAAdmittedSectionRequest) throws -> KDNASectionSnapshot
     public func readExactSelection(_ admitted: KDNAAdmittedSectionRequest) throws -> KDNASectionSnapshot
     public func sectionBytes(_ snapshot: KDNASectionSnapshot, sectionId: String) throws -> [UInt8]
+    // Retained faces (asset-hung; Node semantics preserved: snapshot leading
+    // among the arguments, three arguments total):
+    public func prepareRetainedRead(
+        _ snapshot: KDNASectionSnapshot,
+        _ request: KDNAAdmittedSectionRequest,
+        _ authority: KDNASectionReadAuthority
+    ) throws -> KDNAPreparedRetainedRead        // one-shot token
+    public func readRetained(
+        _ prepared: KDNAPreparedRetainedRead,
+        host: KDNATrustedHostReadProvider
+    ) throws -> KDNARetainedReadResult
 }
 
-// Retained faces mirror the Node split (snapshot leading, three arguments):
 public final class KDNASectionReadAuthority {
     public static func create(
         callback: @escaping (KDNAValue) async throws -> Bool?,
         signaturePolicy: KDNASignaturePolicy
     ) throws -> KDNASectionReadAuthority   // non-function callback → RETAINED_AUTHORITY_CALLBACK (typed)
 }
-public func prepareRetainedRead(
-    _ snapshot: KDNASectionSnapshot,
-    _ request: KDNAAdmittedSectionRequest,
-    _ authority: KDNASectionReadAuthority
-) throws -> KDNAPreparedRetainedRead        // one-shot token
-public func readRetained(
-    _ prepared: KDNAPreparedRetainedRead,
-    host: KDNATrustedHostReadProvider
-) throws -> KDNARetainedReadResult
 
 public struct KDNASectionReadRequest {   // closed union: whole|catalog|exactSelection|expand
     public static func whole(requestId: String, budgetBytes: Int) -> Self
@@ -277,10 +278,14 @@ golden set and checks in, per fixture: the exact bytes, the Node-chain
 outputs (manifest view, A/C/E, IR digest, per-frame sha256, catalog), and
 the expected diagnostics for hostile mutations.
 
-**Privacy is a hard item (f2 requirement):** goldens entering this public
-repo must be synthetic content or an Owner-cleared public-safe subset —
-real coach material must never land here directly. Every fixture carries
-its **regeneration method**: the released-artifact versions used and the
+**Privacy is a hard item (f2 requirement, re-emphasized by c0):** the
+checked-in goldens are **synthetic assets** built to exercise the same
+format paths (plus hostile-mutation vectors) — **zero real coach material
+from the four bundles enters this public repo**; the four real bundles
+serve only as LOCAL acceptance comparisons (digest equality, not
+committed). Any real material in a fixture requires explicit Owner
+clearing with a public-safe subset. Every fixture carries its
+**regeneration method**: the released-artifact versions used and the
 generation script, so reviewers can replay it. Hostile-mutation
 diagnostic-expectation sets are explicitly welcome.
 
