@@ -851,9 +851,38 @@ substitute. Consequently:
     `SectionsFixtureTests.testExpandBindingParity`. Recorded: the
     in-memory capture's source identity is empty, so `checkCapture`'s
     identity comparison is vacuous there while every digest field is
-    checked. Remaining Stage B: the retained read faces (retained-common /
-    retained-plan / retained-state with the host gate), then the kdsig
-    ed25519 stack.
+    checked.
+  - **Retained preparation stack (landed 2026-10-06, Stage B chunk 2b-6):**
+    the retained contract (`retained/contract.json`, 291 KB, ~300 types)
+    is vendored as a SHA-pinned resource (`188b4de8…278c`) with
+    `RetainedContract`; `RetainedPlan` ports the normalization (asset /
+    catalog checks, `READ_SELECTION_NOT_FOUND` / `READ_SELECTION_AMBIGUOUS`,
+    catalog-order normalization) and the plan projection per mode
+    (descriptor sets, the closure walk, the exact-selection union and
+    expansion-target scopes, the expand handle checks) plus
+    `selected-context` (asset-declaration omissions, the judgment catalog
+    subset, the reference/relationship closure); `SectionRetained` ports
+    the request admission (exact key set, UInt budget, the tuple rules
+    incl. the historical tuples and the mixed-tuple detection), the
+    authority with the signature policy, and the preparation — origin
+    record, read intent, authority context, the callback grant, then the
+    prepared receipt with the signature-policy check against the
+    immutable origin receipt. The one-shot phase machine
+    (`available→reserved→closed`) is carried. **Acceptance: ten cases —
+    whole / exact_selection / catalog / expand / stale-expand
+    preparations plus five rejection details
+    (`origin_scope_insufficient`, `authority_denied`,
+    `signature_policy_unsatisfied`, `mixed_tuple`, `input_invalid`) — are
+    byte-identical to the released chain** (475,321 canonical bytes,
+    run-bound UUIDs and the digests that bind them normalized; every
+    other byte exact); committed as
+    `SectionsFixtureTests.testRetainedPreparationParity`. **Recorded scope
+    boundary:** the retained EXECUTION half (the host-gated payload
+    delivery: `readRetained` with a trusted-host provider) belongs to the
+    protected-payload subsystem (`protected-payload-*`,
+    `protected-source-*`, `source-protected-*`) — a separate large scope
+    that stays closed here (fail closed, `PROTECTION_BINDING_UNIMPLEMENTED`
+    paths unchanged). Remaining Stage B: the kdsig ed25519 stack.
 - **Stage A3:** whole-read/catalog faces and the consumer loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1

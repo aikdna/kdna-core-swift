@@ -332,6 +332,86 @@ final class SectionsFixtureTests: XCTestCase {
         XCTAssertEqual(negative { $0["tuple"]["core"] = .string("0.0.0") }, "SECTION_TYPED_SHAPE")
         XCTAssertEqual(negative { $0["mode"] = .string("catalog"); $0["selection"] = .null; $0["handle"] = .null }, "READ_HANDLE_UNTRUSTED")
     }
+    // The retained-preparation stack, pinned against the released chain on
+    // ten cases (whole / exact / catalog / expand / expand-stale preparations
+    // and five rejection details). The normalized digest covers the run-bound
+    // UUIDs and the digests that bind them; every other byte is exact.
+    func testRetainedPreparationParity() async throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
+        let bytes = [UInt8](try Data(contentsOf: url))
+        let asset = try KDNASectionAsset.open(bytes: bytes)
+        let readAuthority = try asset.createReadAuthority { _ in true }
+        let whole = await asset.readWhole(try asset.admitWholeReadRequest(requestId: "w", budgetBytes: 1048576), readAuthority)
+        let wholeView = try XCTUnwrap(whole.snapshot).inspect()
+        let catalog = await asset.readCatalog(try asset.admitCatalogRequest(requestId: "c", budgetBytes: 1048576), readAuthority)
+        var out: J = [:]
+        func run(_ label: String, _ snapshot: KDNASectionSnapshot, _ candidate: J, deny: Bool = false, policy: J? = nil) async throws {
+            let admitted = SectionRetained.admit(candidate)
+            guard case .admitted(let request) = admitted else {
+                if case .rejected(let value) = admitted { out[label] = ["admission": value] }
+                return
+            }
+            var captured: J = .null
+            let authority = try SectionRetained.createAuthority({ ctx in captured = ctx; return !deny }, policy)
+            switch await SectionRetained.prepare(snapshot, request, authority) {
+            case .rejected(let value): out[label] = ["prep": value]
+            case .prepared(let prepared): out[label] = ["context": captured, "data": SectionRetained.inspectPreparation(prepared) ?? .null]
+            }
+        }
+        func wh(_ mode: String, _ extra: J = [:]) -> J {
+            var r: J = ["request_id": .string("r-" + mode), "tuple": asset.tuple, "budget_bytes": .number(1048576),
+                        "mode": .string(mode), "selection": .null, "handle": .null]
+            for (k, v) in extra.fields { r[k.text] = v }
+            return r
+        }
+        try await run("whole", whole.snapshot!, wh("whole_asset"))
+        try await run("exact", whole.snapshot!, wh("exact_selection", ["selection": ["asset_id": "asset:course-craft-standards", "asset_version": "0.1.0", "judgment_ids": .array([.string("craft:judgment-shift")])]]))
+        try await run("catalog-origin", catalog.snapshot!, wh("catalog"))
+        let originRecord: J = ["snapshot_id": wholeView["snapshot_id"], "kind": "whole",
+                               "capture_id": wholeView["verification"]["capture"]["capture_id"],
+                               "admission_request_digest": wholeView["verification"]["request_digest"],
+                               "verification_digest": .string(sha(try KDNAJSON.canonical(wholeView["verification"]))),
+                               "checked_sections_digest": .string(sha(try KDNAJSON.canonical(wholeView["verification"]["checked_sections"])))]
+        let target = wholeView["ir"]["expansion_targets"].list[0]
+        let handle: J = ["handle_id": "h", "asset": wholeView["asset"], "tuple": wholeView["tuple"], "origin": originRecord,
+                         "anchor": ["kind": "asset"], "target": target["target"], "scope": target["scope"]]
+        try await run("expand", whole.snapshot!, wh("expand", ["handle": handle]))
+        var stale = handle
+        stale["origin"]["snapshot_id"] = .string("section-snapshot:00000000-0000-0000-0000-000000000000")
+        try await run("expand-stale", whole.snapshot!, wh("expand", ["handle": stale]))
+        try await run("catalog-origin-with-whole-mode", catalog.snapshot!, wh("whole_asset"))
+        try await run("denied", whole.snapshot!, wh("whole_asset"), deny: true)
+        try await run("require-signature", whole.snapshot!, wh("whole_asset"), policy: ["requireSignature": true, "expectedPublicKeyHex": .null])
+        var mixed = asset.tuple; mixed["read"] = .string("0.0.0")
+        if case .rejected(let value) = SectionRetained.admit(["request_id": "x", "tuple": mixed, "budget_bytes": .number(1), "mode": "whole_asset", "selection": .null, "handle": .null]) {
+            out["mixed-tuple"] = ["admission": value]
+        }
+        if case .rejected(let value) = SectionRetained.admit(["request_id": "x", "tuple": .number(3)]) {
+            out["bad-shape"] = ["admission": value]
+        }
+        // rejection details
+        func detail(_ label: String) -> (String, String) {
+            let obj = out[label]["prep"] != .null ? out[label]["prep"] : out[label]["admission"]
+            return (obj["status"].text, obj["detail"].text)
+        }
+        for (label, expected) in [("catalog-origin-with-whole-mode", "origin_scope_insufficient"), ("denied", "authority_denied"),
+                                  ("require-signature", "signature_policy_unsatisfied"), ("mixed-tuple", "mixed_tuple"), ("bad-shape", "input_invalid")] {
+            XCTAssertEqual(detail(label).1, expected, label)
+        }
+        for label in ["whole", "exact", "catalog-origin"] {
+            XCTAssertEqual(out[label]["data"] != .null, true, label)
+        }
+        // Whole-output pin (run-bound UUIDs and the digests binding them normalized).
+        var text = String(decoding: try KDNAJSON.canonical(out), as: UTF8.self)
+        for family in ["section-snapshot", "section-scoped", "section-catalog", "capture"] {
+            text = text.replacingOccurrences(of: "\(family):[0-9a-f-]{36}", with: "\(family):UUID", options: .regularExpression)
+        }
+        text = text.replacingOccurrences(of: "\"operation_id\":\"retained:[0-9a-f-]{36}\"", with: "\"operation_id\":\"retained:UUID\"", options: .regularExpression)
+        for field in ["verification_digest", "intent_digest", "origin_receipt_digest"] {
+            text = text.replacingOccurrences(of: "\"\(field)\":\"sha256:[0-9a-f]{64}\"", with: "\"\(field)\":\"sha256:RUN-BOUND\"", options: .regularExpression)
+        }
+        XCTAssertEqual(sha(Data(text.utf8)), "sha256:265fddf7e84c8053fcfbdc381712aa5c60024d94e924003d0cd699772ff9d683")
+    }
     func testFixtureAuthorshipAndRegenerationRecord() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0.authorship", withExtension: "json", subdirectory: "Fixtures"))
         let authorship = try KDNAJSON.parse(Data(contentsOf: url))
