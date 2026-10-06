@@ -73,10 +73,12 @@ final class SectionsFixtureTests: XCTestCase {
             .replacingOccurrences(of: "capture:[0-9a-f-]{36}", with: "capture:UUID", options: .regularExpression)
         XCTAssertEqual(sha(Data(normalized.utf8)), "sha256:3199074e931ffeb7b170c5f76ac666fce8ea007564971cf297fff93fb79877c4")
     }
-    // Pins the current fail-closed placeholders for the not-yet-ported partial
-    // modes (f2 review item): contract-valid unsupported envelopes, NOT the
-    // released behavior — the released chain serves both modes, and landing
-    // that parity replaces these pins.
+    // Pins the entry-surface fail-closed behavior (review package §5): the
+    // generic whole-read face declines partial modes with a contract-valid
+    // unsupported envelope. The modes themselves are served by their
+    // dedicated faces — see testCatalogReadFixture, testExactSelectionParity
+    // and testExpandBindingParity; the released chain instead dispatches all
+    // modes through one entry (recorded API-shape difference).
     func testUnportedPartialModesFailClosed() async throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
         let bytes = [UInt8](try Data(contentsOf: url))

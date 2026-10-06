@@ -10,13 +10,14 @@ import Foundation
 // metadata scan, same identity fields and consistency checks; file-read io
 // batches have no bytes analogue (recorded; io is empty here).
 //
-// Declared gaps (fail closed, never silently): exact_selection / expand
-// are not yet ported and return a contract-valid unsupported placeholder
-// envelope — this is the port's own stand-in, NOT the released behavior
-// (the released chain implements these modes; that parity is the Stage B
-// target; catalog landed in readCatalog below). A signed asset fails at
-// the integrity stage until the kdsig ed25519 stack is ported
-// (SectionSignatures).
+// Entry surface (recorded, review package §5): the released chain serves
+// whole_asset and the partial modes through one dispatching entry; this
+// port exposes dedicated faces (readWhole / readCatalog /
+// readExactSelection / readExpand) and the generic whole/catalog faces
+// decline foreign partial modes with a contract-valid unsupported
+// envelope — an API-shape difference, not a behavioral one per call.
+// The signed path is complete (SectionSignatures); the retained execution
+// half and the protected subsystem remain closed scope boundaries.
 public final class KDNASectionSnapshot {
     let view: J
     /// The retained expansion origin record (exact_selection accepts).
