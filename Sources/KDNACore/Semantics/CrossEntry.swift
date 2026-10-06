@@ -195,6 +195,12 @@ enum CrossEntry {
             if ids[id] == nil { ids[id] = index }
         }
         var parentOf: [String: String] = [:]
+        // parentOf is a JS Map in the released rule: iteration below is in
+        // judgment-declaration order, and the cycle's first node — hence the
+        // reported message and path — is observable. A Swift Dictionary's
+        // iteration order is per-process randomized, so the key order is
+        // carried explicitly (the same discipline as the registry maps).
+        var parentOrder: [String] = []
         for (index, judgment) in judgments.enumerated() {
             guard case .object = judgment, judgment.has("parent_ref") else { continue }
             let path = "/judgments/\(index)/parent_ref"
@@ -210,6 +216,7 @@ enum CrossEntry {
                     out.append(Violation(path: path, message: "parent_ref cannot be evaluated because judgment id \(quote(.string(id))) is declared \(idCounts[id]!) times in this asset"))
                     continue
                 }
+                if parentOf[id] == nil { parentOrder.append(id) }
                 parentOf[id] = raw.text
             }
             if exact(raw.text, judgment["id"].text) {
@@ -219,7 +226,7 @@ enum CrossEntry {
             if ids[raw.text] == nil { out.append(Violation(path: path, message: "parent_ref \(quote(.string(raw.text))) does not resolve to any judgment id in this asset")) }
         }
         var settled = Set<String>()
-        for start in parentOf.keys {
+        for start in parentOrder {
             if settled.contains(start) { continue }
             var chain: [String] = []
             var node: String? = start
