@@ -591,6 +591,36 @@ substitute. Consequently:
     ExpressibleByNilLiteral) instead of `Optional.none` — the absent case
     is written with an explicit branch instead. With this, everything the
     whole-read face calls is ported; A3 (the faces and envelopes) is next.
+  - **A3 whole-read faces (landed 2026-10-06):**
+    `Sections/SectionFaces.swift` ports the
+    `executeSectionNode` read path point-by-point — opaque request /
+    authority / snapshot tokens, the admission envelope with the closed
+    stage list and the classify() unsupported/rejected split, the
+    in-memory-bytes capture (the design-sanctioned variant: same metadata
+    scan, identity fields, one-shot latch and consistency checks; io is
+    empty without file reads — recorded), the protection gate, the
+    authorization context with the signature read intent, the strict
+    `true` grant rule, the capture-changed check, the full semantic chain
+    (restore → reconstruct → validateDecodedPayload → buildIR → derived-IR
+    cross-check → observeWhole → bindings → checksums → signatures) and
+    the WholeSectionSnapshotData06 assembly (digests evidence,
+    verification block with capture table-frames). `SectionChecksums`
+    ports the whole-read verification (absent / verified_document_2 with
+    the first-difference pointer); `SectionSignatures` ports policy, the
+    read intent and the unsigned path. **Acceptance:** on all eight local
+    assets the complete snapshot data plus the envelope
+    (`input_byte_length`; the `section-snapshot:` / `capture:` UUIDs
+    normalized) is **byte-identical** to the released chain — 57 MB of
+    canonical JSON — and the denied-callback case matches
+    (`SECTION_PERMISSION_DENIED`, stage `authorization`, diagnostic
+    `null`). Two declared gaps, both fail closed: partial modes
+    (catalog/exact_selection/expand) return the released unsupported
+    envelope until Stage B; a signed asset fails at the integrity stage
+    until the kdsig ed25519 stack is ported. Pitfalls pinned: the
+    envelope's `diagnostic` is the whole object or `null` (not a
+    field/null pair), and comparator harnesses must embed the snapshot as
+    a parsed object — a 9 MB canonical string trips the 1 MiB
+    string cap in the strict canonicalizer on both sides.
 - **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1

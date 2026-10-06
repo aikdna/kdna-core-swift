@@ -46,10 +46,11 @@ enum PublicDigests {
         }
         return out
     }
-    static func evidence(_ key: String, _ observed: String, expected: J = nil) -> J {
+    static func evidence(_ key: String, _ observed: String, expected: J = nil, expectedSource: J = nil) -> J {
         let pairs = ["A": ("container_bytes", "container-bytes"), "C": ("content_tree", "content-tree"), "E": ("runtime_entry_set", "runtime-entry-set")]
         let pair = pairs[key]!
-        let comparison: J = expected == .null ? ["state": "not_compared", "expected": nil, "expected_source": nil] : ["state": .string(exact(expected.text, observed) ? "matched" : "mismatched"), "expected": expected, "expected_source": ["kind": "manifest_declaration", "source_id": "kdna.json"]]
+        let defaultSource: J = ["kind": "manifest_declaration", "source_id": "kdna.json"]
+        let comparison: J = expected == .null ? ["state": "not_compared", "expected": nil, "expected_source": nil] : ["state": .string(exact(expected.text, observed) ? "matched" : "mismatched"), "expected": expected, "expected_source": expectedSource == .null ? defaultSource : expectedSource]
         return ["basis": .string(pair.0), "profile": .string("kdna.digest-basis." + pair.1), "profile_version": "0.2.0", "algorithm": "SHA-256", "observed": .string(observed), "comparison": comparison]
     }
 }
