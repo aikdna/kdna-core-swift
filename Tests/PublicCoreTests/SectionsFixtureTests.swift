@@ -130,6 +130,32 @@ final class SectionsFixtureTests: XCTestCase {
         let normalized = text.replacingOccurrences(of: "capture:[0-9a-f-]{36}", with: "capture:UUID", options: .regularExpression)
         XCTAssertEqual(sha(Data(normalized.utf8)), "sha256:ed47060b53a6a4a3aed802f4faba018a4b8fbf79436db9ef724f5fc0a1ac21f8")
     }
+    func testInterpretationInputsFixture() throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
+        let bytes = [UInt8](try Data(contentsOf: url))
+        var capture = try SectionFaces.captureWhole(bytes)
+        let manifest = try SectionManifest.load(capture.manifestBytes)
+        let layout = try SectionLayout.readSectionLayout(&capture, manifest)
+        let structure = try SectionStructure.inspectStructure(&capture, layout, manifest)
+        let inputs = try SectionLoadedValidation.readInterpretationInputs(&capture, layout, structure)
+        // Released-chain pins (recomputed from 0.36.0 on this fixture).
+        XCTAssertEqual(inputs["judgments"].list.count, 8)
+        XCTAssertEqual(inputs["frames"].list.count, 8)
+        let frame0 = inputs["frames"].list[0]
+        XCTAssertEqual(frame0["section_id"].text, "topic:craft:judgment-shift")
+        XCTAssertEqual(frame0["observed_read_bytes"].numeric, 7866)
+        XCTAssertEqual(frame0["read_calls"].numeric, 1547)
+        XCTAssertEqual(frame0["skipped_text_bytes"].numeric, 6892)
+        XCTAssertEqual(frame0["observed_ranges_digest"].text, "sha256:7b800d5df5e0fa42b2e5b8b0ec9a679260511fee26eee1f7b18e47c4dd4bbc7c")
+        let totalRead = inputs["frames"].list.reduce(0) { $0 + Int($1["observed_read_bytes"].numeric) }
+        let totalSkipped = inputs["frames"].list.reduce(0) { $0 + Int($1["skipped_text_bytes"].numeric) }
+        XCTAssertEqual(totalRead, 58747)
+        XCTAssertEqual(totalSkipped, 47423)
+        // Whole-output pin: the canonical {judgments, frames} equals the
+        // released chain's digest (no UUIDs on this path).
+        let text = String(decoding: try KDNAJSON.canonical(inputs), as: UTF8.self)
+        XCTAssertEqual(sha(Data(text.utf8)), "sha256:a2d8b6f2d67a8a9b1108334f4319bdbf9dd0de92b1b06c1c13251c322463afe0")
+    }
     func testFixtureAuthorshipAndRegenerationRecord() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0.authorship", withExtension: "json", subdirectory: "Fixtures"))
         let authorship = try KDNAJSON.parse(Data(contentsOf: url))

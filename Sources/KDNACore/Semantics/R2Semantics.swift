@@ -7,13 +7,26 @@ import Foundation
 // and result compatibility, relationships, dependencies, examples (incl. the
 // partial-outcome entry ordering), revisions, attributions and closures.
 //
-// The `scope` parameter of the released function belongs to the partial-read
-// flows (Stage B); this port implements the whole-read path (scope == null),
-// where every record and judgment is active.
+// The released `scope` parameter gates the partial-read flows: only loaded
+// judgments (and records owned by them) are actively validated, the registry
+// comes from the structurally observed registration inputs, and the plan
+// graph sees the active judgment subset with the complete-judgment set for
+// emission policies. scope == nil is the whole-read path.
+struct R2ValidationScope {
+    let registry: R2Registry.Registry
+    let loadedJudgments: Set<String>
+    let completeJudgments: [J]
+    let requireCompletePolicyUses: (R2Registry.Record) throws -> Void
+}
 enum R2Semantics {
-    static func validateR2(_ manifest: J, _ payload: J, _ entries: [KDNAKey: Data], _ registryScope: R2Registry.Registry? = nil) throws -> R2Registry.Registry {
+    static func validateR2(_ manifest: J, _ payload: J, _ entries: [KDNAKey: Data], _ scope: R2ValidationScope? = nil) throws -> R2Registry.Registry {
         let r: R2Registry.Registry
-        if let registryScope { r = registryScope } else { r = try R2Registry.createRegistry(manifest, payload) }
+        if let scope { r = scope.registry } else { r = try R2Registry.createRegistry(manifest, payload) }
+        let activeRecord: (R2Registry.Record) -> Bool = { record in
+            scope == nil || record.judgment == .null || scope!.loadedJudgments.contains(record.judgment.text)
+        }
+        let activeJudgments = scope == nil ? payload["judgments"].list
+            : payload["judgments"].list.filter { scope!.loadedJudgments.contains($0["id"].text) }
         let contract = try SemanticContract.loadedContract.get()
         let definition = contract["r2_semantics"], termsRegistry = contract["core_terms"]
         if definition == .null { try R2Registry.fail("/payload/profile_version") }
@@ -51,7 +64,7 @@ enum R2Semantics {
             let material = try own(assetRecord!, target, !r.local(target), ["material"], nil)
             if let material, !["foundation", "premise"].contains(material.value["kind"].text) { try R2Registry.fail("/payload/kernel/foundation_refs") }
         }
-        for record in r.ordered where record.target["kind"].text == "contract" {
+        for record in r.ordered where activeRecord(record) && record.target["kind"].text == "contract" {
             try R2Values.validateContract(record.value, record.path)
             if record.value["kind"].text != "emission_list" {
                 for term in [record.value["form"]] + record.value["allowed_result_types"].list {
@@ -62,6 +75,7 @@ enum R2Semantics {
         }
         var terms = Set<String>()
         for record in r.ordered {
+            if !activeRecord(record) { continue }
             let v = record.value, kind = record.target["kind"].text, at = record.path
             if kind == "material" {
                 if ["definition", "foundation", "premise"].contains(v["kind"].text) { _ = try applies(v["applies_to"], at) }
@@ -139,7 +153,7 @@ enum R2Semantics {
             }
             contentActive.remove(id); contentDone.insert(id)
         }
-        for record in r.ordered where record.target["kind"].text == "component" { try componentBody(record) }
+        for record in r.ordered where activeRecord(record) && record.target["kind"].text == "component" { try componentBody(record) }
         func methodRoles(_ method: String, _ components: [J], _ field: String) throws {
             let spec = roles[method]
             if spec == .null { try R2Registry.fail(field) }
@@ -313,7 +327,13 @@ enum R2Semantics {
                 _ = try own(record, R2Registry.ref("source", dependency["producer"]["source_ref"].text), true, ["source"], nil)
             }
         }
-        try R2Plan.checkPlans(payload, r, normalContract)
+        if scope == nil {
+            try R2Plan.checkPlans(payload, r, normalContract, nil)
+        } else {
+            var scopedPayload = payload
+            scopedPayload["judgments"] = .array(activeJudgments)
+            try R2Plan.checkPlans(scopedPayload, r, normalContract, scope)
+        }
         for example in payload["examples"].list {
             let record = try resolve(R2Registry.ref("example", example["id"].text), "example", "/payload")!
             let at = record.path

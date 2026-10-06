@@ -19,14 +19,15 @@ enum SectionStructureScanner {
     }
     private final class Walker {
         let length: Int
+        let interpretationInputs: Bool
         let read: (Int, Int, String) throws -> [UInt8]
         var offset = 0
         var reads: [Read] = []
         var readBytes = 0
         var skips: [Skip] = []
         var skippedTextBytes = 0
-        init(_ length: Int, _ read: @escaping (Int, Int, String) throws -> [UInt8]) {
-            self.length = length; self.read = read
+        init(_ length: Int, _ interpretationInputs: Bool, _ read: @escaping (Int, Int, String) throws -> [UInt8]) {
+            self.length = length; self.interpretationInputs = interpretationInputs; self.read = read
         }
         func take(_ n: Int, _ purpose: String) throws -> [UInt8] {
             try need(n >= 0 && offset + n <= length, "SCAN_RANGE")
@@ -70,6 +71,11 @@ enum SectionStructureScanner {
             return true
         }
         func retained(_ path: [PathElement], _ force: Bool) -> Bool {
+            if interpretationInputs, path.count >= 3, path[0] == .key("records"), path[1].isIndex, path[2] == .key("value") {
+                if path.count == 4, case .key(let field) = path[3],
+                   ["method", "extensions", "result_contract", "formation_rule", "parent_ref", "lifecycle"].contains(field) { return true }
+                if case .key(let last) = path[path.count - 1], ["extension", "extensions"].contains(last) { return true }
+            }
             if force || isEnvelope(path) { return true }
             if path.count == 1, case .key(let only) = path[0], ["kind", "section_id"].contains(only) { return true }
             if path.count >= 3, path[0] == .key("records"), path[2] == .key("value"), case .key(let last) = path[path.count - 1] {
@@ -169,9 +175,12 @@ enum SectionStructureScanner {
             return .number(value)
         }
     }
-    enum PathElement: Equatable { case key(String), index(Int) }
-    static func scanFrame(_ length: Int, _ read: @escaping (Int, Int, String) throws -> [UInt8]) throws -> Result {
-        let walker = Walker(length, read)
+    enum PathElement: Equatable {
+        case key(String), index(Int)
+        var isIndex: Bool { if case .index = self { return true }; return false }
+    }
+    static func scanFrame(_ length: Int, _ interpretationInputs: Bool = false, _ read: @escaping (Int, Int, String) throws -> [UInt8]) throws -> Result {
+        let walker = Walker(length, interpretationInputs, read)
         let partial = try walker.value(0, [], false, false)
         try walker.need(walker.offset == length, "SCAN_TRAILING_BYTES")
         return Result(partial: partial, reads: walker.reads, readBytes: walker.readBytes, skippedTextBytes: walker.skippedTextBytes)

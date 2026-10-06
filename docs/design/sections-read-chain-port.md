@@ -738,6 +738,28 @@ substitute. Consequently:
     re-verification note). Next Stage B chunks: loaded validation + the
     fixed-point closure + scoped materialization, then the
     exact_selection face and the expansion binding.
+  - **Scoped validation + interpretation inputs (landed 2026-10-06,
+    Stage B chunk 2b-1):** `validateR2` gained the released `scope`
+    parameter (`R2ValidationScope`: the structurally observed registry,
+    the loaded-judgment set, the complete-judgment set for emission
+    policies and the complete-policy-uses hook) with the four gated
+    traversals (`activeRecord` on the contract/record/component loops,
+    `activeJudgments` on the judgment pass) and the plan graph seeing the
+    active subset — `scope == nil` keeps the whole-read path exactly as
+    landed. `SectionLoadedValidation.readInterpretationInputs` ports the
+    topic-frame interpretation read; the scanner gained the
+    `interpretationInputs` retention option (the method/extensions/
+    result_contract/formation_rule/parent_ref/lifecycle subtrees and
+    every extension position are read and hashed; the rest of the body
+    text stays unobserved). **Parity: the full `{judgments, frames}` is
+    byte-identical to the released chain on all eight local assets**
+    (31–53 KB of canonical JSON each). Committed
+    `SectionsFixtureTests.testInterpretationInputsFixture` (frame digests,
+    read/skip accounting and the whole-output digest `a2d8b6f2…afe0`).
+    Remaining for the exact_selection face: the loaded schema/scalar
+    passes (`validateAuthored` with the Ajv field pointers), the scoped
+    cross-entry variant, the fixed-point closure and the scoped
+    materialization.
 - **Stage A3:** whole-read/catalog faces and the consumer loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1

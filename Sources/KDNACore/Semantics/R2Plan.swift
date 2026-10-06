@@ -147,7 +147,7 @@ enum R2Plan {
         }
         for id in graph.keys { try visit(id) }
     }
-    static func checkPlans(_ payload: J, _ r: R2Registry.Registry, _ normalContract: @escaping (J, String) throws -> J) throws {
+    static func checkPlans(_ payload: J, _ r: R2Registry.Registry, _ normalContract: @escaping (J, String) throws -> J, _ scope: R2ValidationScope? = nil) throws {
         var contexts: R2Registry.OrderedMap<Context> = R2Registry.OrderedMap<Context>()
         for judgment in payload["judgments"].list {
             let plan = judgment["method"]["plan"]
@@ -445,7 +445,9 @@ enum R2Plan {
                 try R2Registry.fail(context.at)
             }
         }
-        for record in r.ordered where record.target["kind"].text == "contract" && record.value["kind"].text == "emission_list" {
+        for record in r.ordered where (scope == nil || record.judgment == .null || scope!.loadedJudgments.contains(record.judgment.text))
+            && record.target["kind"].text == "contract" && record.value["kind"].text == "emission_list" {
+            if let scope { try scope.requireCompletePolicyUses(record) }
             let policy = try r.get(record.value["policy_ref"], ["policy"], record.path)
             if policy == nil || policy!.value["combine"]["kind"].text != "authored" { try R2Registry.fail(record.path) }
             guard let context = contexts.get(policy!.judgment.text), let merge = context.nodes.get(R2Registry.canonicalKey(policy!.value["combine"]["merge_node_ref"]["id"])), merge["kind"].text == "use" else {
@@ -453,7 +455,7 @@ enum R2Plan {
             }
             let unit = (try r.get(merge["unit_ref"], ["unit"], record.path))!.value
             var count = 0
-            for judgment in payload["judgments"].list {
+            for judgment in (scope?.completeJudgments ?? payload["judgments"].list) {
                 for candidate in judgment["method"]["units"].list {
                     for port in candidate["inputs"].list + candidate["outputs"].list where r.identity(port["contract_ref"]) == r.identity(record.target) {
                         count += 1
