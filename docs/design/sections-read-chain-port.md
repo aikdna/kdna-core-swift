@@ -492,9 +492,32 @@ substitute. Consequently:
     iterate into the derived IR's reference array), so the port carries
     insertion-ordered maps; `bounds` distinguishes an absent `maximum` from
     an explicit null (JS `=== null`).
-  - **A2c (next):** component semantics, static-policy semantics,
-    `validateR2`, then `canonical-ir` (buildIR) with the derived-IR digest
-    acceptance on the eight assets.
+  - **A2c part 1 (landed 2026-10-06):** `Semantics/ComponentSemantics.swift`
+    (carrier registry and profiles from the contract, definition-digest
+    integrity, extension walking, method presence/adoption carriers,
+    component declarations with every digest binding and limit) and
+    `Semantics/StaticPolicySemantics.swift` (the single critical carrier,
+    rule digest, priority normalization, candidate validation). Parity: the
+    full `resolveComponents` / `resolveStaticPolicies` /
+    `checkInterpretationComplete` output on all eight local assets is
+    byte-identical (238 KB canonical JSON). The eight assets carry no
+    static-policy carriers, so the policy success path was exercised with a
+    crafted synthetic payload in scratch (recorded: the supported record is
+    byte-identical to Node's, 1.8 KB canonical); promoting it to a
+    committed fixture rides on the fixture package. Committed
+    `visit-extensions-oracles.json` (7 synthetic micro-payload rows with
+    verbatim traversal paths and the two interpretation-complete verdicts)
+    with `ComponentSemanticsTests`. Porting facts pinned: the JS `\w` gate
+    in item keys is implied by the ASCII key grammar (ICU `\w` is
+    Unicode-aware, JS's is not); the utf8()/canonicalJson 1 MiB cap
+    classifies as READ_INPUT_INVALID before the component limit checks
+    (READ_COMPONENT_LIMIT_EXCEEDED); the extension-walk dedup is object
+    identity in JS — strict JSON inputs carry no aliasing, so the port's
+    per-path dedup is exact for every representable input (the one
+    aliasing row was dropped from the fixture as unrepresentable).
+  - **A2c part 2 (next):** `r2-plan` and `r2-semantics` (`validateR2`),
+    then `canonical-ir` (buildIR) with the derived-IR digest acceptance on
+    the eight assets.
 - **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1

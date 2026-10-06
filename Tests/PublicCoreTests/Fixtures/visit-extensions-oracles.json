@@ -1,0 +1,151 @@
+{
+ "schema": "kdna.semantics.component-visit-oracles",
+ "schemaVersion": "0.1.0",
+ "authority": "released @aikdna/kdna-core@0.36.0 component-semantics.js visitExtensions / checkInterpretationComplete; paths are the traversal positions (\"#\" marks array indices)",
+ "note": "Synthetic micro-payloads; the walk is schema-typed, so no full payload is required.",
+ "rows": [
+  {
+   "name": "no-extensions",
+   "payload": {
+    "extensions": []
+   },
+   "expected": "ok",
+   "paths": []
+  },
+  {
+   "name": "payload-extension",
+   "payload": {
+    "extensions": [
+     {
+      "id": "x.test/1",
+      "critical": false,
+      "definition": "synthetic definition",
+      "value": {
+       "kind": "null"
+      }
+     }
+    ]
+   },
+   "expected": "ok",
+   "paths": [
+    "extensions/#0=\"x.test/1\""
+   ]
+  },
+  {
+   "name": "judgment-extension",
+   "payload": {
+    "judgments": [
+     {
+      "id": "j1",
+      "extensions": [
+       {
+        "id": "y.test/1",
+        "critical": false,
+        "definition": "synthetic definition",
+        "value": {
+         "kind": "null"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "expected": "ok",
+   "paths": [
+    "judgments/#0/extensions/#0=\"y.test/1\""
+   ]
+  },
+  {
+   "name": "nested-judgment-extension",
+   "payload": {
+    "judgments": [
+     {
+      "id": "j1",
+      "methods": [],
+      "extensions": [
+       {
+        "id": "z.test/1",
+        "critical": false,
+        "definition": "synthetic definition",
+        "value": {
+         "kind": "null"
+        }
+       }
+      ]
+     },
+     {
+      "id": "j2",
+      "extensions": [
+       {
+        "id": "w.test/1",
+        "critical": false,
+        "definition": "synthetic definition",
+        "value": {
+         "kind": "null"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "expected": "ok",
+   "paths": [
+    "judgments/#0/extensions/#0=\"z.test/1\"",
+    "judgments/#1/extensions/#0=\"w.test/1\""
+   ]
+  },
+  {
+   "name": "critical-unknown-carrier",
+   "payload": {
+    "extensions": [
+     {
+      "id": "unknown.carrier/9",
+      "critical": true,
+      "definition": "synthetic definition",
+      "value": {
+       "kind": "null"
+      }
+     }
+    ]
+   },
+   "expected": "ok",
+   "paths": [
+    "extensions/#0=\"unknown.carrier/9\""
+   ]
+  },
+  {
+   "name": "interpretation-complete-critical-unknown",
+   "payload": {
+    "extensions": [
+     {
+      "id": "unknown.carrier/9",
+      "critical": true,
+      "definition": "synthetic definition",
+      "value": {
+       "kind": "null"
+      }
+     }
+    ]
+   },
+   "expected": "READ_UNSUPPORTED_CRITICAL",
+   "paths": []
+  },
+  {
+   "name": "interpretation-complete-known-carrier",
+   "payload": {
+    "extensions": [
+     {
+      "id": "kdna.static-policy/2",
+      "critical": true,
+      "definition": "synthetic definition",
+      "value": {
+       "kind": "null"
+      }
+     }
+    ]
+   },
+   "expected": "ok",
+   "paths": []
+  }
+ ]
+}
