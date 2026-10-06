@@ -662,6 +662,26 @@ substitute. Consequently:
     environment and is carried by the review package for c0+f2 as §7
     specifies — these are local-only materials and their table does not
     enter this repo.
+  - **Public asset-hung surface (landed 2026-10-06):**
+    `Sections/SectionAsset.swift` exposes the confirmed surface (§4/§6
+    binding: KDNA* prefix, asset-hung, phase tokens mandatory through the
+    phases) as a thin public wrapper over the internal faces:
+    `KDNASectionAsset.open(bytes:expectedSHA256:)` (container rules +
+    manifest view + sections contract must hold; the optional expected
+    digest is checked first), `admitSectionRequest(_:)` and the canonical
+    `admitWholeReadRequest(requestId:budgetBytes:)`,
+    `createReadAuthority` with the `Bool?` callback rule (only
+    `.some(true)` grants; `.none` / `.some(false)` / thrown all deny —
+    the Node strict `!== true`), and `readWhole` returning the closed
+    envelope plus the opaque snapshot token. Internal failures cross the
+    boundary as the closed `KDNASectionError.code`; the asset carries
+    `fileSHA256`, the parsed `manifest` view and the contract `tuple`.
+    Committed `SectionAssetAPITests` pins acceptance on the committed
+    fixture through the public surface (accepted whole read incl. the IR
+    digest; denied callback → SECTION_PERMISSION_DENIED without a
+    snapshot; expected-digest mismatch → READ_INPUT_INVALID). Motivation:
+    the gvjl coach app consumes the chain through exactly this surface
+    (its loader migration lands with it). Full suite 39/39 green.
 - **Stage A3:** whole-read/catalog faces and the gvjl loader acceptance.
   Sequencing note: the judgment-supply projection the Render adapter
   consumes comes from the A1 whole-frame path, so A3 can land against A1
