@@ -1,0 +1,2898 @@
+{
+ "schema": "kdna.sections.fixture-authorship",
+ "schemaVersion": "0.1.0",
+ "note": "Synthetic authored inputs for the sections read-chain conformance fixture. Regenerate the asset with regenerate-sections-fixture.mjs against the released creation path (pinned @aikdna/kdna-core version checked by the script). The retained manifest is the release creation retention (format_version/payload/representation_metadata removed); the payload is the authored 0.5.1 payload.",
+ "asset": "craft-course-standards-0.1.0",
+ "fileSha256": "5f87e64fbc57637051d3bb692dc5e168e3e4328b8073d06bbfd9c1b0eb16078e",
+ "fileBytes": 762476,
+ "retainedManifest": {
+  "asset_id": "asset:course-craft-standards",
+  "asset_uid": "uid:course-craft-standards:render-refoundation:20261006",
+  "asset_type": "domain",
+  "title": "什么是好课程：课程制作标准",
+  "summary": "从 Render 仓库已记录的产品本体、课程契约、表单契约、质量引擎与提示词中整理出的课程制作与审查标准；八条判断覆盖判断迁移设计、可自测练习、真实迁移、模块结构与节奏、讲与做的比例、反面模式、证据溯源与人群适配。",
+  "languages": [
+   "zh-CN"
+  ],
+  "lineage": [],
+  "history": {
+   "coverage": "partial",
+   "statement": "本记录保存本次作者（Agent）从 Render 仓库已有标准整理出的第一版工艺资产；此前不存在同名资产的更早公开版本，历史覆盖因此标为 partial，不据此声明完整沿革。",
+   "entries": [
+    {
+     "id": "revision:course-craft-standards:0.1.0",
+     "version": "0.1.0",
+     "judgment_version": "0.1.0",
+     "at": "2026-10-06T00:00:00Z",
+     "summary": "首次成文：把分散在产品本体、消费者契约、课程表单契约、质量引擎、课程提示词与工艺审计中的课程制作判断，收敛为八条可检查的工艺标准，并逐条标注仓库来源。",
+     "affected_refs": [
+      {
+       "kind": "judgment",
+       "id": "craft:judgment-shift"
+      },
+      {
+       "kind": "judgment",
+       "id": "craft:self-verifiable-assessment"
+      },
+      {
+       "kind": "judgment",
+       "id": "craft:transfer-protocol"
+      },
+      {
+       "kind": "judgment",
+       "id": "craft:arc-sequencing"
+      },
+      {
+       "kind": "judgment",
+       "id": "craft:lesson-rhythm"
+      },
+      {
+       "kind": "judgment",
+       "id": "craft:anti-patterns"
+      },
+      {
+       "kind": "judgment",
+       "id": "craft:evidence-and-sources"
+      },
+      {
+       "kind": "judgment",
+       "id": "craft:audience-fit"
+      }
+     ],
+     "actor_refs": [
+      "actor:course-craft-author-agent"
+     ]
+    }
+   ]
+  },
+  "version": "0.1.0",
+  "judgment_version": "0.1.0",
+  "created_at": "2026-10-06T00:00:00Z",
+  "updated_at": "2026-10-06T00:00:00Z",
+  "compatibility": {
+   "min_loader_version": "0.36.0",
+   "profile": "kdna.payload.judgment",
+   "profile_version": "0.5.1"
+  },
+  "runtime": {
+   "mandatory_entries": []
+  }
+ },
+ "payload": {
+  "profile": "kdna.payload.judgment",
+  "profile_version": "0.5.1",
+  "asset": {
+   "asset_id": "asset:course-craft-standards",
+   "asset_version": "0.1.0",
+   "judgment_version": "0.1.0"
+  },
+  "actors": [
+   {
+    "id": "actor:course-craft-author-agent",
+    "kind": "agent",
+    "name": "Render 课程工艺资产作者（Agent）"
+   }
+  ],
+  "materials": [
+   {
+    "id": "material:foundation:form-first",
+    "kind": "foundation",
+    "statement": "作品载体的本质优先于判断的展开：一个课程模块必须首先是一段好的学习体验，一封来信必须首先是一次好的教练介入；当载体成立之后，判断才为其注入深度。课程不是判断的罗列，训练营不是判断的任务列表。",
+    "source_refs": [
+     "source:render-product-engine-philosophy",
+     "source:render-product-ontology"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:foundation:checkable",
+    "kind": "foundation",
+    "statement": "工艺标准必须可检查。schema 通过、lint、字段齐全都不是质量证明；每条标准要落到可观察的字段、数量要求或行为判定上，并由确定性规则、模型审查、样本盲评与真实使用信号分别承担证据。",
+    "source_refs": [
+     "source:render-consumer-contract",
+     "source:render-quality-gates",
+     "source:render-course-craft-readiness"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:foundation:attention-guide",
+    "kind": "foundation",
+    "statement": "限制的唯一目的是把创作注意力引导到需要深度的位置，而不是省 token 或约束表达。产品表单契约像词牌：它规定的不是不能做什么，而是必须在什么框架内完成什么。",
+    "source_refs": [
+     "source:render-product-engine-philosophy",
+     "source:render-craft-architecture-audit"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:definition:craft-asset-role",
+    "kind": "definition",
+    "term": "工艺资产的角色（content / craft）",
+    "statement": "同一条读取链上，内容角色回答产品是关于什么的，工艺角色回答产品形态是怎样被制作与判定的；一次消费必须记录角色与坐标。课程产品的生产要同时引用内容证据与工艺证据，不能只凭内容资产推断课程形态。",
+    "source_refs": [
+     "source:render-consumption-roles"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:definition:craft-move",
+    "kind": "definition",
+    "term": "教学动作（craft move）",
+    "statement": "课程不检查字段是否存在，而检查一件作品是否完成了它该完成的教学动作：课程级五个动作（定义课程承诺、建立判断脊线、排列转变弧线、区分模块角色、让结果对齐练习）与模块级五个动作（暴露错误判断、让失败可见、点明差距、练新判断、自测）。动作可以在不同措辞、媒介与结构里完成。",
+    "source_refs": [
+     "source:render-course-outline-form-contract",
+     "source:render-course-module-form-contract",
+     "source:render-pilot-lesson-form-contract",
+     "source:render-stage-contract"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:definition:judgment-shift",
+    "kind": "definition",
+    "term": "判断迁移设计（judgmentShiftDesign）",
+    "statement": "一个模块的判断迁移由旧默认判断、新目标判断与迁移触发构成：旧默认判断描述学习者在真实情境中的具体默认行为（不少于 50 字），新目标判断描述同一情境下的可执行目标判断（不少于 50 字），触发点是旧判断自然启动的具体场景。核心判断必须来自判断资产，不得由作者自造。",
+    "source_refs": [
+     "source:render-consumer-contract",
+     "source:render-course-outline-prompt"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:definition:self-verifiable-assessment",
+    "kind": "definition",
+    "term": "可自测评估（selfVerifiableAssessment）",
+    "statement": "可自测评估由可观察产出、通过标准与失败标准构成：学习者提交的是可观察的产物，通过标准与失败标准各不少于一条（模块级检查要求各不少于两条），判定不需要教师在场，同伴仅凭标准即可判出这份提交用的是新判断还是旧判断。",
+    "source_refs": [
+     "source:render-consumer-contract",
+     "source:render-pilot-lesson-form-contract"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:definition:transfer-protocol",
+    "kind": "definition",
+    "term": "迁移协议（transferProtocol / transferAssignment）",
+    "statement": "迁移协议由真实世界触发点、应用任务与复查构成：触发点指向学习者真实工作中的一个具体时刻（不少于 30 字），应用任务说明在那个时刻要做的一件事（不少于 30 字），复查定义事后如何确认新判断是否生效。",
+    "source_refs": [
+     "source:render-consumer-contract",
+     "source:render-pilot-lesson-form-contract"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:definition:old-judgment-trap",
+    "kind": "definition",
+    "term": "旧判断陷阱（oldJudgmentTrap）",
+    "statement": "旧判断陷阱是练习必须写明的部分：学习者在做这个任务时会自然滑回哪种旧判断。练习要设计成旧判断会自然复发、学习者必须主动覆盖它才能完成；缺少或过于笼统的旧判断陷阱，说明练习还没有在训练判断。",
+    "source_refs": [
+     "source:render-pilot-lesson-prompt",
+     "source:render-quality-evaluation-prompt"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:definition:false-positive",
+    "kind": "definition",
+    "term": "假阳性（false positive）",
+    "statement": "假阳性是听起来流畅、看起来很完整、但仍在用旧判断完成的提交。自测标准必须能让假阳性判为不通过；高阶学习者的评估还要显式写出假阳性样例，防止浅层精通。",
+    "source_refs": [
+     "source:render-pilot-lesson-prompt",
+     "source:render-course-user-readiness",
+     "source:render-assemble-course-package"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:premise:anti-patterns",
+    "kind": "premise",
+    "statement": "课程文本的禁用清单来自质量引擎的反面模式与课程确定性规则：通用建议、励志话术、结果承诺、治疗语言、说服操纵、通用沟通与成长建议；中文侧另有保证、爆款、轻松、快速、立刻、马上等禁用语。命中意味着必须修改的缺陷，不是风格偏好。",
+    "source_refs": [
+     "source:render-quality-engine",
+     "source:render-course-quality-rules"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:premise:no-lecture",
+    "kind": "premise",
+    "statement": "课程不是讲座、不是知识整理、不是判断合集。教材式标题、主题介绍、动机话术、要求“理解……的重要性”、没有可观察产出的“讨论”、没有标准的“教师会点评”、没有触发与任务与复查的“在真实生活中应用”，都不构成一节课。",
+    "source_refs": [
+     "source:render-pilot-lesson-prompt",
+     "source:render-course-outline-prompt",
+     "source:render-excellence-exemplars"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:premise:arc-difficulty",
+    "kind": "premise",
+    "statement": "课程级结构规则：至少三个模块，模块编号从 1 连续递增；第一模块从学习者入口或默认状态开始，最后模块指向迁移、边界或精通；相邻模块难度不得跳级超过两级，整门课不得所有模块停在同一个难度；同一个难度曲线对入门与高阶学习者分别有起点与终点要求。",
+    "source_refs": [
+     "source:render-course-outline-form-contract",
+     "source:render-course-difficulty-curve",
+     "source:render-course-experience-prompt"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:premise:exemplar-usage",
+    "kind": "premise",
+    "statement": "卓越样本只用于提取原则，不用于复制结构：被接受为卓越样本要求人审标记且四维分数（判断保真、用户适配、作品工艺、影响力）均不低于 0.85，使用政策只允许 principles_only，提示注入必须关闭；产物与样本的措辞或结构高度相似时判为模板化风险。",
+    "source_refs": [
+     "source:render-reviewer-exemplars",
+     "source:render-excellence-exemplar-guide",
+     "source:render-excellence-fixture"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:premise:traceability",
+    "kind": "premise",
+    "statement": "溯源与完整性的最低要求：每个判断资产至少有一条来源链接，并至少包含一个核心判断；课程大纲顶层与每个模块都要声明所引用的判断资产，核心判断不得自造；产品文本不得含占位符与空的关键字段，不得含禁用词；对外承诺必须是学习者课后能自己验证的能力，而不是“我会更擅长 X”。",
+    "source_refs": [
+     "source:render-course-quality-rules",
+     "source:render-course-outline-form-contract",
+     "source:render-consumer-contract",
+     "source:render-quality-evaluation-prompt",
+     "source:render-stage-contract"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:premise:audience-fit-rules",
+    "kind": "premise",
+    "statement": "目标人群规则：主分段必须能在这个判断失败里认出自己，并说明为什么更简单的解释与技巧对他们失效；必须给出排除画像，写明这门课不是给谁的；准备度差异必须导致结构差异（入口、抽象程度、练习量、自测方式），而不仅是语气差异；练习量要与练习承载力匹配。",
+    "source_refs": [
+     "source:render-audience-prompt",
+     "source:render-course-user-readiness",
+     "source:render-quality-evaluation-prompt"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   },
+   {
+    "id": "material:premise:negative-constraints",
+    "kind": "premise",
+    "statement": "诚实边界规则：不得使用保证、退款承诺、夸大形容词与超级承诺；中文侧禁止“爆款、轻松、快速、立刻、马上、保证”；对外材料必须写出不适合谁、非承诺与限制；只完成试讲课时不得声称这是“完整课程”；教师反馈要先命名被使用的判断，再评论表面质量。",
+    "source_refs": [
+     "source:render-course-quality-rules",
+     "source:render-quality-evaluation-prompt",
+     "source:render-assemble-course-package"
+    ],
+    "applies_to": {
+     "kind": "asset"
+    }
+   }
+  ],
+  "reasons": [
+   {
+    "id": "reason:judgment-shift",
+    "role": "support",
+    "judgment_ref": "craft:judgment-shift",
+    "statement": "一门课要改变的是决定，不是知识量。先把旧默认与新目标写成同一情境下的两个具体决定，练习、自测与迁移才有对象；否则课程会在“讲清楚一个概念”处完成，而学习者的决定不变。这也是判断资产能够进入产品的前提：判断只有变成学习者会做的决定，才可能被训练。",
+    "component_refs": [
+     "component:judgment-shift-standard",
+     "component:judgment-shift-contrast",
+     "component:judgment-shift-resolve",
+     "component:judgment-shift-bottom"
+    ]
+   },
+   {
+    "id": "reason:self-verifiable-assessment",
+    "role": "support",
+    "judgment_ref": "craft:self-verifiable-assessment",
+    "statement": "判定标准是课程能否离开教师独立运行的分界线：如果学习者或同伴无法凭标准判出对错，练习就退化成了阅读与感受。失败标准的作用是暴露仍在起作用的旧判断，而不是给作品打分；把假阳性判为不通过，才能阻止“听起来很好”的提交冒充迁移证据。",
+    "component_refs": [
+     "component:self-verifiable-assessment-criteria",
+     "component:self-verifiable-assessment-contrast",
+     "component:self-verifiable-assessment-resolve",
+     "component:self-verifiable-assessment-bottom"
+    ]
+   },
+   {
+    "id": "reason:transfer-protocol",
+    "role": "support",
+    "judgment_ref": "craft:transfer-protocol",
+    "statement": "判断是否真的迁移，只能在真实时刻里观察；课程内的正确提交只证明学习者在提示下会做。把触发点、任务与复查写进协议，等于提前约定迁移证据的采集位置，避免课程以完成度或感受度冒充效果。",
+    "component_refs": [
+     "component:transfer-protocol-material",
+     "component:transfer-protocol-link",
+     "component:transfer-protocol-counter"
+    ]
+   },
+   {
+    "id": "reason:arc-sequencing",
+    "role": "support",
+    "judgment_ref": "craft:arc-sequencing",
+    "statement": "课程的价值来自顺序而不是清单：同一个判断集合，按入口、递进、边界与迁移排列，才会形成转变弧线。难度曲线与模块角色差异是这条弧线的可检查代理量；没有它们，课程会退化为可以互换的章节列表，学习者也无法用产出看到自己的进展。",
+    "component_refs": [
+     "component:arc-sequencing-object",
+     "component:arc-sequencing-relation",
+     "component:arc-sequencing-clue",
+     "component:arc-sequencing-context"
+    ]
+   },
+   {
+    "id": "reason:lesson-rhythm",
+    "role": "support",
+    "judgment_ref": "craft:lesson-rhythm",
+    "statement": "讲与做的比例决定这是课程还是阅读材料。把讲解限制在“让练习做得成”的最小范围，并把练习设计成旧判断会自然复发的判断作业，学习者才会经历一次真实的判断选择；否则课堂的热情与流畅的讲稿都会掩盖判断没有改变这一事实。",
+    "component_refs": [
+     "component:lesson-rhythm-object",
+     "component:lesson-rhythm-relation",
+     "component:lesson-rhythm-clue",
+     "component:lesson-rhythm-alternative"
+    ]
+   },
+   {
+    "id": "reason:anti-patterns",
+    "role": "support",
+    "judgment_ref": "craft:anti-patterns",
+    "statement": "反面模式是具体性与诚实性的下限：通用建议可以被发给任何人，励志话术与结果承诺制造无法兑现的期待，治疗与说服语言把课程带离判断训练。逐条排除它们，是把课程的可信度建立在其判断内容上，而不是建立在措辞的感染力上。",
+    "component_refs": [
+     "component:anti-patterns-classes",
+     "component:anti-patterns-features",
+     "component:anti-patterns-match",
+     "component:anti-patterns-confusion"
+    ]
+   },
+   {
+    "id": "reason:evidence-and-sources",
+    "role": "support",
+    "judgment_ref": "craft:evidence-and-sources",
+    "statement": "课程是判断资产的载体，不是作者即兴主张的集合。把每条判断追溯到判断资产、把每句对外承诺落到可验证的能力上、把示例标明性质，才能让课程的可信度可以被复查；否则一旦判断被改写，课程会以更精致的形式传播错误判断。",
+    "component_refs": [
+     "component:evidence-and-sources-material",
+     "component:evidence-and-sources-link",
+     "component:evidence-and-sources-selection"
+    ]
+   },
+   {
+    "id": "reason:audience-fit",
+    "role": "support",
+    "judgment_ref": "craft:audience-fit",
+    "statement": "同一份内容对不同准备度的人不是同一门课。只有先写清谁能认出旧判断、谁不需要这门课，再让入口、抽象程度、练习量与自测方式随准备度改变，课程才可能对某个人成立；否则它会对所有人显得“还不错”，也就是对所有人都不成立。",
+    "component_refs": [
+     "component:audience-fit-object",
+     "component:audience-fit-relation",
+     "component:audience-fit-clue"
+    ]
+   }
+  ],
+  "sources": [
+   {
+    "id": "source:render-product-ontology",
+    "identity": "Render 仓库 docs/canon/product-ontology.md：课程本体、五项教学动作原型、难度曲线与用户适配原型（2026-07-05 版）",
+    "digest": "sha256:b1f0b6eacecfe938de069e9082ee721b1d66e620dcb3b236c6366413e12de2bb"
+   },
+   {
+    "id": "source:render-product-engine-philosophy",
+    "identity": "Render 仓库 docs/canon/product-engine-philosophy.md：载体本质优先、限制作为注意力引导、四层架构",
+    "digest": "sha256:2e14b3ba5a922cda0ac6f797f26f4c48f80e42f7002878f6215e8787e4ad1125"
+   },
+   {
+    "id": "source:render-consumer-contract",
+    "identity": "Render 仓库 docs/canon/consumer-contract.md：通用标准与 course_outline / pilot_lesson_package / course_package 字段契约（2026-07-05 版）",
+    "digest": "sha256:ed219b867cba3845202523c93f0020eed8c8dedef2d32f748fb2dba633f5c611"
+   },
+   {
+    "id": "source:render-course-module-form-contract",
+    "identity": "Render 仓库 engines/course-engine/src/craft/course-module-form-contract.ts：模块五项教学动作与完成度判定",
+    "digest": "sha256:7646a8aa58337c56e0524f87b0b5f3c164187c5d81d283241e27f0fad41e07e9"
+   },
+   {
+    "id": "source:render-course-outline-form-contract",
+    "identity": "Render 仓库 engines/course-engine/src/craft/course-outline-form-contract.ts：课程级五项教学动作、模块与难度顺序检查",
+    "digest": "sha256:8b56daec8432f935aada48e896dba4dd12b510a7cc1464b808368bf947d912dc"
+   },
+   {
+    "id": "source:render-pilot-lesson-form-contract",
+    "identity": "Render 仓库 engines/course-engine/src/craft/pilot-lesson-form-contract.ts：单课五项教学动作与完成度判定",
+    "digest": "sha256:a90cd02287b92a36d08a50fee980398a622a2d889abd47a63890aa8af18d9f8b"
+   },
+   {
+    "id": "source:render-course-difficulty-curve",
+    "identity": "Render 仓库 engines/course-engine/src/craft/course-difficulty-curve.ts：模块难度估计、跳级与准备度错配检查",
+    "digest": "sha256:98d62b3ba70361df65187c0c1d8db8c7ed83df590249a6ddc6aaa135d4716e1e"
+   },
+   {
+    "id": "source:render-course-user-readiness",
+    "identity": "Render 仓库 engines/course-engine/src/craft/course-user-readiness.ts：准备度画像与用户适配检查",
+    "digest": "sha256:3dfa1b6733c8b7b067b63e5b90791afa5abd977acf3b29d3c1172b50a78bc3ea"
+   },
+   {
+    "id": "source:render-course-craft-readiness",
+    "identity": "Render 仓库 engines/course-engine/src/craft/course-craft-readiness.ts：表单契约汇总为作品级就绪信号",
+    "digest": "sha256:8181520d42a3c57876b927906e2b9abffa19588a4ef54867f0999a7cf4e56a06"
+   },
+   {
+    "id": "source:render-course-outline-prompt",
+    "identity": "Render 仓库 engines/course-engine/src/prompts/course-outline.prompt.ts：课程大纲与模块表单契约、禁止教材式标题",
+    "digest": "sha256:79b941f8270c50d846470aa2d0d13aada140946681afe330d1237ff1e4ac3330"
+   },
+   {
+    "id": "source:render-pilot-lesson-prompt",
+    "identity": "Render 仓库 engines/course-engine/src/prompts/pilot-lesson-package.prompt.ts：单课七步结构、旧判断陷阱与禁止清单",
+    "digest": "sha256:e970f14119849d920a9a055dbedca8ce9add9f48f7ec321777b0b8760e116983"
+   },
+   {
+    "id": "source:render-course-experience-prompt",
+    "identity": "Render 仓库 engines/course-engine/src/prompts/course-experience-plan.prompt.ts：认知弧五阶段、情绪弧、练习节奏与迁移计划",
+    "digest": "sha256:50446ee6be1552b4822fbb29ee08cbe7660220899a9e95e3fa17c7f15696e48d"
+   },
+   {
+    "id": "source:render-audience-prompt",
+    "identity": "Render 仓库 engines/course-engine/src/prompts/audience-model.prompt.ts：受众理论、排除画像与 NOT-FOR 要求",
+    "digest": "sha256:5d8ac48f688333a21feb792d7eabd84167e7544529b958b6355bff2a52cc0f09"
+   },
+   {
+    "id": "source:render-quality-evaluation-prompt",
+    "identity": "Render 仓库 engines/course-engine/src/prompts/quality-evaluation.prompt.ts：六维三问的课程质量审查问题集",
+    "digest": "sha256:9388e85ff15400af000ee77fb106c9ec42352bfe68daea80ae7ed93d645137d4"
+   },
+   {
+    "id": "source:render-quality-engine",
+    "identity": "Render 仓库 packages/quality-engine/src/index.js：八维评分、反面模式清单与课程必备元素",
+    "digest": "sha256:589f285fa528526962e813702eff73a35f4789287d742d827afc0ea389abc92d"
+   },
+   {
+    "id": "source:render-excellence-exemplars",
+    "identity": "Render 仓库 packages/quality-engine/src/excellence-exemplars.js：课程原则样本与防模板化规则",
+    "digest": "sha256:f6c945ab58ed22366d87489d51908c94d60e857b3aa84d02132465f2e6a0d282"
+   },
+   {
+    "id": "source:render-reviewer-exemplars",
+    "identity": "Render 仓库 packages/quality-engine/src/reviewer-exemplars.js：卓越样本审核协议与 0.85 分数阈值",
+    "digest": "sha256:8f2ae3addd299cbe79a97d11bff1d608384a21b394cc6e28de90e1e7f63dcfe9"
+   },
+   {
+    "id": "source:render-quality-gates",
+    "identity": "Render 仓库 packages/quality-engine/src/quality-gates.js：三级质量门与可发布条件",
+    "digest": "sha256:4e40f27e7d744880b6e145d7cc71c7a591eaa272c7f5f71f02e46153b6f9f785"
+   },
+   {
+    "id": "source:render-course-quality-rules",
+    "identity": "Render 仓库 engines/course-engine/src/stages/course-quality-rules.ts：课程确定性规则、禁用语与告警清单",
+    "digest": "sha256:c9fdae4b0592634694a8d9fabbdf8a5df8bf63b683d365f97691de531af8a6c5"
+   },
+   {
+    "id": "source:render-assemble-course-package",
+    "identity": "Render 仓库 engines/course-engine/src/stages/assemble-course-package.stage.ts：教师指南、反馈原则与 doNotSay 默认值",
+    "digest": "sha256:a20ee1263028a17e594ba62e5c142eb7abe702b0d3a8c2b30d6d595761e402ff"
+   },
+   {
+    "id": "source:render-stage-contract",
+    "identity": "Render 仓库 packages/engine-runtime/src/stage-contract.ts：课程各阶段必产证据、认知角色与质量门",
+    "digest": "sha256:8121107042f9194aaf52ead4fbe09fd0a094e3b7ab255b3b18716e6acb21a316"
+   },
+   {
+    "id": "source:render-craft-architecture-audit",
+    "identity": "Render 仓库 docs/reports/product-craft-architecture-audit.md：创作 schema 与审查 schema 分离、反对字段填充",
+    "digest": "sha256:75a2e2d47c611fb13dafd0f3d3e39f324f69376774de611c9e81cee0932d8850"
+   },
+   {
+    "id": "source:render-excellence-fixture",
+    "identity": "Render 仓库 fixtures/excellence-exemplars/reviewer-library.test-fixture.json：卓越样本库字段形状（测试 fixture，非生产样本）",
+    "digest": "sha256:f864fdfdf842c65f5d11cf42c877851213cf2f63bbbbe12bed8133fa9db1c424"
+   },
+   {
+    "id": "source:render-excellence-exemplar-guide",
+    "identity": "Render 仓库 docs/canon/excellence-exemplar-guide.md：四维分数不低于 0.85 与 principles_only 使用政策",
+    "digest": "sha256:cc21c40d565100281f2562291904bc84ff04503e4633ac523cf1ce6ee63cf339"
+   },
+   {
+    "id": "source:render-consumption-roles",
+    "identity": "Render 仓库 packages/kdna-consumption/src/index.ts：content / craft 角色与消费证据记录",
+    "digest": "sha256:368df978b601c349607c9e74efbe37fe5b00d5c1f493b63f9508e2d21957f829"
+   }
+  ],
+  "source_uses": [
+   {
+    "id": "source-use:ontology:form-first",
+    "source_ref": "source:render-product-ontology",
+    "target_kind": "material",
+    "target_ref": "material:foundation:form-first",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:ontology:craft-move",
+    "source_ref": "source:render-product-ontology",
+    "target_kind": "material",
+    "target_ref": "material:definition:craft-move",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:philosophy:form-first",
+    "source_ref": "source:render-product-engine-philosophy",
+    "target_kind": "material",
+    "target_ref": "material:foundation:form-first",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:philosophy:attention-guide",
+    "source_ref": "source:render-product-engine-philosophy",
+    "target_kind": "material",
+    "target_ref": "material:foundation:attention-guide",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:consumer-contract:checkable",
+    "source_ref": "source:render-consumer-contract",
+    "target_kind": "material",
+    "target_ref": "material:foundation:checkable",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:consumer-contract:judgment-shift",
+    "source_ref": "source:render-consumer-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:judgment-shift",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:consumer-contract:self-verifiable",
+    "source_ref": "source:render-consumer-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:self-verifiable-assessment",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:consumer-contract:transfer",
+    "source_ref": "source:render-consumer-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:transfer-protocol",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:consumer-contract:traceability",
+    "source_ref": "source:render-consumer-contract",
+    "target_kind": "material",
+    "target_ref": "material:premise:traceability",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:module-contract:craft-move",
+    "source_ref": "source:render-course-module-form-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:craft-move",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:module-contract:self-verifiable",
+    "source_ref": "source:render-course-module-form-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:self-verifiable-assessment",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:outline-contract:arc-difficulty",
+    "source_ref": "source:render-course-outline-form-contract",
+    "target_kind": "material",
+    "target_ref": "material:premise:arc-difficulty",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:outline-contract:craft-move",
+    "source_ref": "source:render-course-outline-form-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:craft-move",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:outline-contract:traceability",
+    "source_ref": "source:render-course-outline-form-contract",
+    "target_kind": "material",
+    "target_ref": "material:premise:traceability",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:pilot-contract:craft-move",
+    "source_ref": "source:render-pilot-lesson-form-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:craft-move",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:pilot-contract:self-verifiable",
+    "source_ref": "source:render-pilot-lesson-form-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:self-verifiable-assessment",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:pilot-contract:transfer",
+    "source_ref": "source:render-pilot-lesson-form-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:transfer-protocol",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:difficulty-curve:arc",
+    "source_ref": "source:render-course-difficulty-curve",
+    "target_kind": "material",
+    "target_ref": "material:premise:arc-difficulty",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:user-readiness:audience",
+    "source_ref": "source:render-course-user-readiness",
+    "target_kind": "material",
+    "target_ref": "material:premise:audience-fit-rules",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:user-readiness:false-positive",
+    "source_ref": "source:render-course-user-readiness",
+    "target_kind": "material",
+    "target_ref": "material:definition:false-positive",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:craft-readiness:checkable",
+    "source_ref": "source:render-course-craft-readiness",
+    "target_kind": "material",
+    "target_ref": "material:foundation:checkable",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:outline-prompt:judgment-shift",
+    "source_ref": "source:render-course-outline-prompt",
+    "target_kind": "material",
+    "target_ref": "material:definition:judgment-shift",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:outline-prompt:no-lecture",
+    "source_ref": "source:render-course-outline-prompt",
+    "target_kind": "material",
+    "target_ref": "material:premise:no-lecture",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:pilot-prompt:no-lecture",
+    "source_ref": "source:render-pilot-lesson-prompt",
+    "target_kind": "material",
+    "target_ref": "material:premise:no-lecture",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:pilot-prompt:old-judgment-trap",
+    "source_ref": "source:render-pilot-lesson-prompt",
+    "target_kind": "material",
+    "target_ref": "material:definition:old-judgment-trap",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:pilot-prompt:false-positive",
+    "source_ref": "source:render-pilot-lesson-prompt",
+    "target_kind": "material",
+    "target_ref": "material:definition:false-positive",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:experience-prompt:arc",
+    "source_ref": "source:render-course-experience-prompt",
+    "target_kind": "material",
+    "target_ref": "material:premise:arc-difficulty",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:experience-prompt:audience",
+    "source_ref": "source:render-course-experience-prompt",
+    "target_kind": "material",
+    "target_ref": "material:premise:audience-fit-rules",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:audience-prompt:audience",
+    "source_ref": "source:render-audience-prompt",
+    "target_kind": "material",
+    "target_ref": "material:premise:audience-fit-rules",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:quality-eval-prompt:traceability",
+    "source_ref": "source:render-quality-evaluation-prompt",
+    "target_kind": "material",
+    "target_ref": "material:premise:traceability",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:quality-eval-prompt:old-judgment-trap",
+    "source_ref": "source:render-quality-evaluation-prompt",
+    "target_kind": "material",
+    "target_ref": "material:definition:old-judgment-trap",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:quality-eval-prompt:negative-constraints",
+    "source_ref": "source:render-quality-evaluation-prompt",
+    "target_kind": "material",
+    "target_ref": "material:premise:negative-constraints",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:quality-engine:anti-patterns",
+    "source_ref": "source:render-quality-engine",
+    "target_kind": "material",
+    "target_ref": "material:premise:anti-patterns",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:excellence-exemplars:no-lecture",
+    "source_ref": "source:render-excellence-exemplars",
+    "target_kind": "material",
+    "target_ref": "material:premise:no-lecture",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:reviewer-exemplars:exemplar-usage",
+    "source_ref": "source:render-reviewer-exemplars",
+    "target_kind": "material",
+    "target_ref": "material:premise:exemplar-usage",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:quality-gates:checkable",
+    "source_ref": "source:render-quality-gates",
+    "target_kind": "material",
+    "target_ref": "material:foundation:checkable",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:quality-rules:anti-patterns",
+    "source_ref": "source:render-course-quality-rules",
+    "target_kind": "material",
+    "target_ref": "material:premise:anti-patterns",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:quality-rules:traceability",
+    "source_ref": "source:render-course-quality-rules",
+    "target_kind": "material",
+    "target_ref": "material:premise:traceability",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:quality-rules:negative-constraints",
+    "source_ref": "source:render-course-quality-rules",
+    "target_kind": "material",
+    "target_ref": "material:premise:negative-constraints",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:assemble:false-positive",
+    "source_ref": "source:render-assemble-course-package",
+    "target_kind": "material",
+    "target_ref": "material:definition:false-positive",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:assemble:negative-constraints",
+    "source_ref": "source:render-assemble-course-package",
+    "target_kind": "material",
+    "target_ref": "material:premise:negative-constraints",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:stage-contract:craft-move",
+    "source_ref": "source:render-stage-contract",
+    "target_kind": "material",
+    "target_ref": "material:definition:craft-move",
+    "role": "definition"
+   },
+   {
+    "id": "source-use:stage-contract:traceability",
+    "source_ref": "source:render-stage-contract",
+    "target_kind": "material",
+    "target_ref": "material:premise:traceability",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:craft-audit:attention-guide",
+    "source_ref": "source:render-craft-architecture-audit",
+    "target_kind": "material",
+    "target_ref": "material:foundation:attention-guide",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:craft-audit:checkable",
+    "source_ref": "source:render-craft-architecture-audit",
+    "target_kind": "material",
+    "target_ref": "material:foundation:checkable",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:exemplar-fixture:exemplar-usage",
+    "source_ref": "source:render-excellence-fixture",
+    "target_kind": "material",
+    "target_ref": "material:premise:exemplar-usage",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:exemplar-guide:exemplar-usage",
+    "source_ref": "source:render-excellence-exemplar-guide",
+    "target_kind": "material",
+    "target_ref": "material:premise:exemplar-usage",
+    "role": "premise"
+   },
+   {
+    "id": "source-use:consumption-roles:craft-asset-role",
+    "source_ref": "source:render-consumption-roles",
+    "target_kind": "material",
+    "target_ref": "material:definition:craft-asset-role",
+    "role": "definition"
+   }
+  ],
+  "resources": [],
+  "relationships": [],
+  "dependencies": [
+   {
+    "id": "dependency:shift-before-assessment",
+    "producer": {
+     "kind": "judgment_result",
+     "judgment_ref": "craft:judgment-shift",
+     "result_contract_ref": "result-contract:craft:judgment-shift"
+    },
+    "producer_port": "output:shift-for-assessment",
+    "consumer_judgment_ref": "craft:self-verifiable-assessment",
+    "consumer_port": "input:shift-for-assessment",
+    "input_role": "input:shift-for-assessment",
+    "data_type": {
+     "term": "text"
+    },
+    "required": true,
+    "purpose": "只有先写死旧默认判断与新目标判断，才能写出区分旧判断提交的通过标准与失败标准。"
+   },
+   {
+    "id": "dependency:shift-before-arc",
+    "producer": {
+     "kind": "judgment_result",
+     "judgment_ref": "craft:judgment-shift",
+     "result_contract_ref": "result-contract:craft:judgment-shift"
+    },
+    "producer_port": "output:shift-for-arc",
+    "consumer_judgment_ref": "craft:arc-sequencing",
+    "consumer_port": "input:shift-for-arc",
+    "input_role": "input:shift-for-arc",
+    "data_type": {
+     "term": "text"
+    },
+    "required": true,
+    "purpose": "每条模块的判断迁移是课程判断脊线的输入；没有它，模块角色与先后顺序无法排出。"
+   },
+   {
+    "id": "dependency:assessment-before-transfer",
+    "producer": {
+     "kind": "judgment_result",
+     "judgment_ref": "craft:self-verifiable-assessment",
+     "result_contract_ref": "result-contract:craft:self-verifiable-assessment"
+    },
+    "producer_port": "output:assessment-for-transfer",
+    "consumer_judgment_ref": "craft:transfer-protocol",
+    "consumer_port": "input:assessment-for-transfer",
+    "input_role": "input:assessment-for-transfer",
+    "data_type": {
+     "term": "text"
+    },
+    "required": true,
+    "purpose": "迁移复查需要可执行的判定标准，否则课后复查无法说明新判断是否生效。"
+   },
+   {
+    "id": "dependency:audience-before-arc",
+    "producer": {
+     "kind": "judgment_result",
+     "judgment_ref": "craft:audience-fit",
+     "result_contract_ref": "result-contract:craft:audience-fit"
+    },
+    "producer_port": "output:audience-for-arc",
+    "consumer_judgment_ref": "craft:arc-sequencing",
+    "consumer_port": "input:audience-for-arc",
+    "input_role": "input:audience-for-arc",
+    "data_type": {
+     "term": "text"
+    },
+    "required": true,
+    "purpose": "学习者的入口状态与练习承载力决定第一模块的起点、难度曲线与练习节奏。"
+   }
+  ],
+  "contracts": [],
+  "conditions": [
+   {
+    "id": "condition:judgment-shift:1",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:judgment-shift"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "课程面向入门学习者时，先用具体情境暴露旧判断，再命名新判断；抽象命名不得先于场景。"
+    }
+   },
+   {
+    "id": "condition:judgment-shift:2",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:judgment-shift"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "模块的核心判断引用判断资产后，目标判断必须保持该资产的判断内容，不得在改写中扩大或软化它。"
+    }
+   },
+   {
+    "id": "condition:self-verifiable-assessment:1",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:self-verifiable-assessment"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "面向低练习承载力的学习者时，一个模块只安排一个聚焦任务，并立即给出自测标准。"
+    }
+   },
+   {
+    "id": "condition:self-verifiable-assessment:2",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:self-verifiable-assessment"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "面向高阶学习者时，评估标准必须覆盖假阳性与边界情形，不能只包含常规正确样例。"
+    }
+   },
+   {
+    "id": "condition:transfer-protocol:1",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:transfer-protocol"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "迁移动作必须落在学习者自己能控制的行为上；需要他人配合的迁移要在任务里写清依赖，并保留触发与复查。"
+    }
+   },
+   {
+    "id": "condition:transfer-protocol:2",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:transfer-protocol"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "课程周期较短时，复查可以安排在课程结束后的一个具体事件上，但不得省略复查。"
+    }
+   },
+   {
+    "id": "condition:arc-sequencing:1",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:arc-sequencing"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "课程定位为入门时，第一模块从熟悉场景与旧判断现身开始，估计难度不超过入门级。"
+    }
+   },
+   {
+    "id": "condition:arc-sequencing:2",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:arc-sequencing"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "课程定位为高阶时，最后一个模块必须包含边界、权衡或假阳性一类的高难度工作。"
+    }
+   },
+   {
+    "id": "condition:lesson-rhythm:1",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:lesson-rhythm"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "面向低抽象承受度的学习者时，场景与对比案例先于概念命名。"
+    }
+   },
+   {
+    "id": "condition:lesson-rhythm:2",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:lesson-rhythm"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "练习必须让旧判断自然复发；如果练习用新判断顺手就能完成，这一条判为未完成。"
+    }
+   },
+   {
+    "id": "condition:anti-patterns:1",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:anti-patterns"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "文本属于教学中的反例或规则说明时，被引用的错误说法本身不算命中，但必须标明这是反例。"
+    }
+   },
+   {
+    "id": "condition:anti-patterns:2",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:anti-patterns"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "文本中的术语如果直接对应判断资产，即使听起来普通，也不按通用建议处理。"
+    }
+   },
+   {
+    "id": "condition:anti-patterns:3",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:anti-patterns"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "卓越样本只用于提取原则；产物与样本的结构或措辞高度相似时按复制处理，并按模板化风险阈值判定。"
+    }
+   },
+   {
+    "id": "condition:evidence-and-sources:1",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:evidence-and-sources"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "承诺涉及可量化的结果时，必须同时给出该结果的证据来源，或明确标为未验证。"
+    }
+   },
+   {
+    "id": "condition:evidence-and-sources:2",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:evidence-and-sources"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "课程复用外部来源时，来源只支持具名主张，不表示来源机构为本课程、示例或效果背书。"
+    }
+   },
+   {
+    "id": "condition:audience-fit:1",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:audience-fit"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "入门人群不得过早引入边界与权衡语言；高阶人群不得重复讲解基础。"
+    }
+   },
+   {
+    "id": "condition:audience-fit:2",
+    "owner_ref": {
+     "kind": "judgment",
+     "id": "craft:audience-fit"
+    },
+    "expression": {
+     "kind": "interpreted",
+     "statement": "目标人群尚未明确时，先写出不为谁设计（NOT-FOR）与排除画像，再补人群描述。"
+    }
+   }
+  ],
+  "shared_declarations": [],
+  "examples": [
+   {
+    "id": "example:module-review-illustration",
+    "title": "示意：一次模块评审的判定",
+    "kind": "illustrative",
+    "context": "一门写作判断课程第二模块的稿子：练习要求“反思你最近一次的修改经历，写下三点感想”，没有可观察产出，也没有通过或失败标准；模块标题是“理解结构诊断的重要性”。",
+    "input_refs": [
+     {
+      "kind": "judgment",
+      "id": "craft:self-verifiable-assessment"
+     },
+     {
+      "kind": "judgment",
+      "id": "craft:anti-patterns"
+     }
+    ],
+    "adopted_judgments": [
+     {
+      "kind": "local",
+      "judgment_id": "craft:self-verifiable-assessment"
+     },
+     {
+      "kind": "local",
+      "judgment_id": "craft:anti-patterns"
+     }
+    ],
+    "application": "按可自测评估标准检查：练习产出是三点感想，不是可观察产物；没有通过标准与失败标准，学习者无法独立判定自己是否做对。按反面模式标准检查：练习形态是“反思”，属于被动形态；标题“理解……的重要性”命中禁止的主题标签写法。两个判定都成立，因此该模块判为需要修改；这不是“内容还不够丰富”的问题。",
+    "results": [
+     {
+      "id": "example-result:module-review-1",
+      "kind": "expected",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:self-verifiable-assessment"
+      },
+      "value": {
+       "kind": "text",
+       "value": "该模块未通过可自测评估与反面模式两条标准：缺少可观察产出与通过/失败标准，练习是被动反思，标题是主题标签。修改方向是把练习改成旧判断会自然复发的可观察任务，补上不少于两条通过标准与两条失败标准，并把标题改成描述学习者会做的决定。"
+      }
+     }
+    ]
+   }
+  ],
+  "exceptions": [],
+  "misuse": [
+   {
+    "id": "misuse:field-filling",
+    "statement": "把八条标准当作生成阶段的字段清单，逐项填写以通过检查，产出结构完整但没有完成教学动作的课程。标准描述的是动作与判定，不是字段名；创作 schema 与审查 schema 必须分开。"
+   },
+   {
+    "id": "misuse:checklist-before-craft",
+    "statement": "在创作之前就用审查口径约束措辞与结构，使课程读起来像合规文档。标准应当前置为创作框架、后置为审查判据，而不是替代创作判断。"
+   },
+   {
+    "id": "misuse:craft-as-content",
+    "statement": "把本资产当作内容资产使用，期望它提供某个领域的判断或知识。它只规定课程怎样才算成立，不提供任何领域的判断内容。"
+   }
+  ],
+  "judgments": [
+   {
+    "id": "craft:judgment-shift",
+    "focus": "这个模块要改变学习者的哪一个具体判断——从什么旧默认到什么新目标，在什么真实情境里发生？",
+    "subject": {
+     "actor_ids": [
+      "actor:course-craft-author-agent"
+     ],
+     "statement": "当前 Agent 对课程判断迁移设计的作者综合"
+    },
+    "scope": {
+     "statement": "用于设计和审阅课程模块与单课的目标设计，检查判断迁移是否被写成一个可教、可练、可验的迁移；不判断该领域判断本身是否正确。"
+    },
+    "answer_kind": "guidance",
+    "parent_ref": null,
+    "form": "conclusion",
+    "core_expression": {
+     "kind": "authored",
+     "statement": "每个模块必须先写死一次判断迁移。旧默认判断用不少于 50 字描述学习者在真实情境中会做出的具体默认行为（例如“当反馈说不够清楚时，我会先去改句子”）；新目标判断用不少于 50 字描述同一情境下的可执行目标判断（例如“在动句子之前，我先定位结构上的缺口”）。两者必须是两个不同的判断，不能是同一句话的换词。再给出迁移触发点——旧判断自然启动的具体场景（例如“同事请我看一份稿子”），以及失败信号——旧判断正在失败的可见迹象。模块不是“理解某个主题”，也不是知识章节；写不出学习者的旧默认，就说明这个模块还没有找到可教的判断。核心判断必须来自判断资产，作者不得自造新判断。",
+     "qualification_refs": [
+      {
+       "kind": "condition",
+       "id": "condition:judgment-shift:1"
+      },
+      {
+       "kind": "condition",
+       "id": "condition:judgment-shift:2"
+      },
+      {
+       "kind": "boundary",
+       "id": "boundary:judgment-shift"
+      }
+     ]
+    },
+    "method": {
+     "method": {
+      "term": "criteria_comparison",
+      "vocabulary": "core"
+     },
+     "components": [
+      {
+       "id": "component:judgment-shift-standard",
+       "method": {
+        "term": "criteria_comparison",
+        "vocabulary": "core"
+       },
+       "role": "判断标准",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:judgment-shift"
+        }
+       ],
+       "statement": "旧默认判断用不少于 50 字写出学习者在真实情境中的具体默认决定（例如“当反馈说不够清楚时，我会先去改句子”），新目标判断用不少于 50 字写出同一情境下的可执行决定（例如“在动句子之前，我先定位结构上的缺口”）；两者必须是两个不同的判断，不能是同一句话的换词。"
+      },
+      {
+       "id": "component:judgment-shift-contrast",
+       "method": {
+        "term": "criteria_comparison",
+        "vocabulary": "core"
+       },
+       "role": "对照办法",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:craft-move"
+        }
+       ],
+       "statement": "把两个判断放回同一情境做对照：文本不同只是最低条件，实际要求是两个判断会导向不同的动作；对照成立的标志是能看出旧默认会做什么、新目标会做什么，否则模块没有完成对比这一次教学动作。"
+      },
+      {
+       "id": "component:judgment-shift-resolve",
+       "method": {
+        "term": "criteria_comparison",
+        "vocabulary": "core"
+       },
+       "role": "归结办法",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:judgment-shift"
+        }
+       ],
+       "statement": "对照归结为模块可教的判断迁移：写出迁移触发点——旧判断自然启动的具体场景（例如“同事请我看一份稿子”）——以及失败信号，即旧判断正在失败的可见迹象；写不出旧默认，这个模块就还没有找到可教的判断。"
+      },
+      {
+       "id": "component:judgment-shift-bottom",
+       "method": {
+        "term": "criteria_comparison",
+        "vocabulary": "core"
+       },
+       "role": "底线要求",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:traceability"
+        }
+       ],
+       "statement": "核心判断必须引用判断资产，作者不得自造；引用不到判断资产时这一条判为未完成，而不是判为“主题选得不好”；引用到了但改变了判断内容，按未完成处理。"
+      }
+     ],
+     "bindings": []
+    },
+    "material_refs": [
+     "material:definition:judgment-shift",
+     "material:definition:craft-move",
+     "material:premise:traceability",
+     "material:foundation:form-first"
+    ],
+    "reason_refs": [
+     "reason:judgment-shift"
+    ],
+    "content_uses": [
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:definition:judgment-shift"
+      },
+      "role": "adopt",
+      "statement": "本题按此定义使用判断迁移设计的字段与字数要求；相关限制保留。"
+     },
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:foundation:form-first"
+      },
+      "role": "adopt",
+      "statement": "本题采用本篇共同解释基础，按本题条件与范围使用。"
+     }
+    ],
+    "ports": [
+     {
+      "name": "output:shift-for-assessment",
+      "meaning": "旧默认判断与新目标判断的对照，供自测评估区分仍在用旧判断的提交。",
+      "direction": "output",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:judgment-shift"
+      },
+      "result_field": null
+     },
+     {
+      "name": "output:shift-for-arc",
+      "meaning": "模块级判断迁移（旧默认、新目标、触发点），供课程级判断脊线与顺序设计。",
+      "direction": "output",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:judgment-shift"
+      },
+      "result_field": null
+     }
+    ],
+    "inputs": [],
+    "boundaries": {
+     "state": "provided",
+     "value": [
+      {
+       "id": "boundary:judgment-shift",
+       "effect": "limit",
+       "statement": "本条要求判断迁移可被观察与检验，不要求一次迁移在单个模块内完成，也不规定迁移发生的速度；跨模块累积的判断改变由课程级结构标准处理。领域判断的正确性由内容资产负责，本资产只检验它是否被设计成可教、可练、可验。",
+       "declared_by": "actor:course-craft-author-agent",
+       "applies_to": {
+        "kind": "judgments",
+        "judgment_refs": [
+         "craft:judgment-shift"
+        ]
+       },
+       "exception_refs": []
+      }
+     ]
+    },
+    "exceptions": {
+     "state": "none",
+     "value": null
+    },
+    "misuse": {
+     "state": "none",
+     "value": null
+    },
+    "extensions": [],
+    "result_contract": {
+     "id": "result-contract:craft:judgment-shift",
+     "form": {
+      "term": "scalar",
+      "vocabulary": "core"
+     },
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 1,
+     "allowed_result_types": [
+      {
+       "term": "text",
+       "vocabulary": "core"
+      }
+     ]
+    },
+    "result": {
+     "contract_ref": "result-contract:craft:judgment-shift",
+     "result_type": {
+      "term": "text",
+      "vocabulary": "core"
+     },
+     "value": {
+      "kind": "text",
+      "value": "每个模块先写死一次判断迁移：旧默认判断用不少于 50 字写出学习者在真实情境中的具体默认决定，新目标判断用不少于 50 字写出同一情境下的可执行目标决定，两者必须是不同的判断；再给出旧判断自然启动的触发点与失败的可见信号。核心判断引用判断资产，作者不自造。写不出旧默认，就说明这个模块还没有可教的判断。"
+     }
+    }
+   },
+   {
+    "id": "craft:self-verifiable-assessment",
+    "focus": "学习者不用老师在旁边，能不能依据写出来的标准自己判断这次做对了没有？",
+    "subject": {
+     "actor_ids": [
+      "actor:course-craft-author-agent"
+     ],
+     "statement": "当前 Agent 对课程练习与可自测评估的作者综合"
+    },
+    "scope": {
+     "statement": "用于设计和审阅练习与自测评估：练习是否有可观察产出，通过标准与失败标准是否足以让学习者或同伴独立判定；不规定评分等级、量表形式或题目数量。"
+    },
+    "answer_kind": "guidance",
+    "parent_ref": null,
+    "form": "conclusion",
+    "core_expression": {
+     "kind": "authored",
+     "statement": "练习必须给出可观察产出——学习者提交的一句话、一张对照表、一次诊断或一段改写，而不是“讨论”“反思你最近的一次经历”或“谈感受”。自测评估至少要有两条通过标准和两条失败标准；失败标准要能指出哪一条旧判断还在起作用，而不是笼统地说“不够好”。判定必须由学习者本人或同伴依据这些标准完成，不需要教师在场。标准还要能抓住假阳性：听起来流畅、看起来很完整、但仍在用旧判断的提交，必须判为不通过。因此标准要写到“用哪个判断做出的决定”这一层，而不是只检查格式、字数或结构完整度。",
+     "qualification_refs": [
+      {
+       "kind": "condition",
+       "id": "condition:self-verifiable-assessment:1"
+      },
+      {
+       "kind": "condition",
+       "id": "condition:self-verifiable-assessment:2"
+      },
+      {
+       "kind": "boundary",
+       "id": "boundary:self-verifiable-assessment"
+      }
+     ]
+    },
+    "method": {
+     "method": {
+      "term": "criteria_comparison",
+      "vocabulary": "core"
+     },
+     "components": [
+      {
+       "id": "component:self-verifiable-assessment-criteria",
+       "method": {
+        "term": "criteria_comparison",
+        "vocabulary": "core"
+       },
+       "role": "判断标准",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:self-verifiable-assessment"
+        },
+        {
+         "kind": "material",
+         "id": "material:definition:craft-move"
+        }
+       ],
+       "statement": "自测评估至少要有两条通过标准和两条失败标准；失败标准要能指出哪一条旧判断还在起作用，而不是笼统地说“不够好”。"
+      },
+      {
+       "id": "component:self-verifiable-assessment-contrast",
+       "method": {
+        "term": "criteria_comparison",
+        "vocabulary": "core"
+       },
+       "role": "对照办法",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:self-verifiable-assessment"
+        }
+       ],
+       "statement": "判定由学习者本人或同伴拿提交逐条对照标准完成，不需要教师在场；对照必须落在“用哪个判断做出的决定”这一层，而不是只检查格式、字数或结构完整度。"
+      },
+      {
+       "id": "component:self-verifiable-assessment-resolve",
+       "method": {
+        "term": "criteria_comparison",
+        "vocabulary": "core"
+       },
+       "role": "归结办法",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:false-positive"
+        }
+       ],
+       "statement": "对照归结为通过或不通过：产出必须是名词性的可观察物（一句话、一张对照表、一次诊断、一段改写），讨论、反思、感受不算产出；听起来流畅、看起来很完整但仍在用旧判断的提交（假阳性）归结为不通过。"
+      },
+      {
+       "id": "component:self-verifiable-assessment-bottom",
+       "method": {
+        "term": "criteria_comparison",
+        "vocabulary": "core"
+       },
+       "role": "底线要求",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:anti-patterns"
+        }
+       ],
+       "statement": "标准离开教师解释就无法执行时，这一条判为未完成；缺少可观察产出的练习即使教学意图正确，也判为未完成。"
+      }
+     ],
+     "bindings": []
+    },
+    "material_refs": [
+     "material:definition:self-verifiable-assessment",
+     "material:definition:false-positive",
+     "material:definition:craft-move",
+     "material:premise:anti-patterns"
+    ],
+    "reason_refs": [
+     "reason:self-verifiable-assessment"
+    ],
+    "content_uses": [
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:definition:self-verifiable-assessment"
+      },
+      "role": "adopt",
+      "statement": "本题按此定义使用可自测评估的构成与数量要求；相关限制保留。"
+     },
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:definition:false-positive"
+      },
+      "role": "adopt",
+      "statement": "本题采用假阳性定义作为判定对手，按本题范围使用。"
+     }
+    ],
+    "ports": [
+     {
+      "name": "input:shift-for-assessment",
+      "meaning": "来自判断迁移设计的旧默认判断与新目标判断。",
+      "direction": "input",
+      "input_role": "input:shift-for-assessment",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:judgment-shift"
+      }
+     },
+     {
+      "name": "output:assessment-for-transfer",
+      "meaning": "可执行的通过标准与失败标准，供迁移复查判定新判断是否生效。",
+      "direction": "output",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:self-verifiable-assessment"
+      },
+      "result_field": null
+     }
+    ],
+    "inputs": [
+     {
+      "name": "input:shift-for-assessment",
+      "meaning": "来自判断迁移设计的旧默认判断与新目标判断。",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:judgment-shift"
+      }
+     }
+    ],
+    "boundaries": {
+     "state": "provided",
+     "value": [
+      {
+       "id": "boundary:self-verifiable-assessment",
+       "effect": "limit",
+       "statement": "本条检验的是判定的可执行性，不规定评分等级、量表形式或题目数量，测评类产品的评分与解释规则另有契约。没有可观察产出的练习，即使教学意图正确，也判为未完成。",
+       "declared_by": "actor:course-craft-author-agent",
+       "applies_to": {
+        "kind": "judgments",
+        "judgment_refs": [
+         "craft:self-verifiable-assessment"
+        ]
+       },
+       "exception_refs": []
+      }
+     ]
+    },
+    "exceptions": {
+     "state": "none",
+     "value": null
+    },
+    "misuse": {
+     "state": "none",
+     "value": null
+    },
+    "extensions": [],
+    "result_contract": {
+     "id": "result-contract:craft:self-verifiable-assessment",
+     "form": {
+      "term": "scalar",
+      "vocabulary": "core"
+     },
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 1,
+     "allowed_result_types": [
+      {
+       "term": "text",
+       "vocabulary": "core"
+      }
+     ]
+    },
+    "result": {
+     "contract_ref": "result-contract:craft:self-verifiable-assessment",
+     "result_type": {
+      "term": "text",
+      "vocabulary": "core"
+     },
+     "value": {
+      "kind": "text",
+      "value": "练习必须交付可观察产出，不是讨论或反思；自测评估至少两条通过标准与两条失败标准，失败标准指出仍在起作用的旧判断。判定由学习者或同伴独立完成，不需要教师在場，并且必须能把听起来流畅、实际仍用旧判断的提交判为不通过。"
+     }
+    }
+   },
+   {
+    "id": "craft:transfer-protocol",
+    "focus": "课程结束后，新判断在哪个真实时刻被重新触发，怎样知道它真的发生了？",
+    "subject": {
+     "actor_ids": [
+      "actor:course-craft-author-agent"
+     ],
+     "statement": "当前 Agent 对课程迁移协议的作者综合"
+    },
+    "scope": {
+     "statement": "用于设计和审阅迁移协议：迁移触发是否落在学习者真实工作中的一个具体时刻，任务与复查是否可执行；不规定课程周期长度或课后跟进的组织方式。"
+    },
+    "answer_kind": "guidance",
+    "parent_ref": null,
+    "form": "conclusion",
+    "core_expression": {
+     "kind": "authored",
+     "statement": "每个模块必须给出完整的迁移协议三件套：真实世界触发点指向学习者真实工作中的一个具体时刻（例如“下次发布前”“下一轮绩效沟通前”），不少于 30 字；应用任务说明在那个时刻要做的一件事，不少于 30 字；复查定义事后如何确认新判断是否生效。三者缺一不可。禁止“在未来的写作中应用”“把所学用回到生活中”这类没有时间、地点与动作的伪迁移。迁移是判断能否稳定成立的唯一证据：完成课程、读完材料、学习者自述很有收获，都不算迁移证据。",
+     "qualification_refs": [
+      {
+       "kind": "condition",
+       "id": "condition:transfer-protocol:1"
+      },
+      {
+       "kind": "condition",
+       "id": "condition:transfer-protocol:2"
+      },
+      {
+       "kind": "boundary",
+       "id": "boundary:transfer-protocol"
+      }
+     ]
+    },
+    "method": {
+     "method": {
+      "term": "evidence_analysis",
+      "vocabulary": "core"
+     },
+     "components": [
+      {
+       "id": "component:transfer-protocol-material",
+       "method": {
+        "term": "evidence_analysis",
+        "vocabulary": "core"
+       },
+       "role": "所用材料",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:transfer-protocol"
+        }
+       ],
+       "statement": "迁移材料是协议三件套：真实世界触发点指向学习者真实工作中的一个具体时刻（例如“下次发布前”“下一轮绩效沟通前”），不少于 30 字；应用任务说明在那个时刻要做的一件事，不少于 30 字；复查定义事后如何确认新判断生效。三者缺一不可。"
+      },
+      {
+       "id": "component:transfer-protocol-link",
+       "method": {
+        "term": "evidence_analysis",
+        "vocabulary": "core"
+       },
+       "role": "材料与判断的联系",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:traceability"
+        }
+       ],
+       "statement": "迁移是判断能否稳定成立的唯一证据：完成课程、读完材料、学习者自述很有收获都不算迁移证据；只有触发点上的实际动作与复查记录，才把新判断和它的真实发生连起来。"
+      },
+      {
+       "id": "component:transfer-protocol-counter",
+       "method": {
+        "term": "evidence_analysis",
+        "vocabulary": "core"
+       },
+       "role": "反向材料",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:transfer-protocol"
+        }
+       ],
+       "statement": "“在未来的写作中应用”“把所学用回到生活中”这类没有时间、地点与动作的表述作为反向材料被排除，它们是伪迁移，不是迁移。"
+      }
+     ],
+     "bindings": []
+    },
+    "material_refs": [
+     "material:definition:transfer-protocol",
+     "material:premise:traceability",
+     "material:definition:judgment-shift"
+    ],
+    "reason_refs": [
+     "reason:transfer-protocol"
+    ],
+    "content_uses": [
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:definition:transfer-protocol"
+      },
+      "role": "adopt",
+      "statement": "本题按此定义使用迁移协议的三个组成部分与字数要求；相关限制保留。"
+     },
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:premise:traceability"
+      },
+      "role": "adopt",
+      "statement": "本题采用溯源要求作为复查可检查性的依据。"
+     }
+    ],
+    "ports": [
+     {
+      "name": "input:assessment-for-transfer",
+      "meaning": "来自可自测评估的通过标准与失败标准，用于设计课后复查。",
+      "direction": "input",
+      "input_role": "input:assessment-for-transfer",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:self-verifiable-assessment"
+      }
+     }
+    ],
+    "inputs": [
+     {
+      "name": "input:assessment-for-transfer",
+      "meaning": "来自可自测评估的通过标准与失败标准。",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:self-verifiable-assessment"
+      }
+     }
+    ],
+    "boundaries": {
+     "state": "provided",
+     "value": [
+      {
+       "id": "boundary:transfer-protocol",
+       "effect": "limit",
+       "statement": "本条要求迁移的触发、任务与复查被写清楚并可执行，不要求每一次迁移都在课程周期内观察到结果，也不规定复查的形式（自评、同伴复查或工作产出均可）。",
+       "declared_by": "actor:course-craft-author-agent",
+       "applies_to": {
+        "kind": "judgments",
+        "judgment_refs": [
+         "craft:transfer-protocol"
+        ]
+       },
+       "exception_refs": []
+      }
+     ]
+    },
+    "exceptions": {
+     "state": "none",
+     "value": null
+    },
+    "misuse": {
+     "state": "none",
+     "value": null
+    },
+    "extensions": [],
+    "result_contract": {
+     "id": "result-contract:craft:transfer-protocol",
+     "form": {
+      "term": "scalar",
+      "vocabulary": "core"
+     },
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 1,
+     "allowed_result_types": [
+      {
+       "term": "text",
+       "vocabulary": "core"
+      }
+     ]
+    },
+    "result": {
+     "contract_ref": "result-contract:craft:transfer-protocol",
+     "result_type": {
+      "term": "text",
+      "vocabulary": "core"
+     },
+     "value": {
+      "kind": "text",
+      "value": "每个模块给出完整迁移协议：触发点指向学习者真实工作中的一个具体时刻（不少于 30 字），应用任务说明在那个时刻要做的一件事（不少于 30 字），复查定义事后如何确认新判断生效。三者缺一不可；没有触发、任务与复查的“在真实生活中应用”不算迁移设计。"
+     }
+    }
+   },
+   {
+    "id": "craft:arc-sequencing",
+    "focus": "整门课是不是一条从入口到迁移的递进旅程，而不是可以互换的章节列表？",
+    "subject": {
+     "actor_ids": [
+      "actor:course-craft-author-agent"
+     ],
+     "statement": "当前 Agent 对课程级结构与节奏的作者综合"
+    },
+    "scope": {
+     "statement": "用于设计和审阅课程级结构：模块数量与顺序、入口与终点、模块角色差异、难度递进与课程承诺的写法；不规定课程时长、节数或每节课的媒介。"
+    },
+    "answer_kind": "guidance",
+    "parent_ref": null,
+    "form": "conclusion",
+    "core_expression": {
+     "kind": "authored",
+     "statement": "课程至少三个模块，模块编号从 1 连续递增。第一个模块必须从学习者的入口状态或默认判断开始，先用熟悉的场景让旧判断现身；最后一个模块必须指向迁移、边界或精通证据。每个模块要有互不重复的角色与互不重复的核心判断：标题不得是“模块 N”“第 N 章”这类占位，也不得使用“……入门”“……概述”“理解……的重要性”这类主题标签——模块标题要说清这个模块在弧线上做什么。难度必须递进：相邻模块的估计难度不得跳级超过两级，整门课不得所有模块停在同一个难度；对入门学习者，第一模块不得高于入门难度，对高阶学习者，最后一个模块必须到达边界与权衡的难度。课程承诺要写成具体的学习者转变（“他们以前……现在……”），不是内容目录。",
+     "qualification_refs": [
+      {
+       "kind": "condition",
+       "id": "condition:arc-sequencing:1"
+      },
+      {
+       "kind": "condition",
+       "id": "condition:arc-sequencing:2"
+      },
+      {
+       "kind": "boundary",
+       "id": "boundary:arc-sequencing"
+      }
+     ]
+    },
+    "method": {
+     "method": {
+      "term": "interpretation",
+      "vocabulary": "core"
+     },
+     "components": [
+      {
+       "id": "component:arc-sequencing-object",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "解读对象",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:arc-difficulty"
+        }
+       ],
+       "statement": "解读对象是课程级结构：模块数量与顺序、入口与终点、模块角色的差异、难度递进与课程承诺的写法。"
+      },
+      {
+       "id": "component:arc-sequencing-relation",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "解释关系",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:craft-move"
+        }
+       ],
+       "statement": "结构成立的关系：至少三个模块且编号从 1 连续递增；第一个模块从学习者的入口状态或默认判断开始，最后一个模块指向迁移、边界或精通证据；模块要有互不重复的角色与核心判断，标题不得是“模块 N”“第 N 章”这类占位或“……入门”“……概述”这类主题标签；课程承诺写成具体的学习者转变（“他们以前……现在……”），不是内容目录。"
+      },
+      {
+       "id": "component:arc-sequencing-clue",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "理解线索",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:arc-difficulty"
+        }
+       ],
+       "statement": "难度曲线是理解顺序的线索：相邻模块的估计难度不得跳级超过两级，整门课不得所有模块停在同一个难度；对入门学习者第一模块不得高于入门难度，对高阶学习者最后一个模块必须到达边界与权衡的难度。"
+      },
+      {
+       "id": "component:arc-sequencing-context",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "相关语境",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:traceability"
+        }
+       ],
+       "statement": "判断脊线是排顺序的语境：大纲顶层与每个模块都要声明所引用的判断资产与核心判断，模块顺序即判断脊线的展开；引用缺一处，脊线就断在那里。"
+      }
+     ],
+     "bindings": []
+    },
+    "material_refs": [
+     "material:premise:arc-difficulty",
+     "material:definition:craft-move",
+     "material:premise:traceability",
+     "material:foundation:attention-guide"
+    ],
+    "reason_refs": [
+     "reason:arc-sequencing"
+    ],
+    "content_uses": [
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:premise:arc-difficulty"
+      },
+      "role": "adopt",
+      "statement": "本题采用课程级结构规则作为检查依据；相关限制保留。"
+     },
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:foundation:attention-guide"
+      },
+      "role": "adopt",
+      "statement": "本题采用限制作为注意力引导这一共同理解，按本题范围使用。"
+     }
+    ],
+    "ports": [
+     {
+      "name": "input:shift-for-arc",
+      "meaning": "来自判断迁移设计的模块级判断迁移。",
+      "direction": "input",
+      "input_role": "input:shift-for-arc",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:judgment-shift"
+      }
+     },
+     {
+      "name": "input:audience-for-arc",
+      "meaning": "来自人群适配的学习者入口状态与练习承载力。",
+      "direction": "input",
+      "input_role": "input:audience-for-arc",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:audience-fit"
+      }
+     }
+    ],
+    "inputs": [
+     {
+      "name": "input:shift-for-arc",
+      "meaning": "来自判断迁移设计的模块级判断迁移。",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:judgment-shift"
+      }
+     },
+     {
+      "name": "input:audience-for-arc",
+      "meaning": "来自人群适配的学习者入口状态与练习承载力。",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:audience-fit"
+      }
+     }
+    ],
+    "boundaries": {
+     "state": "provided",
+     "value": [
+      {
+       "id": "boundary:arc-sequencing",
+       "effect": "limit",
+       "statement": "模块数量与难度分级只是审查用的最小检查，本资产不规定课程时长、模块数上限或单模块字数；训练营的行为节奏与每日来信的连续介入另有本体，不由本条覆盖。",
+       "declared_by": "actor:course-craft-author-agent",
+       "applies_to": {
+        "kind": "judgments",
+        "judgment_refs": [
+         "craft:arc-sequencing"
+        ]
+       },
+       "exception_refs": []
+      }
+     ]
+    },
+    "exceptions": {
+     "state": "none",
+     "value": null
+    },
+    "misuse": {
+     "state": "none",
+     "value": null
+    },
+    "extensions": [],
+    "result_contract": {
+     "id": "result-contract:craft:arc-sequencing",
+     "form": {
+      "term": "scalar",
+      "vocabulary": "core"
+     },
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 1,
+     "allowed_result_types": [
+      {
+       "term": "text",
+       "vocabulary": "core"
+      }
+     ]
+    },
+    "result": {
+     "contract_ref": "result-contract:craft:arc-sequencing",
+     "result_type": {
+      "term": "text",
+      "vocabulary": "core"
+     },
+     "value": {
+      "kind": "text",
+      "value": "课程至少三个模块且编号连续；第一模块从入口与默认判断开始，最后模块指向迁移、边界或精通；模块角色与核心判断互不重复，标题不是占位或主题标签；难度逐级递进，相邻不跳级超过两级，整门课不扁平，且与入门或高阶定位的起点终点要求一致；课程承诺写成具体的学习者转变。"
+     }
+    }
+   },
+   {
+    "id": "craft:lesson-rhythm",
+    "focus": "这节课是一件被设计过的学习体验，还是一段讲解加一个任务？",
+    "subject": {
+     "actor_ids": [
+      "actor:course-craft-author-agent"
+     ],
+     "statement": "当前 Agent 对单课教学动线与讲做比例的作者综合"
+    },
+    "scope": {
+     "statement": "用于设计和审阅单课（试讲课与其余课时）的教学动线：讲与做的比例、练习的形态、禁止出现的讲解形态；不规定措辞、媒介或时长。"
+    },
+    "answer_kind": "guidance",
+    "parent_ref": null,
+    "form": "conclusion",
+    "core_expression": {
+     "kind": "authored",
+     "statement": "一节课必须按固定教学动线组织：认出场景（一个学习者认得出的具体处境）→ 让旧判断的失败可见 → 用同一情境的弱例与强例对比新旧判断 → 做一件旧判断会自然复发的练习 → 学习者自测 → 真实迁移。讲解只服务于让练习做得成；出现“今天我们要学习……”“某某是一项重要的能力”“理解……的重要性”，或要求“讨论”“反思”而不给可观察产出的段落，都不算教学，只算占位。练习必须是主动的判断作业——写、诊断、识别、比较、改写、决定；读、看、听、复习只能作为输入，不能算学习者的作品。旧判断陷阱必须写进练习：说清学习者在做这个任务时自然会滑回哪种旧判断；如果练习用新判断顺手就能完成，这一条判为未完成。",
+     "qualification_refs": [
+      {
+       "kind": "condition",
+       "id": "condition:lesson-rhythm:1"
+      },
+      {
+       "kind": "condition",
+       "id": "condition:lesson-rhythm:2"
+      },
+      {
+       "kind": "boundary",
+       "id": "boundary:lesson-rhythm"
+      }
+     ]
+    },
+    "method": {
+     "method": {
+      "term": "interpretation",
+      "vocabulary": "core"
+     },
+     "components": [
+      {
+       "id": "component:lesson-rhythm-object",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "解读对象",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:foundation:form-first"
+        }
+       ],
+       "statement": "解读对象是单课的教学动线：讲与做的比例、练习的形态，以及各段的实现方式。"
+      },
+      {
+       "id": "component:lesson-rhythm-relation",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "解释关系",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:craft-move"
+        }
+       ],
+       "statement": "动线成立的关系是六段顺序：认出场景（一个学习者认得出的具体处境）→ 让旧判断的失败可见 → 用同一情境的弱例与强例对比新旧判断 → 做一件旧判断会自然复发的练习 → 学习者自测 → 真实迁移；讲解只服务于让练习做得成，缺段要在产物里说明这一段如何被实现，而不是留下空档。"
+      },
+      {
+       "id": "component:lesson-rhythm-clue",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "理解线索",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:old-judgment-trap"
+        }
+       ],
+       "statement": "判断练习是否成立的线索有两组：主动与被动动词——写、诊断、识别、比较、改写、决定属于主动判断作业，读、看、听、复习只作为输入；以及旧判断陷阱——练习要写明学习者在做这个任务时会自然滑回哪种默认决定，用新判断顺手就能完成的练习不算。"
+      },
+      {
+       "id": "component:lesson-rhythm-alternative",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "替代解读",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:no-lecture"
+        }
+       ],
+       "statement": "“讲解加一个任务就是课”“讨论即练习”这类替代解读不成立：教材式开场、主题介绍、动机话术、要求理解重要性、没有可观察产出的讨论、没有标准的教师点评，都不计入教学动线。"
+      }
+     ],
+     "bindings": []
+    },
+    "material_refs": [
+     "material:premise:no-lecture",
+     "material:definition:old-judgment-trap",
+     "material:definition:self-verifiable-assessment",
+     "material:foundation:form-first"
+    ],
+    "reason_refs": [
+     "reason:lesson-rhythm"
+    ],
+    "content_uses": [
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:premise:no-lecture"
+      },
+      "role": "adopt",
+      "statement": "本题采用课程不是讲座这一前提，并据此列出排除项。"
+     },
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:foundation:form-first"
+      },
+      "role": "adopt",
+      "statement": "本题采用载体本质优先的共同理解：课程必须首先是一段学习体验。"
+     }
+    ],
+    "ports": [],
+    "inputs": [],
+    "boundaries": {
+     "state": "provided",
+     "value": [
+      {
+       "id": "boundary:lesson-rhythm",
+       "effect": "limit",
+       "statement": "动线约束的是要素与顺序，不规定措辞、媒介或时长。直播工作坊、训练营的每日推进与每日来信的定点介入另有本体，不由本条覆盖。",
+       "declared_by": "actor:course-craft-author-agent",
+       "applies_to": {
+        "kind": "judgments",
+        "judgment_refs": [
+         "craft:lesson-rhythm"
+        ]
+       },
+       "exception_refs": []
+      }
+     ]
+    },
+    "exceptions": {
+     "state": "none",
+     "value": null
+    },
+    "misuse": {
+     "state": "none",
+     "value": null
+    },
+    "extensions": [],
+    "result_contract": {
+     "id": "result-contract:craft:lesson-rhythm",
+     "form": {
+      "term": "scalar",
+      "vocabulary": "core"
+     },
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 1,
+     "allowed_result_types": [
+      {
+       "term": "text",
+       "vocabulary": "core"
+      }
+     ]
+    },
+    "result": {
+     "contract_ref": "result-contract:craft:lesson-rhythm",
+     "result_type": {
+      "term": "text",
+      "vocabulary": "core"
+     },
+     "value": {
+      "kind": "text",
+      "value": "单课按认出场景、失败可见、弱例强例对比、带旧判断陷阱的练习、自测、迁移六段动线组织；讲解只服务于让练习做得成；练习是主动的判断作业，读看听复习只能作为输入；教材式开场、动机话术、要求理解重要性、无产出的讨论与无标准的点评不计入教学。"
+     }
+    }
+   },
+   {
+    "id": "craft:anti-patterns",
+    "focus": "这份课程文本里出现了哪些必须删掉的反面模式？",
+    "subject": {
+     "actor_ids": [
+      "actor:course-craft-author-agent"
+     ],
+     "statement": "当前 Agent 对课程反面模式清单的作者综合"
+    },
+    "scope": {
+     "statement": "用于审阅课程文本的禁用项检查：通用建议、励志话术、结果承诺、治疗语言、说服操纵、通用沟通与成长建议、被动练习、复制卓越样本；不用于评论文本风格偏好。"
+    },
+    "answer_kind": "evaluation",
+    "parent_ref": null,
+    "form": "conclusion",
+    "core_expression": {
+     "kind": "authored",
+     "statement": "审查时必须逐条排除：一、通用建议——“只要……就行”“关键在于……”，删掉课程名之后可以发给任何人的话；二、励志话术——“你可以做到”“相信自己”“改变人生”；三、结果承诺——“保证”“一定会”“每次都有效”“百分之百有效”，以及中文的“爆款、轻松、快速、立刻、马上”；四、治疗语言——疗愈、创伤、内在小孩、情绪伤口；五、说服操纵——赢得争论、说服对方、让对方照做；六、通用沟通与成长建议——积极倾听、成长型思维、情商；七、被动练习——把读、看、听、复习当作学习者的练习；八、复制卓越样本的结构或措辞。命中的条目不是风格建议，而是必须修改的缺陷：出现承诺或保证按错误处理，出现通用建议按具体性缺陷处理。",
+     "qualification_refs": [
+      {
+       "kind": "condition",
+       "id": "condition:anti-patterns:1"
+      },
+      {
+       "kind": "condition",
+       "id": "condition:anti-patterns:2"
+      },
+      {
+       "kind": "condition",
+       "id": "condition:anti-patterns:3"
+      },
+      {
+       "kind": "boundary",
+       "id": "boundary:anti-patterns"
+      }
+     ]
+    },
+    "method": {
+     "method": {
+      "term": "recognition",
+      "vocabulary": "core"
+     },
+     "components": [
+      {
+       "id": "component:anti-patterns-classes",
+       "method": {
+        "term": "recognition",
+        "vocabulary": "core"
+       },
+       "role": "类别定义",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:anti-patterns"
+        }
+       ],
+       "statement": "类别定义是八类反面模式：通用建议、励志话术、结果承诺、治疗语言、说服操纵、通用沟通与成长建议、被动练习、复制卓越样本的结构或措辞；它们分别挂在非通用性、教学力、商业诚实、判断保真与具体性等质量维度上。"
+      },
+      {
+       "id": "component:anti-patterns-features",
+       "method": {
+        "term": "recognition",
+        "vocabulary": "core"
+       },
+       "role": "识别特征",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:anti-patterns"
+        },
+        {
+         "kind": "material",
+         "id": "material:premise:negative-constraints"
+        }
+       ],
+       "statement": "识别特征分两类：通用建议用受众替换检验——删掉课程名与领域词之后仍可发给任何人的句子即命中；承诺类用语对照禁用词表——保证、退款、一定、每次、百分之百，以及中文的爆款、轻松、快速、立刻、马上。"
+      },
+      {
+       "id": "component:anti-patterns-match",
+       "method": {
+        "term": "recognition",
+        "vocabulary": "core"
+       },
+       "role": "匹配办法",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:exemplar-usage"
+        }
+       ],
+       "statement": "匹配之后按缺陷定性：承诺或保证按错误处理，通用建议按具体性缺陷处理，被动练习按缺少主动判断作业处理；与卓越样本的措辞或结构高度相似时按模板化复制处理，相似度阈值取 0.82。"
+      },
+      {
+       "id": "component:anti-patterns-confusion",
+       "method": {
+        "term": "recognition",
+        "vocabulary": "core"
+       },
+       "role": "易混淆情况",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:anti-patterns"
+        }
+       ],
+       "statement": "教学中的反例与标注示例不算命中，但上下文必须标明这是反例或构造示意；与判断资产直接对应的术语即使听起来普通，也不按通用建议处理。"
+      }
+     ],
+     "bindings": []
+    },
+    "material_refs": [
+     "material:premise:anti-patterns",
+     "material:premise:negative-constraints",
+     "material:premise:exemplar-usage"
+    ],
+    "reason_refs": [
+     "reason:anti-patterns"
+    ],
+    "content_uses": [
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:premise:anti-patterns"
+      },
+      "role": "adopt",
+      "statement": "本题采用质量引擎的反面模式清单作为识别依据；相关限制保留。"
+     },
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:premise:exemplar-usage"
+      },
+      "role": "adopt",
+      "statement": "本题采用卓越样本的只提原则政策作为复制判定依据。"
+     }
+    ],
+    "ports": [],
+    "inputs": [],
+    "boundaries": {
+     "state": "provided",
+     "value": [
+      {
+       "id": "boundary:anti-patterns",
+       "effect": "limit",
+       "statement": "禁用清单针对产品文本，不针对讨论本身：作者在教学中示范一句错误说法、或明确标为构造示意时不算命中，但上下文中必须标明这是在指出错误或作为示例；反例与真实主张必须在文本上可区分。",
+       "declared_by": "actor:course-craft-author-agent",
+       "applies_to": {
+        "kind": "judgments",
+        "judgment_refs": [
+         "craft:anti-patterns"
+        ]
+       },
+       "exception_refs": []
+      }
+     ]
+    },
+    "exceptions": {
+     "state": "none",
+     "value": null
+    },
+    "misuse": {
+     "state": "none",
+     "value": null
+    },
+    "extensions": [],
+    "result_contract": {
+     "id": "result-contract:craft:anti-patterns",
+     "form": {
+      "term": "scalar",
+      "vocabulary": "core"
+     },
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 1,
+     "allowed_result_types": [
+      {
+       "term": "text",
+       "vocabulary": "core"
+      }
+     ]
+    },
+    "result": {
+     "contract_ref": "result-contract:craft:anti-patterns",
+     "result_type": {
+      "term": "text",
+      "vocabulary": "core"
+     },
+     "value": {
+      "kind": "text",
+      "value": "逐条排除通用建议、励志话术、结果承诺、治疗语言、说服操纵、通用沟通与成长建议、被动练习与样本复制；命中的是必须修改的缺陷，不是风格建议——承诺类按错误处理，通用建议按具体性缺陷处理，被动练习按缺少主动判断作业处理。"
+     }
+    }
+   },
+   {
+    "id": "craft:evidence-and-sources",
+    "focus": "这条课程承诺、这个判断、这次练习，能不能追溯到判断资产和可用于验证的证据？",
+    "subject": {
+     "actor_ids": [
+      "actor:course-craft-author-agent"
+     ],
+     "statement": "当前 Agent 对课程溯源与诚实边界的作者综合"
+    },
+    "scope": {
+     "statement": "用于审阅课程产品的溯源与诚实边界：判断与承诺是否可追溯、可验证，对外宣称是否越界，示例是否标明性质；不评判上游消费路由与组合是否正确。"
+    },
+    "answer_kind": "evaluation",
+    "parent_ref": null,
+    "form": "conclusion",
+    "core_expression": {
+     "kind": "authored",
+     "statement": "课程里的每一条判断都要能追溯：模块要在引用字段中声明它训练的判断资产，课程大纲顶层也要声明，核心判断不得由作者自造；从判断资产到模块的对应关系必须能在产物里看到，而不是只存在于生成过程。课程承诺要写成学习者在课后可以自己验证的能力（“我能诊断 X”），而不是“我会更擅长 Y”；涉及对外宣称时，没有证据支持的进入禁止宣称清单，并必须给出不适合谁与非承诺边界。示例必须标明是构造示意还是观察所得，构造示意不得伪装成真实结果。占位符、空的关键字段与无法追溯的主张不得进入课程产品。",
+     "qualification_refs": [
+      {
+       "kind": "condition",
+       "id": "condition:evidence-and-sources:1"
+      },
+      {
+       "kind": "condition",
+       "id": "condition:evidence-and-sources:2"
+      },
+      {
+       "kind": "boundary",
+       "id": "boundary:evidence-and-sources"
+      }
+     ]
+    },
+    "method": {
+     "method": {
+      "term": "evidence_analysis",
+      "vocabulary": "core"
+     },
+     "components": [
+      {
+       "id": "component:evidence-and-sources-material",
+       "method": {
+        "term": "evidence_analysis",
+        "vocabulary": "core"
+       },
+       "role": "所用材料",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:traceability"
+        }
+       ],
+       "statement": "所用材料是两级溯源：课程大纲顶层声明所引用的判断资产，每个模块声明自己训练的判断资产与核心判断；判断资产本身至少有一条来源链接；示例要标明是构造示意还是观察所得。"
+      },
+      {
+       "id": "component:evidence-and-sources-link",
+       "method": {
+        "term": "evidence_analysis",
+        "vocabulary": "core"
+       },
+       "role": "材料与判断的联系",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:negative-constraints"
+        }
+       ],
+       "statement": "材料与判断的联系落在承诺上：承诺要写成学习者课后能自己验证的能力（“我能诊断 X”而不是“我会更擅长 Y”）；没有证据支持的对外宣称进入禁止宣称清单，并必须给出不适合谁与非承诺边界。"
+      },
+      {
+       "id": "component:evidence-and-sources-selection",
+       "method": {
+        "term": "evidence_analysis",
+        "vocabulary": "core"
+       },
+       "role": "材料取舍",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:craft-asset-role"
+        },
+        {
+         "kind": "material",
+         "id": "material:foundation:checkable"
+        }
+       ],
+       "statement": "材料取舍按供给角色划分：课程是关于什么的来自内容资产，课程形态怎样成立来自工艺资产；生产与审查要分别引用两侧证据，不能用内容资产推断课程形态；占位符、空的关键字段与不可追溯的主张不得进入产品。"
+      }
+     ],
+     "bindings": []
+    },
+    "material_refs": [
+     "material:premise:traceability",
+     "material:premise:negative-constraints",
+     "material:definition:craft-asset-role",
+     "material:foundation:checkable"
+    ],
+    "reason_refs": [
+     "reason:evidence-and-sources"
+    ],
+    "content_uses": [
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:premise:traceability"
+      },
+      "role": "adopt",
+      "statement": "本题采用溯源最低要求作为检查依据；相关限制保留。"
+     },
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:definition:craft-asset-role"
+      },
+      "role": "adopt",
+      "statement": "本题采用内容与工艺两种供给的角色定义，用于区分两侧证据。"
+     }
+    ],
+    "ports": [],
+    "inputs": [],
+    "boundaries": {
+     "state": "provided",
+     "value": [
+      {
+       "id": "boundary:evidence-and-sources",
+       "effect": "limit",
+       "statement": "本资产不评判判断资产的领域正确性，也不评判上游路由、组合与投影是否选对——那是内容资产与消费证据的责任。本条只要求课程把它使用的是哪一个判断资产暴露出来，并且不越权自造判断或宣称未被支持的结论。",
+       "declared_by": "actor:course-craft-author-agent",
+       "applies_to": {
+        "kind": "judgments",
+        "judgment_refs": [
+         "craft:evidence-and-sources"
+        ]
+       },
+       "exception_refs": []
+      }
+     ]
+    },
+    "exceptions": {
+     "state": "none",
+     "value": null
+    },
+    "misuse": {
+     "state": "none",
+     "value": null
+    },
+    "extensions": [],
+    "result_contract": {
+     "id": "result-contract:craft:evidence-and-sources",
+     "form": {
+      "term": "scalar",
+      "vocabulary": "core"
+     },
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 1,
+     "allowed_result_types": [
+      {
+       "term": "text",
+       "vocabulary": "core"
+      }
+     ]
+    },
+    "result": {
+     "contract_ref": "result-contract:craft:evidence-and-sources",
+     "result_type": {
+      "term": "text",
+      "vocabulary": "core"
+     },
+     "value": {
+      "kind": "text",
+      "value": "课程顶层与每个模块都声明所引用的判断资产，核心判断不自造；每条承诺都要能回答“学习者课后凭什么自己确认它发生了”，无法验证的宣称进入禁止清单；对外材料给出不适合谁与非承诺；示例标明构造示意或观察所得；占位符与不可追溯的主张不得进入产品。"
+     }
+    }
+   },
+   {
+    "id": "craft:audience-fit",
+    "focus": "这门课是为能在自己身上认出旧判断的人设计的，又明确写出不为谁设计？",
+    "subject": {
+     "actor_ids": [
+      "actor:course-craft-author-agent"
+     ],
+     "statement": "当前 Agent 对课程人群适配的作者综合"
+    },
+    "scope": {
+     "statement": "用于设计和审阅课程的目标人群适配：人群是否认得出旧判断、是否给出不为谁设计、不同准备度是否导致结构差异；不规定人群分层方法、画像字段或市场定位策略。"
+    },
+    "answer_kind": "guidance",
+    "parent_ref": null,
+    "form": "conclusion",
+    "core_expression": {
+     "kind": "authored",
+     "statement": "目标人群要写成“能在自己身上认出旧判断”的具体人群，而不是任一泛化标签；同时必须给出不为谁设计——明确写出这门课不是给谁的、谁不需要这个判断。同一门课对不同准备度的学习者必须在结构上不同，而不只是换语气：入门者先用熟悉场景让旧判断现身，概念命名放在场景与对比之后，练习小到可以独立完成一次，自测标准明确；高阶者不再重讲基础，直接处理边界、权衡与假阳性，练习接近真实高风险任务。练习量必须与练习承载力匹配：轻量承载力不安排多案例或每日重复，强化承载力要用多案例与重复练习换取迁移证据。",
+     "qualification_refs": [
+      {
+       "kind": "condition",
+       "id": "condition:audience-fit:1"
+      },
+      {
+       "kind": "condition",
+       "id": "condition:audience-fit:2"
+      },
+      {
+       "kind": "boundary",
+       "id": "boundary:audience-fit"
+      }
+     ]
+    },
+    "method": {
+     "method": {
+      "term": "interpretation",
+      "vocabulary": "core"
+     },
+     "components": [
+      {
+       "id": "component:audience-fit-object",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "解读对象",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:audience-fit-rules"
+        }
+       ],
+       "statement": "解读对象是目标人群：能在自己身上认出旧判断的具体人群，以及明确的排除画像——这门课不是给谁的、谁不需要这个判断、谁不具备前提。"
+      },
+      {
+       "id": "component:audience-fit-relation",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "解释关系",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:definition:false-positive"
+        }
+       ],
+       "statement": "人群与课程的关系体现在结构上：入门者先用熟悉场景让旧判断现身，概念命名放在场景与对比之后，练习小到可以独立完成一次，自测标准明确；高阶者不再重讲基础，直接处理边界、权衡与假阳性，练习接近真实高风险任务；只换语气或举例不构成适配。"
+      },
+      {
+       "id": "component:audience-fit-clue",
+       "method": {
+        "term": "interpretation",
+        "vocabulary": "core"
+       },
+       "role": "理解线索",
+       "material_refs": [
+        {
+         "kind": "material",
+         "id": "material:premise:audience-fit-rules"
+        }
+       ],
+       "statement": "练习量是理解承载力的线索：轻量承载力不安排多案例或每日重复，一个模块一个聚焦任务并立即自测；强化承载力要用多案例与重复练习换取迁移证据。"
+      }
+     ],
+     "bindings": []
+    },
+    "material_refs": [
+     "material:premise:audience-fit-rules",
+     "material:definition:false-positive",
+     "material:foundation:form-first"
+    ],
+    "reason_refs": [
+     "reason:audience-fit"
+    ],
+    "content_uses": [
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:premise:audience-fit-rules"
+      },
+      "role": "adopt",
+      "statement": "本题采用目标人群规则作为检查依据；相关限制保留。"
+     },
+     {
+      "target": {
+       "kind": "material",
+       "id": "material:foundation:form-first"
+      },
+      "role": "adopt",
+      "statement": "本题采用载体本质优先的共同理解：适配改变结构，而不只是语气。"
+     }
+    ],
+    "ports": [
+     {
+      "name": "output:audience-for-arc",
+      "meaning": "学习者的入口状态、准备度差异与练习承载力，供课程弧线与节奏设计。",
+      "direction": "output",
+      "contract_ref": {
+       "kind": "contract",
+       "id": "result-contract:craft:audience-fit"
+      },
+      "result_field": null
+     }
+    ],
+    "inputs": [],
+    "boundaries": {
+     "state": "provided",
+     "value": [
+      {
+       "id": "boundary:audience-fit",
+       "effect": "limit",
+       "statement": "本条要求课程在结构上区分准备度并给出排除画像，不规定人群分层方法、人数、画像字段或定价与市场策略；产品定位与销售叙事由相应资产负责。",
+       "declared_by": "actor:course-craft-author-agent",
+       "applies_to": {
+        "kind": "judgments",
+        "judgment_refs": [
+         "craft:audience-fit"
+        ]
+       },
+       "exception_refs": []
+      }
+     ]
+    },
+    "exceptions": {
+     "state": "none",
+     "value": null
+    },
+    "misuse": {
+     "state": "none",
+     "value": null
+    },
+    "extensions": [],
+    "result_contract": {
+     "id": "result-contract:craft:audience-fit",
+     "form": {
+      "term": "scalar",
+      "vocabulary": "core"
+     },
+     "shape": {
+      "kind": "scalar",
+      "scalar_type": "text"
+     },
+     "minimum": 1,
+     "maximum": 1,
+     "allowed_result_types": [
+      {
+       "term": "text",
+       "vocabulary": "core"
+      }
+     ]
+    },
+    "result": {
+     "contract_ref": "result-contract:craft:audience-fit",
+     "result_type": {
+      "term": "text",
+      "vocabulary": "core"
+     },
+     "value": {
+      "kind": "text",
+      "value": "目标人群写成能认出旧判断的具体人群，并给出排除画像说明这门课不是给谁的；准备度差异要改变入口、抽象程度、练习量与自测方式，而不是只换语气；练习量与承载力匹配，轻量承载不安排多案例或每日重复，强化承载用多案例与重复练习换取迁移证据。"
+     }
+    }
+   }
+  ],
+  "asset_capability": "asserted_answers",
+  "scope": {
+   "statement": "面向课程产品（course）的制作与审查：定义什么样的课程才算好课程，并给出判断迁移设计、可自测练习、真实迁移、模块结构与节奏、讲与做的比例、反面模式、证据与来源、目标人群适配这八条标准的检查口径。标准来自 Render 仓库已经记录的产品本体、消费者契约、课程表单契约、质量引擎与课程提示词。不覆盖每日来信、训练营、测评、咨询等其他产品的本体标准，也不评判内容资产中的领域判断本身是否正确。",
+   "dimensions": [
+    {
+     "name": "scope:objects",
+     "value": {
+      "kind": "text",
+      "value": "课程产品（course_outline、pilot_lesson_package、course_package）及其模块与单课设计"
+     }
+    },
+    {
+     "name": "scope:tasks",
+     "value": {
+      "kind": "text",
+      "value": "为课程创作提供创作框架，为课程审查提供可检查标准；不执行具体课程生成，也不判定领域判断的真伪"
+     }
+    }
+   ]
+  },
+  "kernel": {
+   "purpose": {
+    "kind": "authored",
+    "statement": "把 Render 仓库中已经记录、但分散在产品本体、消费者契约、表单契约、提示词与质量规则里的课程制作判断，收敛成一份可被引擎消费的工艺标准：创作时作为框架，审查时作为判据，失败时能定位到具体哪一条判断没有被完成。"
+   },
+   "foundation_refs": [
+    {
+     "kind": "material",
+     "id": "material:foundation:form-first"
+    },
+    {
+     "kind": "material",
+     "id": "material:foundation:checkable"
+    },
+    {
+     "kind": "material",
+     "id": "material:foundation:attention-guide"
+    }
+   ]
+  },
+  "reading_order": [
+   "craft:judgment-shift",
+   "craft:self-verifiable-assessment",
+   "craft:transfer-protocol",
+   "craft:lesson-rhythm",
+   "craft:arc-sequencing",
+   "craft:audience-fit",
+   "craft:evidence-and-sources",
+   "craft:anti-patterns"
+  ],
+  "attributions": {
+   "state": "provided",
+   "value": [
+    {
+     "role": "creator",
+     "actor_ids": [
+      "actor:course-craft-author-agent"
+     ],
+     "statement": "课程工艺资产作者（Agent）依据 Render 仓库内的产品本体、消费者契约、课程表单契约、质量引擎、课程提示词与工艺审计综合而成；本资产是仓库内已有标准的整理与成文化，不包含仓库之外的新主张，也没有声明真人内容确认、发布授权或课程质量已被接受。"
+    }
+   ]
+  },
+  "extensions": [],
+  "declarations": {
+   "highest_question": {
+    "state": "provided",
+    "value": "什么样的课程才算好课程，怎样做出来？"
+   },
+   "boundaries": {
+    "state": "provided",
+    "value": [
+     {
+      "id": "boundary:scope-and-authority",
+      "effect": "limit",
+      "statement": "本资产是课程制作与审查的工艺标准，不是内容资产：它不定义任何领域判断本身，也不评判上游 KDNA 路由、组合与投影是否选对。课程必须先作为学习体验成立，KDNA 判断只在该载体成立之后为其注入深度；本资产不因此为任何内容资产、消费证据或课程质量背书。",
+      "declared_by": "actor:course-craft-author-agent",
+      "applies_to": {
+       "kind": "asset"
+      },
+      "exception_refs": []
+     },
+     {
+      "id": "boundary:standard-not-checklist",
+      "effect": "limit",
+      "statement": "八条标准描述必须完成的教学动作与判定，不构成字段清单。把标准当作逐项填字段的模板，仍然会产出结构完整但不像课程的课程；标准用于创作框架与完成后的审查，不用于要求生成阶段直接满足全部字段。",
+      "declared_by": "actor:course-craft-author-agent",
+      "applies_to": {
+       "kind": "asset"
+      },
+      "exception_refs": []
+     }
+    ]
+   }
+  }
+ }
+}
