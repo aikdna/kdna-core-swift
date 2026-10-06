@@ -412,6 +412,52 @@ final class SectionsFixtureTests: XCTestCase {
         }
         XCTAssertEqual(sha(Data(text.utf8)), "sha256:265fddf7e84c8053fcfbdc381712aa5c60024d94e924003d0cd699772ff9d683")
     }
+    // The kdsig verification stack, pinned against the released chain on the
+    // committed signed fixture (self-key and pinned-key verifications, the
+    // wrong-pin / require-signature / tampered-signature rejections). The
+    // fixture is regenerated with the unsigned one by the same script (the
+    // deterministic test seed is documented there).
+    func testSignedFixtureParity() async throws {
+        let signedURL = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0.signed", withExtension: "kdna", subdirectory: "Fixtures"))
+        let unsignedURL = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0", withExtension: "kdna", subdirectory: "Fixtures"))
+        let signed = [UInt8](try Data(contentsOf: signedURL))
+        let unsigned = [UInt8](try Data(contentsOf: unsignedURL))
+        XCTAssertEqual(sha(Data(signed)), "sha256:21bf43204f42bbd1d6ce047e30796ed75f69cc507b8fa26910caaf605424aacc")
+        let correctKey = "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+        var out: J = [:]
+        func read(_ label: String, _ bytes: [UInt8], _ policy: J?) async throws {
+            let asset = try KDNASectionAsset.open(bytes: bytes)
+            let authority = try asset.createReadAuthority({ _ in true }, signaturePolicy: policy)
+            let outcome = await asset.readWhole(try asset.admitWholeReadRequest(requestId: "signed-1", budgetBytes: 1048576), authority)
+            if let snapshot = outcome.snapshot {
+                out[label] = ["status": outcome.envelope["status"], "signature_integrity": snapshot.inspect()["verification"]["signature_integrity"]]
+            } else {
+                out[label] = ["status": outcome.envelope["status"], "reason": outcome.envelope["reason"],
+                              "stage": outcome.envelope["stage"], "diagnostic": outcome.envelope["diagnostic"]]
+            }
+        }
+        try await read("selfKey", signed, nil)
+        try await read("pinned", signed, ["requireSignature": true, "expectedPublicKeyHex": .string(correctKey)])
+        try await read("wrongPin", signed, ["requireSignature": true, "expectedPublicKeyHex": .string(String(repeating: "0", count: 64))])
+        try await read("unsignedRequire", unsigned, ["requireSignature": true, "expectedPublicKeyHex": .null])
+        // The tampered-signature case is covered by the scratch parity run
+        // (the committed test pins the four cases above; rebuilding a
+        // tampered container in-repo needs a stored-container writer, which
+        // the open port does not expose).
+        // rejection codes
+        XCTAssertEqual(out["wrongPin"]["reason"].text, "SECTION_SIGNATURE_PIN_MISMATCH")
+        XCTAssertEqual(out["wrongPin"]["diagnostic"]["field"].text, "/signature.kdsig/public_key")
+        XCTAssertEqual(out["unsignedRequire"]["reason"].text, "SECTION_SIGNATURE_REQUIRED")
+        XCTAssertEqual(out["selfKey"]["signature_integrity"]["status"].text, "verified_self_key")
+        XCTAssertEqual(out["pinned"]["signature_integrity"]["status"].text, "verified_pinned_key")
+        XCTAssertEqual(out["selfKey"]["signature_integrity"]["public_key"].text, correctKey)
+        XCTAssertEqual(out["selfKey"]["signature_integrity"]["key_fingerprint"].text, "sha256:10ba682c8ad13513971e8b56881aab8bd702bb807796eca81932c735a94d6e6d")
+        XCTAssertEqual(out["selfKey"]["signature_integrity"]["observed_signature_content_digest"].text, "sha256:69e56e80862a70ad9db5d6e2dee5c8f44cb3b70f39ae89a2d7f23b11bdc58536")
+        // Whole-output pin (capture UUID normalized).
+        let text = String(decoding: try KDNAJSON.canonical(out), as: UTF8.self)
+        let normalized = text.replacingOccurrences(of: "capture:[0-9a-f-]{36}", with: "capture:UUID", options: .regularExpression)
+        XCTAssertEqual(sha(Data(normalized.utf8)), "sha256:c3a9280ddab46a4479995f9ed956bae3e46a0b5719bb3ed0dc324af0be648ae8")
+    }
     func testFixtureAuthorshipAndRegenerationRecord() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "sections-fixture-craft-course-0.1.0.authorship", withExtension: "json", subdirectory: "Fixtures"))
         let authorship = try KDNAJSON.parse(Data(contentsOf: url))

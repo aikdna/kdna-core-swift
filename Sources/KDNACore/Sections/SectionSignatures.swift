@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 // The kdsig signature domain (section-signatures.js, @aikdna/kdna-core@0.36.0):
 // policy validation, the read intent and the whole-read verification path.
@@ -51,7 +52,114 @@ enum SectionSignatures {
             result["status"] = "absent"
             return try SectionContract.validate("SectionSignatureVerification06", result)
         }
-        throw PublicFailure("READ_CORE_CAPABILITY_UNAVAILABLE")
+        // The signed branch (section-signatures.js parse/domain/verify plus
+        // the kdsig helpers in signature.js and protection-integrity.js): the
+        // bundle parse pre-checks, the intent comparison, the policy pin, the
+        // per-member signature-basis domain and the Ed25519 verification.
+        let raw = entries.first { $0.name == "signature.kdsig" }!.bytes
+        let bundle = try parseBundle(raw)
+        let actualIntent = try intent(entries.map { (name: $0.name, size: $0.bytes.count) })
+        try demand(sha(try KDNAJSON.canonical(actualIntent)) == sha(try KDNAJSON.canonical(readIntent)), "SECTION_SIGNATURE_INTENT_MISMATCH")
+        if signaturePolicy["expectedPublicKeyHex"] != .null && !exact(bundle["public_key"].text, signaturePolicy["expectedPublicKeyHex"].text) {
+            try invalid("SECTION_SIGNATURE_PIN_MISMATCH", "/signature.kdsig/public_key")
+        }
+        var domainRows: [String] = [], members: [J] = []
+        var excludedNames = entries.map { $0.name }.filter { excluded($0) }
+        excludedNames.sort(by: SectionFrameGraph.utf8Less)
+        var names = entries.map { $0.name }.filter { !excluded($0) }
+        names.sort(by: SectionFrameGraph.utf8Less)
+        for name in names {
+            guard let entry = entries.first(where: { $0.name == name }) else { continue }
+            let row: String
+            do { row = try signatureBasisRow(name, entry.bytes) }
+            catch {
+                if name.lowercased().hasSuffix(".json") { try invalid("SECTION_SIGNATURE_INVALID", "/" + name, name) }
+                throw error
+            }
+            domainRows.append(row)
+            members.append(["name": .string(name), "bytes": .number(Double(entry.bytes.count)),
+                            "raw_digest": .string(sha(Data(entry.bytes))),
+                            "signature_basis_digest": .string("sha256:" + String(row.suffix(64)))])
+        }
+        let observed = sha(Data(domainRows.joined(separator: "\n").utf8))
+        do { try verifyBundle(raw, observed) }
+        catch let failureValue as PublicFailure where failureValue.code == "KDNA_INTEGRITY_SIGNATURE_FAILED" { try invalid() }
+        var result = common
+        result["status"] = signaturePolicy["expectedPublicKeyHex"] == .null ? .string("verified_self_key") : .string("verified_pinned_key")
+        result["profile"] = .string(profile)
+        result["profile_version"] = .string(version)
+        result["algorithm"] = "ed25519"
+        result["signature_document_digest"] = .string(sha(Data(raw)))
+        result["expected_signature_content_digest"] = bundle["content_digest"]
+        result["observed_signature_content_digest"] = .string(observed)
+        result["public_key"] = bundle["public_key"]
+        result["key_fingerprint"] = .string(try keyFingerprint(bundle["public_key"].text))
+        result["members"] = .array(members)
+        result["excluded_members"] = .array(excludedNames.map { .string($0) })
+        return try SectionContract.validate("SectionSignatureVerification06", result)
+    }
+    // MARK: - The kdsig helpers (signature.js + protection-integrity.js)
+    static func hexBytes(_ hex: String, _ count: Int) -> [UInt8]? {
+        guard hex.count == count * 2, hex.allSatisfy({ $0.isHexDigit && !$0.isUppercase }) else { return nil }
+        var out: [UInt8] = []
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let next = hex.index(index, offsetBy: 2)
+            guard let byte = UInt8(hex[index..<next], radix: 16) else { return nil }
+            out.append(byte)
+            index = next
+        }
+        return out
+    }
+    static func keyFingerprint(_ publicKeyHex: String) throws -> String {
+        guard let raw = hexBytes(publicKeyHex, 32) else { throw PublicFailure("KDNA_SIGNATURE_KEY_INVALID") }
+        return sha(Data(raw))
+    }
+    /// The section-level bundle parse pre-checks then the kdsig parse.
+    static func parseBundle(_ raw: [UInt8]) throws -> J {
+        if raw.count > 1048576 { try invalid() }
+        let value: J
+        do { value = try KDNAJSON.parse(Data(raw)) }
+        catch is PublicFailure { try invalid() }
+        catch is StrictJSONSyntaxFailure { try invalid() }
+        let fields = ["algorithm", "content_digest", "profile", "profile_version", "public_key", "signature"]
+        guard value.fields.count == fields.count, fields.allSatisfy({ value.has($0) && !value[$0].text.isEmpty }),
+              value["content_digest"].text.range(of: "^sha256:[0-9a-f]{64}$", options: .regularExpression) != nil,
+              hexBytes(value["public_key"].text, 32) != nil,
+              hexBytes(value["signature"].text, 64) != nil else { try invalid() }
+        if value["profile"].text != profile || value["profile_version"].text != version || value["algorithm"].text != "ed25519" {
+            try invalid("SIGNATURE_PROFILE_UNSUPPORTED")
+        }
+        return value
+    }
+    /// protection-integrity.signatureContentPreimage for one member: JSON
+    /// members are re-canonicalized (kdna.json additionally drops the digest
+    /// fields); the row is name + ':' + the member digest hex.
+    static func signatureBasisRow(_ name: String, _ bytes: [UInt8]) throws -> String {
+        var member = bytes
+        if name.lowercased().hasSuffix(".json") {
+            var value = try KDNAJSON.parse(Data(bytes))
+            if name == "kdna.json" {
+                for key in ["asset_digest", "container_sha256", "content_digest", "_source"] { value.remove(key) }
+                if case .object = value["authoring"] { value["authoring"].remove("content_digest") }
+            }
+            member = [UInt8](try KDNAJSON.canonical(value))
+        }
+        return name + ":" + String(sha(Data(member)).dropFirst(7))
+    }
+    /// signature.verifySignatureBundle: the content-digest equality and the
+    /// Ed25519 verification over the domain-separated signing payload.
+    static func verifyBundle(_ raw: [UInt8], _ contentDigest: String) throws {
+        let bundle = try parseBundle(raw)
+        guard exact(bundle["content_digest"].text, contentDigest) else { throw PublicFailure("KDNA_INTEGRITY_SIGNATURE_FAILED") }
+        guard let publicKeyBytes = hexBytes(bundle["public_key"].text, 32), let signatureBytes = hexBytes(bundle["signature"].text, 64),
+              let publicKey = try? Curve25519.Signing.PublicKey(rawRepresentation: Data(publicKeyBytes)) else {
+            throw PublicFailure("KDNA_INTEGRITY_SIGNATURE_FAILED")
+        }
+        let payload = Data("\(profile):\(version):\(contentDigest)".utf8)
+        guard publicKey.isValidSignature(Data(signatureBytes), for: payload) else {
+            throw PublicFailure("KDNA_INTEGRITY_SIGNATURE_FAILED")
+        }
     }
     // MARK: - Scoped (partial) flow — section-signatures.js
     /// authorizationContext: the whole-read face builds this inline; the
