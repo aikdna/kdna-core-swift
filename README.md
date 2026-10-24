@@ -2,6 +2,8 @@
 
 A Swift-native implementation of the pinned public Core and Read contract, at candidate coordinate `0.4.0-rc.component-semantics.1`. The Swift package exposes the `KDNACore` library. It uses Foundation, CryptoKit, Darwin and platform zlib with no external package dependencies. SwiftPM declares macOS 13 and iOS 16 deployment targets. CI runs macOS tests and a generic iOS device compilation; the iOS leg does not exercise device runtime behavior. Linux, Windows, Tauri and WKWebView are not verified.
 
+**Status (2026-10-24):** source release candidate pinned to Core `0.24.0-rc.component-semantics.2` / Read `0.3.0-rc.component-semantics.2`; last source change 2026-09-14. The current published npm line is CLI `0.43.2` / Core `0.37.9` / Read `0.13.3`; this package does not track it and no update is currently scheduled. Exact coordinates: [`public-contract-binding.json`](public-contract-binding.json). Historical tags and releases on this repository predate this candidate and are not asserted. Tag naming on this repository is historical and mixed (v-prefixed and bare); it carries no release semantics.
+
 ## Core admission
 
 ```swift
