@@ -1,8 +1,10 @@
 # KDNA Swift Core and Read
 
+> **Status Notice (Legacy Pre-0.6.0 Line):** This repository is preserved as a historical compatibility package and is not the active entrypoint for current KDNA Container `0.6.0` judgment works. For current specifications, offline CLI authoring/reading/encryption, Agent Skills, Desktop KDNA Reader, and *KDNA Whitepaper* (1.0.1), visit [`aikdna/kdna`](https://github.com/aikdna/kdna), [`aikdna/kdna-cli`](https://github.com/aikdna/kdna-cli), [`aikdna/kdna-skills`](https://github.com/aikdna/kdna-skills), and [`aikdna/kdna-assets`](https://github.com/aikdna/kdna-assets).
+
 A Swift-native implementation of the pinned public Core and Read contract, at candidate coordinate `0.4.0-rc.component-semantics.1`. The Swift package exposes the `KDNACore` library. It uses Foundation, CryptoKit, Darwin and platform zlib with no external package dependencies. SwiftPM declares macOS 13 and iOS 16 deployment targets. CI runs macOS tests and a generic iOS device compilation; the iOS leg does not exercise device runtime behavior. Linux, Windows, Tauri and WKWebView are not verified.
 
-**Status (2026-10-24):** source release candidate pinned to Core `0.24.0-rc.component-semantics.2` / Read `0.3.0-rc.component-semantics.2`; last source change 2026-09-14. The current published npm line is CLI `0.43.2` / Core `0.37.9` / Read `0.13.3`; this package does not track it and no update is currently scheduled. Exact coordinates: [`public-contract-binding.json`](public-contract-binding.json). Historical tags and releases on this repository predate this candidate and are not asserted. Tag naming on this repository is historical and mixed (v-prefixed and bare); it carries no release semantics.
+**Status (2026-10-24):** source release candidate pinned to Core `0.24.0-rc.component-semantics.2` / Read `0.3.0-rc.component-semantics.2`; last source change 2026-09-14. The published npm line includes `@aikdna/kdna-cli` (`0.43.x` / current stable on npm); this legacy pre-0.6.0 package does not track it and no update is currently scheduled. Exact coordinates: [`public-contract-binding.json`](public-contract-binding.json). Historical tags and releases on this repository predate this candidate and are not asserted. Tag naming on this repository is historical and mixed (v-prefixed and bare); it carries no release semantics.
 
 ## Core admission
 
